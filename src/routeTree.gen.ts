@@ -9,8 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SpeakerRouteImport } from './routes/speaker'
+import { Route as AudianceRouteImport } from './routes/audiance'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SpeakerRoute = SpeakerRouteImport.update({
+  id: '/speaker',
+  path: '/speaker',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AudianceRoute = AudianceRouteImport.update({
+  id: '/audiance',
+  path: '/audiance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +31,50 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/audiance': typeof AudianceRoute
+  '/speaker': typeof SpeakerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/audiance': typeof AudianceRoute
+  '/speaker': typeof SpeakerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/audiance': typeof AudianceRoute
+  '/speaker': typeof SpeakerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/audiance' | '/speaker'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/audiance' | '/speaker'
+  id: '__root__' | '/' | '/audiance' | '/speaker'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AudianceRoute: typeof AudianceRoute
+  SpeakerRoute: typeof SpeakerRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/speaker': {
+      id: '/speaker'
+      path: '/speaker'
+      fullPath: '/speaker'
+      preLoaderRoute: typeof SpeakerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/audiance': {
+      id: '/audiance'
+      path: '/audiance'
+      fullPath: '/audiance'
+      preLoaderRoute: typeof AudianceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +87,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AudianceRoute: AudianceRoute,
+  SpeakerRoute: SpeakerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

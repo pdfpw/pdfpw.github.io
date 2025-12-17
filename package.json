@@ -20,6 +20,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.544.0",
+    "pdfjs-dist": "^5.4.449",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwind-merge": "^3.0.2",
@@ -43,6 +44,6 @@
     "web-vitals": "^5.1.0"
   },
   "imports": {
-    "#src/*":"#src/*"
+    "#src/*": "#src/*"
   }
 }
