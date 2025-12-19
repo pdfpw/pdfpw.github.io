@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port 3000",
+    "dev": "vite --port 6123",
     "build": "vite build && tsc -b",
     "preview": "vite preview",
     "test": "vitest run",
@@ -12,6 +12,7 @@
     "check": "biome check"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.2.4",
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/react-devtools": "^0.7.0",
     "@tanstack/react-router": "^1.132.0",
@@ -19,16 +20,19 @@
     "@tanstack/router-plugin": "^1.132.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "idb": "^8.0.3",
     "lucide-react": "^0.544.0",
     "pdfjs-dist": "^5.4.449",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.0.6",
-    "tw-animate-css": "^1.3.6"
+    "tw-animate-css": "^1.3.6",
+    "typia": "^10.1.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
+    "@ryoppippi/unplugin-typia": "^2.6.5",
     "@tanstack/devtools-vite": "^0.3.11",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",
@@ -44,6 +48,6 @@
     "web-vitals": "^5.1.0"
   },
   "imports": {
-    "#src/*": "#src/*"
+    "#src/*": "./src/*"
   }
 }

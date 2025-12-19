@@ -23,6 +23,11 @@ declare module "@tanstack/react-router" {
 	interface Register {
 		router: typeof router;
 	}
+
+	interface HistoryState {
+		pdf?: File | FileSystemFileHandle;
+		pdfpc?: File | FileSystemFileHandle;
+	}
 }
 
 // Render the app
