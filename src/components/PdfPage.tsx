@@ -2,7 +2,6 @@ import type { ClassValue } from "clsx";
 import type { PageViewport, PDFDocumentProxy } from "pdfjs-dist";
 import {
 	type HTMLAttributes,
-	memo,
 	type RefObject,
 	Suspense,
 	use,
@@ -17,47 +16,59 @@ import { Skeleton } from "./ui/skeleton";
 
 interface PdfPageProps
 	extends Omit<HTMLAttributes<HTMLDivElement>, "ref" | "className"> {
-	pdfProxy: PDFDocumentProxy;
+	pdfProxyPromise: Promise<PDFDocumentProxy>;
 	pageNumber: number;
 	className?: ClassValue;
 }
 
-export function PdfPage({ className, ...props }: PdfPageProps) {
+export function PdfPage({
+	pdfProxyPromise,
+	pageNumber,
+	className,
+	...props
+}: PdfPageProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	return (
 		<div
 			data-slot="pdf-page-container"
 			className={cn(
-				"flex h-full w-full items-center justify-center",
+				"flex h-full w-full items-center justify-center overflow-hidden",
 				className,
 			)}
 			ref={containerRef}
 			{...props}
 		>
 			<Suspense
-				fallback={<Skeleton className="block max-h-full max-w-full"></Skeleton>}
+				fallback={<Skeleton className="block h-full w-full"></Skeleton>}
 			>
-				<PdfPageCanvas {...props} />
+				<PdfPageCanvas
+					pdfProxyPromise={pdfProxyPromise}
+					pageNumber={pageNumber}
+					containerRef={containerRef}
+				/>
 			</Suspense>
 		</div>
 	);
 }
 
 function PdfPageCanvas({
-	pdfProxy,
+	pdfProxyPromise,
 	pageNumber,
 	containerRef,
 }: {
-	pdfProxy: PDFDocumentProxy;
+	pdfProxyPromise: Promise<PDFDocumentProxy>;
 	pageNumber: number;
 	containerRef: RefObject<HTMLDivElement | null>;
 }) {
-	const page = use(pdfProxy.getPage(pageNumber));
-	const { baseViewport } = useMemo(
-		() => ({
-			baseViewport: page.getViewport({ scale: 1 }),
-		}),
-		[page],
+	const pdfProxy = use(pdfProxyPromise);
+	const { page, baseViewport } = use(
+		useMemo(async () => {
+			const page = await pdfProxy.getPage(pageNumber);
+			return {
+				page,
+				baseViewport: page.getViewport({ scale: 1 }),
+			};
+		}, [pdfProxy, pageNumber]),
 	);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const [viewport, setViewport] = useState<PageViewport | null>(null);
@@ -67,7 +78,9 @@ function PdfPageCanvas({
 		scale: number;
 	} | null>(null);
 
-	const a = useEffectEvent<ResizeObserverCallback>((entries) => {
+	const updateScale = useEffectEvent(((
+		entries: Pick<ResizeObserverEntry, "target" | "contentRect">[],
+	) => {
 		const divElement = entries.find(
 			(e) =>
 				e.target.attributes.getNamedItem("data-slot")?.value ===
@@ -82,7 +95,7 @@ function PdfPageCanvas({
 			width / baseViewport.width,
 			height / baseViewport.height,
 		);
-		const nextScale = Math.max(0.1);
+		const nextScale = Math.max(0.1, scale);
 		const nextViewport = page.getViewport({ scale: nextScale });
 		const last = lastViewportRef.current;
 		if (
@@ -99,44 +112,22 @@ function PdfPageCanvas({
 			scale: nextScale,
 		};
 		setViewport(nextViewport);
-	});
+	}) satisfies ResizeObserverCallback);
 
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container) return;
-		const baseViewport = page.getViewport({ scale: 1 });
 
-		const updateScale = () => {
-			const { width, height } = container.getBoundingClientRect();
-			if (width <= 0 || height <= 0) return;
-			const scale = Math.min(
-				width / baseViewport.width,
-				height / baseViewport.height,
-			);
-			const nextScale = Math.max(scale, 0.1);
-			const nextViewport = page.getViewport({ scale: nextScale });
-			const last = lastViewportRef.current;
-			if (
-				last &&
-				Math.abs(last.scale - nextScale) < 0.001 &&
-				Math.abs(last.width - nextViewport.width) < 0.5 &&
-				Math.abs(last.height - nextViewport.height) < 0.5
-			) {
-				return;
-			}
-			lastViewportRef.current = {
-				width: nextViewport.width,
-				height: nextViewport.height,
-				scale: nextScale,
-			};
-			setViewport(nextViewport);
-		};
-
-		updateScale();
+		updateScale([
+			{
+				target: container,
+				contentRect: getContentBoxSize(container),
+			},
+		]);
 		const observer = new ResizeObserver(updateScale);
 		observer.observe(container);
 		return () => observer.disconnect();
-	}, [page]);
+	}, [containerRef.current]);
 
 	useEffect(() => {
 		if (!viewport) return;
@@ -166,4 +157,15 @@ function PdfPageCanvas({
 	}, [page, viewport]);
 
 	return <canvas ref={canvasRef} className="block max-h-full max-w-full" />;
+}
+function getContentBoxSize(el: HTMLElement): DOMRectReadOnly {
+	const style = window.getComputedStyle(el);
+	const paddingX = Number(style.paddingLeft) + Number(style.paddingRight);
+	const paddingY = Number(style.paddingTop) + Number(style.paddingBottom);
+
+	// clientWidth/Height は border は含まず、padding は含みます
+	const width = Math.max(0, el.clientWidth - paddingX);
+	const height = Math.max(0, el.clientHeight - paddingY);
+
+	return { width, height } as DOMRectReadOnly;
 }

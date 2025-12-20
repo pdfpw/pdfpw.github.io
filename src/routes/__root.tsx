@@ -6,7 +6,7 @@ import Header from "../components/Header";
 
 export const Route = createRootRoute({
 	component: () => (
-		<>
+		<div className="grid grid-rows-[auto_1fr] h-screen">
 			<Header />
 			<Outlet />
 			<TanStackDevtools
@@ -20,6 +20,6 @@ export const Route = createRootRoute({
 					},
 				]}
 			/>
-		</>
+		</div>
 	),
 });

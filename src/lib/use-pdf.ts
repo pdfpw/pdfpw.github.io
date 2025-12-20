@@ -7,7 +7,9 @@ async function loadPdf(file: File | FileSystemFileHandle) {
 }
 export function usePdf(file: File | FileSystemFileHandle) {
 	return useReducer(
-		(_, file: File | FileSystemFileHandle) => loadPdf(file),
+		(_, file: File | FileSystemFileHandle) => loadPdf(file).catch((err) => {
+			console.error("Failed to load PDF:", err);
+		}),
 		file,
 		loadPdf,
 	);

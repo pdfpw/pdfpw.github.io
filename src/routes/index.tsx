@@ -14,10 +14,10 @@ import {
 	removeRecent,
 	upsertRecent,
 } from "../lib/recent-store";
-import { DropzoneSection } from "./~index/DropzoneSection";
-import { HeroSection } from "./~index/HeroSection";
-import { RecentSection, RecentSectionLoading } from "./~index/RecentSection";
-import { RecentSectionData } from "./~index/RecentSectionData";
+import { DropzoneSection } from "./-index/DropzoneSection";
+import { HeroSection } from "./-index/HeroSection";
+import { RecentSection, RecentSectionLoading } from "./-index/RecentSection";
+import { RecentSectionData } from "./-index/RecentSectionData";
 
 export const Route = createFileRoute("/")({
 	component: Home,
