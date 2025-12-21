@@ -1,10 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Suspense, use, useId, useReducer, useState } from "react";
+import {
+	createFileRoute,
+	useNavigate,
+	useRouter,
+} from "@tanstack/react-router";
+import { Suspense, useId, useReducer, useState } from "react";
 import {
 	canUseFSA,
 	ensureHandleReadable,
 	ensureHandleWritable,
-} from "../lib/fsa";
+} from "../../lib/fsa";
 import {
 	clearRecentStore,
 	getRecentFiles,
@@ -13,18 +17,18 @@ import {
 	type RecentFile,
 	removeRecent,
 	upsertRecent,
-} from "../lib/recent-store";
+} from "../../lib/recent-store";
 import { DropzoneSection } from "./-index/DropzoneSection";
 import { HeroSection } from "./-index/HeroSection";
 import { RecentSection, RecentSectionLoading } from "./-index/RecentSection";
 import { RecentSectionData } from "./-index/RecentSectionData";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/(main)/")({
 	component: Home,
 });
 
 const HERO_CTA = {
-	title: "ファイルを選択して Speaker を開始",
+	title: "ファイルを選択して Presenter View を開始",
 	subtitle: "PDF と同名の .pdfpc を一緒に選ぶと設定も読み込みます。",
 };
 
@@ -38,6 +42,7 @@ function Home() {
 	const [status, setStatus] = useState<string | null>(null);
 	const inputId = useId();
 	const navigate = useNavigate();
+	const router = useRouter();
 
 	async function saveRecent(entry: RecentFile) {
 		try {
@@ -118,8 +123,8 @@ function Home() {
 				: `「${pdf.name}」を読み込み中…`,
 		);
 
-		await navigate({
-			to: "/speaker",
+		await router.navigate({
+			to: "/presenter",
 			search: {
 				file: pdf.name,
 			},
@@ -128,6 +133,16 @@ function Home() {
 				pdfpc: pdfpcHandle ?? pdfpc,
 			},
 		});
+		window.open(
+			router.buildLocation({
+				to: "/presentation",
+				search: {
+					file: pdf.name,
+				},
+			}).href,
+			"_blank",
+			"noopener,noreferrer,popup=yes,width=1200,height=675,resizable=yes",
+		);
 	}
 
 	async function onFilesSelected(files: File[]) {

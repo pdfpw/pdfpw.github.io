@@ -1,4 +1,4 @@
-import { Card } from "../../components/ui/card";
+import { Card } from "#src/components/ui/card";
 
 type HeroSectionProps = {
 	title: string;
@@ -18,7 +18,7 @@ export function HeroSection({ title, subtitle, status }: HeroSectionProps) {
 					<p className="font-semibold text-foreground">基本</p>
 					<ul className="mt-2 space-y-1">
 						<li>・ドラッグ＆ドロップ／ファイル選択でPDFを開く</li>
-						<li>・選択後は Speaker へリダイレクト</li>
+						<li>・選択後は Presenter View へリダイレクト</li>
 					</ul>
 				</Card>
 				<Card className="bg-card/80 p-4 shadow-sm gap-2">

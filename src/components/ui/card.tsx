@@ -1,8 +1,13 @@
+import type { ClassValue } from "clsx";
 import type * as React from "react";
-
 import { cn } from "#src/lib/utils";
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+function Card({
+	className,
+	...props
+}: Omit<React.ComponentProps<"div">, "className"> & {
+	className?: ClassValue;
+}) {
 	return (
 		<div
 			data-slot="card"

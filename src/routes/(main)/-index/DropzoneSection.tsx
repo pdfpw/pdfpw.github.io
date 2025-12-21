@@ -1,8 +1,8 @@
 import { FolderOpenIcon, HistoryIcon, UploadCloudIcon } from "lucide-react";
 import { type DragEvent, useState } from "react";
-import { Button } from "../../components/ui/button";
-import { Card } from "../../components/ui/card";
-import { cn } from "../../lib/utils";
+import { Button } from "#src/components/ui/button";
+import { Card } from "#src/components/ui/card";
+import { cn } from "#src/lib/utils";
 
 type DropzoneSectionProps = {
 	inputId: string;

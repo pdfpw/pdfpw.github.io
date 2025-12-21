@@ -9,86 +9,116 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SpeakerRouteImport } from './routes/speaker'
-import { Route as AudianceRouteImport } from './routes/audiance'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as mainRouteRouteImport } from './routes/(main)/route'
+import { Route as PresentationIndexRouteImport } from './routes/presentation/index'
+import { Route as mainIndexRouteImport } from './routes/(main)/index'
+import { Route as mainPresenterRouteImport } from './routes/(main)/presenter'
 
-const SpeakerRoute = SpeakerRouteImport.update({
-  id: '/speaker',
-  path: '/speaker',
+const mainRouteRoute = mainRouteRouteImport.update({
+  id: '/(main)',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AudianceRoute = AudianceRouteImport.update({
-  id: '/audiance',
-  path: '/audiance',
+const PresentationIndexRoute = PresentationIndexRouteImport.update({
+  id: '/presentation/',
+  path: '/presentation/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const mainIndexRoute = mainIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => mainRouteRoute,
+} as any)
+const mainPresenterRoute = mainPresenterRouteImport.update({
+  id: '/presenter',
+  path: '/presenter',
+  getParentRoute: () => mainRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/audiance': typeof AudianceRoute
-  '/speaker': typeof SpeakerRoute
+  '/presenter': typeof mainPresenterRoute
+  '/': typeof mainIndexRoute
+  '/presentation': typeof PresentationIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/audiance': typeof AudianceRoute
-  '/speaker': typeof SpeakerRoute
+  '/presenter': typeof mainPresenterRoute
+  '/': typeof mainIndexRoute
+  '/presentation': typeof PresentationIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/audiance': typeof AudianceRoute
-  '/speaker': typeof SpeakerRoute
+  '/(main)': typeof mainRouteRouteWithChildren
+  '/(main)/presenter': typeof mainPresenterRoute
+  '/(main)/': typeof mainIndexRoute
+  '/presentation/': typeof PresentationIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/audiance' | '/speaker'
+  fullPaths: '/presenter' | '/' | '/presentation'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/audiance' | '/speaker'
-  id: '__root__' | '/' | '/audiance' | '/speaker'
+  to: '/presenter' | '/' | '/presentation'
+  id:
+    | '__root__'
+    | '/(main)'
+    | '/(main)/presenter'
+    | '/(main)/'
+    | '/presentation/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AudianceRoute: typeof AudianceRoute
-  SpeakerRoute: typeof SpeakerRoute
+  mainRouteRoute: typeof mainRouteRouteWithChildren
+  PresentationIndexRoute: typeof PresentationIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/speaker': {
-      id: '/speaker'
-      path: '/speaker'
-      fullPath: '/speaker'
-      preLoaderRoute: typeof SpeakerRouteImport
+    '/(main)': {
+      id: '/(main)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof mainRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/audiance': {
-      id: '/audiance'
-      path: '/audiance'
-      fullPath: '/audiance'
-      preLoaderRoute: typeof AudianceRouteImport
+    '/presentation/': {
+      id: '/presentation/'
+      path: '/presentation'
+      fullPath: '/presentation'
+      preLoaderRoute: typeof PresentationIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/(main)/': {
+      id: '/(main)/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof mainIndexRouteImport
+      parentRoute: typeof mainRouteRoute
+    }
+    '/(main)/presenter': {
+      id: '/(main)/presenter'
+      path: '/presenter'
+      fullPath: '/presenter'
+      preLoaderRoute: typeof mainPresenterRouteImport
+      parentRoute: typeof mainRouteRoute
     }
   }
 }
 
+interface mainRouteRouteChildren {
+  mainPresenterRoute: typeof mainPresenterRoute
+  mainIndexRoute: typeof mainIndexRoute
+}
+
+const mainRouteRouteChildren: mainRouteRouteChildren = {
+  mainPresenterRoute: mainPresenterRoute,
+  mainIndexRoute: mainIndexRoute,
+}
+
+const mainRouteRouteWithChildren = mainRouteRoute._addFileChildren(
+  mainRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AudianceRoute: AudianceRoute,
-  SpeakerRoute: SpeakerRoute,
+  mainRouteRoute: mainRouteRouteWithChildren,
+  PresentationIndexRoute: PresentationIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

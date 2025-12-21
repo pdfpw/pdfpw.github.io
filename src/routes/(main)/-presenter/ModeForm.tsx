@@ -1,10 +1,5 @@
 import type { ClassValue } from "clsx";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "#src/components/ui/card.tsx";
+import { Card, CardContent } from "#src/components/ui/card.tsx";
 import { Label } from "#src/components/ui/label.tsx";
 import { Switch } from "#src/components/ui/switch.tsx";
 import { cn } from "#src/lib/utils.ts";

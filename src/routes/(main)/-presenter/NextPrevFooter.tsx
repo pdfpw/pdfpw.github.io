@@ -1,16 +1,17 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import { Suspense, use } from "react";
+import { type RefObject, Suspense } from "react";
 import { PdfPage } from "#src/components/PdfPage.tsx";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
 
 interface NextPrevFooterProps {
-	pdfProxyPromise: Promise<PDFDocumentProxy>;
-	pdfpcConfigPromise: Promise<ResolvedPdfpcConfigV2>;
+	pdfProxy: PDFDocumentProxy;
+	pdfpcConfig: ResolvedPdfpcConfigV2;
 	/**
 	 * 0-based current slide index
 	 */
 	currentPageNumber: number;
+	ref?: RefObject<HTMLDivElement | null>;
 }
 
 export function NextPrevFooter(props: NextPrevFooterProps) {
@@ -37,25 +38,25 @@ function getNextPrev(slidePageNumbers: number[][], currentPageNumber: number) {
 }
 
 function NextPrevFooterCore({
-	pdfProxyPromise,
-	pdfpcConfigPromise,
+	pdfProxy,
+	pdfpcConfig,
 	currentPageNumber,
+	ref,
 }: NextPrevFooterProps) {
-	const pdfpcConfig = use(pdfpcConfigPromise);
 	const { next, current, prev } = getNextPrev(
 		pdfpcConfig.pages.map((p) => p.map(({ pageNumber }) => pageNumber)),
 		currentPageNumber,
 	);
 
 	return (
-		<div className="grid grid-cols-[auto_1fr_auto]">
+		<div className="grid grid-cols-[auto_1fr_auto]" ref={ref}>
 			{prev === null ? (
 				<div className="h-full aspect-video"></div>
 			) : (
 				<PdfPage
-					pdfProxyPromise={pdfProxyPromise}
+					pdfProxy={pdfProxy}
 					pageNumber={prev}
-					className="h-full w-[initial] aspect-video"
+					className="h-full w-auto aspect-video"
 				/>
 			)}
 			<div className="text-center">
@@ -65,9 +66,9 @@ function NextPrevFooterCore({
 				<div className="h-full aspect-video"></div>
 			) : (
 				<PdfPage
-					pdfProxyPromise={pdfProxyPromise}
+					pdfProxy={pdfProxy}
 					pageNumber={next}
-					className="h-full w-[initial] aspect-video"
+					className="h-full w-auto aspect-video"
 				/>
 			)}
 		</div>

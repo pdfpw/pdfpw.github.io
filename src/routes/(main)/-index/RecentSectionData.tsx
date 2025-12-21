@@ -1,5 +1,5 @@
 import { use } from "react";
-import type { RecentFile } from "../../lib/recent-store";
+import type { RecentFile } from "#src/lib/recent-store";
 import { RecentSection } from "./RecentSection";
 
 type RecentSectionDataProps = {

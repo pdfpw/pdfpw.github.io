@@ -1,6 +1,7 @@
 import type { ClassValue } from "clsx";
-import type { PageViewport, PDFDocumentProxy } from "pdfjs-dist";
+import type { PageViewport, PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";
 import {
+	type FulfilledReactPromise,
 	type HTMLAttributes,
 	type RefObject,
 	Suspense,
@@ -15,16 +16,18 @@ import { cn } from "#src/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 
 interface PdfPageProps
-	extends Omit<HTMLAttributes<HTMLDivElement>, "ref" | "className"> {
-	pdfProxyPromise: Promise<PDFDocumentProxy>;
+	extends Omit<HTMLAttributes<HTMLDivElement>, "className"> {
+	pdfProxy: PDFDocumentProxy;
 	pageNumber: number;
 	className?: ClassValue;
+	ref?: RefObject<HTMLDivElement | null>;
 }
 
 export function PdfPage({
-	pdfProxyPromise,
+	pdfProxy,
 	pageNumber,
 	className,
+	ref,
 	...props
 }: PdfPageProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
@@ -35,41 +38,56 @@ export function PdfPage({
 				"flex h-full w-full items-center justify-center overflow-hidden",
 				className,
 			)}
-			ref={containerRef}
+			ref={ref ? ref : containerRef}
 			{...props}
 		>
 			<Suspense
 				fallback={<Skeleton className="block h-full w-full"></Skeleton>}
 			>
 				<PdfPageCanvas
-					pdfProxyPromise={pdfProxyPromise}
+					pdfProxy={pdfProxy}
 					pageNumber={pageNumber}
-					containerRef={containerRef}
+					containerRef={ref ? ref : containerRef}
 				/>
 			</Suspense>
 		</div>
 	);
 }
 
+let pdfProxyKey: PDFDocumentProxy | null = null;
+const pdfPageCache: Map<number, PDFPageProxy> = new Map();
+function getPage(pdfProxy: PDFDocumentProxy, pageNumber: number) {
+	if (pdfProxyKey !== pdfProxy) {
+		pdfPageCache.clear();
+		pdfProxyKey = pdfProxy;
+	}
+
+	const cachedPage = pdfPageCache.get(pageNumber);
+	if (cachedPage)
+		return {
+			status: "fulfilled",
+			value: cachedPage,
+			// biome-ignore lint/suspicious/noThenProperty: To satisfy FulfilledReactPromise
+			then: (onFulfilled): any => Promise.resolve(onFulfilled?.(cachedPage)),
+		} satisfies FulfilledReactPromise<PDFPageProxy>;
+
+	return pdfProxy.getPage(pageNumber).then((page) => {
+		if (pdfProxyKey === pdfProxy) pdfPageCache.set(pageNumber, page);
+		return page;
+	});
+}
+
 function PdfPageCanvas({
-	pdfProxyPromise,
+	pdfProxy,
 	pageNumber,
 	containerRef,
 }: {
-	pdfProxyPromise: Promise<PDFDocumentProxy>;
+	pdfProxy: PDFDocumentProxy;
 	pageNumber: number;
 	containerRef: RefObject<HTMLDivElement | null>;
 }) {
-	const pdfProxy = use(pdfProxyPromise);
-	const { page, baseViewport } = use(
-		useMemo(async () => {
-			const page = await pdfProxy.getPage(pageNumber);
-			return {
-				page,
-				baseViewport: page.getViewport({ scale: 1 }),
-			};
-		}, [pdfProxy, pageNumber]),
-	);
+	const page = use(getPage(pdfProxy, pageNumber));
+	const baseViewport = useMemo(() => page.getViewport({ scale: 1 }), [page]);
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const [viewport, setViewport] = useState<PageViewport | null>(null);
 	const lastViewportRef = useRef<{

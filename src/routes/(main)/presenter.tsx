@@ -1,32 +1,37 @@
 import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Suspense, use, useEffect, useEffectEvent, useState } from "react";
+import { Suspense, use, useRef, useState } from "react";
 import * as typia from "typia";
 import { Button } from "#src/components/ui/button";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
 import {
 	assertPdfpcConfigV2,
-	type ResolvedPdfpcConfigV2,
 	resolvePdfpcConfig,
 } from "#src/lib/pdfpc-config.ts";
 import { getRecentFileById, openDb } from "#src/lib/recent-store.ts";
 import { createUseMemoried } from "#src/lib/use-memoried.ts";
-import { ModeForm } from "./-speaker/ModeForm";
-import { NextPrevFooter } from "./-speaker/NextPrevFooter";
-import { NextSlide } from "./-speaker/NextSlide";
-import { Note } from "./-speaker/Note";
-import { SlideStage } from "./-speaker/SlideStage";
+import {
+	type BroadcastAction,
+	getBroadcastChannel,
+	usePresenterBroadcast,
+} from "../-broadcast";
+import { useSlideShortcut } from "../-hooks/use-slide-shortcut";
+import { ModeForm } from "./-presenter/ModeForm";
+import { NextPrevFooter } from "./-presenter/NextPrevFooter";
+import { NextSlide } from "./-presenter/NextSlide";
+import { Note } from "./-presenter/Note";
+import { SlideStage } from "./-presenter/SlideStage";
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
-interface SpeakerSearch {
+interface PresenterSearch {
 	file?: string;
 }
 
-export const Route = createFileRoute("/speaker")({
+export const Route = createFileRoute("/(main)/presenter")({
 	component: RouteComponent,
-	validateSearch: typia.createValidate<SpeakerSearch>(),
+	validateSearch: typia.createValidate<PresenterSearch>(),
 });
 
 function RouteComponent() {
@@ -57,12 +62,12 @@ function RouteComponent() {
 			<Suspense
 				fallback={
 					<div className="grid h-full max-h-full grid-cols-[auto_1fr] grid-rows-[3fr_1fr] p-4 gap-4">
-						<Skeleton className="aspect-video"></Skeleton>
+						<Skeleton className="aspect-video min-h-[calc((100vh-60px)/4*3)]"></Skeleton>
 						<div className="row-span-2 flex flex-col gap-4">
 							<Skeleton className="h-auto aspect-video max-h-80 w-full"></Skeleton>
 							<Skeleton className="flex-1"></Skeleton>
 						</div>
-						<Skeleton></Skeleton>
+						<Skeleton className="w-full min-h-0 h-full"></Skeleton>
 					</div>
 				}
 			>
@@ -110,9 +115,7 @@ function RecentPdfResolver({
 			</main>
 		);
 
-	return (
-		<SpeakerView key={pdf.name} pdf={pdf} pdfpc={pdfpc} fileName={fileName} />
-	);
+	return <PresenterView pdf={pdf} pdfpc={pdfpc} fileName={fileName} />;
 }
 
 async function loadPdf(file: File | FileSystemFileHandle) {
@@ -133,11 +136,7 @@ const usePdf = createUseMemoried((file: File | FileSystemFileHandle) => {
 });
 
 const usePdfpcConfig = createUseMemoried(
-	async (
-		file: File | FileSystemFileHandle | undefined,
-		labelsPromise: Promise<string[]>,
-	) => {
-		const labels = await labelsPromise;
+	async (file: File | FileSystemFileHandle | undefined, labels: string[]) => {
 		if (!file) return resolvePdfpcConfig(undefined, labels);
 		if (!(file instanceof File)) file = await file.getFile();
 		const rawConfig = JSON.parse(await file.text());
@@ -146,88 +145,87 @@ const usePdfpcConfig = createUseMemoried(
 	},
 );
 
-function SpeakerView({
+function PresenterView({
 	pdf,
 	pdfpc,
+	fileName,
 }: {
 	pdf: File | FileSystemFileHandle;
 	pdfpc: File | FileSystemFileHandle | undefined;
 	fileName: string;
 }) {
 	const [pdfProxyPromise, slidePageNumbersPromise] = usePdf(pdf);
-	const pdfpcConfigPromise = usePdfpcConfig(pdfpc, slidePageNumbersPromise);
+	const pdfProxy = use(pdfProxyPromise);
+	const slidePageNumbers = use(slidePageNumbersPromise);
+	const pdfpcConfigPromise = usePdfpcConfig(pdfpc, slidePageNumbers);
+	const pdfpcConfig = use(pdfpcConfigPromise);
 	const [pageNumber, setPageNumber] = useState(1);
 	const [presentationPageNumber, setPresentationPageNumber] = useState(1);
 	const [isFrozen, setIsFrozen] = useState(false);
 	if (!isFrozen && pageNumber !== presentationPageNumber)
 		setPresentationPageNumber(pageNumber);
 
-	const moveNextSlide = async () => {
-		const pdfpcConfig = await pdfpcConfigPromise;
+	const slideStageRef = useRef<HTMLElement | null>(null);
+	const nextSlideRef = useRef<HTMLDivElement | null>(null);
+	const nextPrevRef = useRef<HTMLDivElement | null>(null);
 
-		console.log(pdfpcConfig);
-		setPageNumber((prev) => {
-			const a =
-				pdfpcConfig.totalOverlays > prev ? prev + 1 : pdfpcConfig.totalOverlays;
-			console.log({ a });
-			return a;
-		});
-	};
-
-	const movePrevSlide = async () => {
-		setPageNumber((prev) => (prev > 1 ? prev - 1 : 1));
-	};
-
-	const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
-		if (event.defaultPrevented) return;
-		switch (event.key) {
-			case "ArrowRight":
-			case " ":
-			case "PageDown":
-				event.preventDefault();
-				moveNextSlide();
-				break;
-			case "ArrowLeft":
-			case "PageUp":
-				event.preventDefault();
-				movePrevSlide();
-				break;
+	useSlideShortcut(() => {
+		setPageNumber((prev) =>
+			pdfpcConfig.totalOverlays > prev ? prev + 1 : pdfpcConfig.totalOverlays,
+		);
+		if (!isFrozen) {
+			const channel = getBroadcastChannel(fileName);
+			channel.postMessage({
+				from: "presenter",
+				command: "send-current-page-number",
+				pageNumber:
+					pdfpcConfig.totalOverlays > pageNumber
+						? pageNumber + 1
+						: pdfpcConfig.totalOverlays,
+			} satisfies BroadcastAction);
 		}
-	});
+	}, () => {
+		setPageNumber((prev) => (prev > 1 ? prev - 1 : 1));
+		if (!isFrozen) {
+			const channel = getBroadcastChannel(fileName);
+			channel.postMessage({
+				from: "presenter",
+				command: "send-current-page-number",
+				pageNumber: pageNumber > 1 ? pageNumber - 1 : 1,
+			} satisfies BroadcastAction);
+		}
+	}, [slideStageRef, nextSlideRef, nextPrevRef]);
 
-	useEffect(() => {
-		window.addEventListener("keydown", handleKeyDown);
-		return () => {
-			window.removeEventListener("keydown", handleKeyDown);
-		};
-	}, []);
+	usePresenterBroadcast(fileName, pdfpcConfig, pdf);
 
 	return (
 		<div className="grid h-full max-h-full grid-cols-[auto_1fr] grid-rows-[3fr_1fr] p-4 gap-4">
 			<SlideStage
-				pdfProxyPromise={pdfProxyPromise}
-				pdfpcConfigPromise={pdfpcConfigPromise}
+				pdfProxy={pdfProxy}
 				pageNumber={presentationPageNumber}
 				isFrozen={isFrozen}
-				className="aspect-video min-h-0"
+				className="aspect-video min-h-[calc((100vh-100px)/4*3)]"
+				ref={slideStageRef}
 			/>
 			<div className="row-span-2 flex flex-col gap-4">
 				<NextSlide
-					currentSlidePage={pageNumber - 1}
-					pdfProxyPromise={pdfProxyPromise}
-					pdfpcConfigPromise={pdfpcConfigPromise}
+					currentSlidePage={pageNumber}
+					pdfProxy={pdfProxy}
+					pdfpcConfig={pdfpcConfig}
+					ref={nextSlideRef}
 				></NextSlide>
 				<ModeForm isFrozen={isFrozen} onChangeIsFrozen={setIsFrozen} />
 				<Note
 					className="flex-1"
-					pdfpcConfigPromise={pdfpcConfigPromise}
+					pdfpcConfig={pdfpcConfig}
 					pageNumber={pageNumber}
 				/>
 			</div>
 			<NextPrevFooter
-				pdfProxyPromise={pdfProxyPromise}
-				pdfpcConfigPromise={pdfpcConfigPromise}
+				pdfProxy={pdfProxy}
+				pdfpcConfig={pdfpcConfig}
 				currentPageNumber={pageNumber}
+				ref={nextPrevRef}
 			/>
 		</div>
 	);

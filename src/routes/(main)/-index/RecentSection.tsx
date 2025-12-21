@@ -1,8 +1,8 @@
 import { FileIcon } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Card } from "../../components/ui/card";
-import { Skeleton } from "../../components/ui/skeleton";
-import type { RecentFile } from "../../lib/recent-store";
+import { Button } from "#src/components/ui/button";
+import { Card } from "#src/components/ui/card";
+import { Skeleton } from "#src/components/ui/skeleton";
+import type { RecentFile } from "#src/lib/recent-store";
 
 type RecentSectionProps = {
 	supportsFSA: boolean;

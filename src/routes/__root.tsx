@@ -2,12 +2,9 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
-import Header from "../components/Header";
-
 export const Route = createRootRoute({
 	component: () => (
-		<div className="grid grid-rows-[auto_1fr] h-screen">
-			<Header />
+		<>
 			<Outlet />
 			<TanStackDevtools
 				config={{
@@ -20,6 +17,6 @@ export const Route = createRootRoute({
 					},
 				]}
 			/>
-		</div>
+		</>
 	),
 });
