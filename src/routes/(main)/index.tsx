@@ -1,8 +1,4 @@
-import {
-	createFileRoute,
-	useNavigate,
-	useRouter,
-} from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Suspense, useId, useReducer, useState } from "react";
 import {
 	canUseFSA,
@@ -41,7 +37,6 @@ function Home() {
 	);
 	const [status, setStatus] = useState<string | null>(null);
 	const inputId = useId();
-	const navigate = useNavigate();
 	const router = useRouter();
 
 	async function saveRecent(entry: RecentFile) {
