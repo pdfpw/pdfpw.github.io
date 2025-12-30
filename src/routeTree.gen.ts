@@ -13,6 +13,7 @@ import { Route as mainRouteRouteImport } from './routes/(main)/route'
 import { Route as PresentationIndexRouteImport } from './routes/presentation/index'
 import { Route as mainIndexRouteImport } from './routes/(main)/index'
 import { Route as mainPresenterRouteImport } from './routes/(main)/presenter'
+import { Route as mainLicensesRouteImport } from './routes/(main)/licenses'
 
 const mainRouteRoute = mainRouteRouteImport.update({
   id: '/(main)',
@@ -33,13 +34,20 @@ const mainPresenterRoute = mainPresenterRouteImport.update({
   path: '/presenter',
   getParentRoute: () => mainRouteRoute,
 } as any)
+const mainLicensesRoute = mainLicensesRouteImport.update({
+  id: '/licenses',
+  path: '/licenses',
+  getParentRoute: () => mainRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
+  '/licenses': typeof mainLicensesRoute
   '/presenter': typeof mainPresenterRoute
   '/': typeof mainIndexRoute
   '/presentation': typeof PresentationIndexRoute
 }
 export interface FileRoutesByTo {
+  '/licenses': typeof mainLicensesRoute
   '/presenter': typeof mainPresenterRoute
   '/': typeof mainIndexRoute
   '/presentation': typeof PresentationIndexRoute
@@ -47,18 +55,20 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(main)': typeof mainRouteRouteWithChildren
+  '/(main)/licenses': typeof mainLicensesRoute
   '/(main)/presenter': typeof mainPresenterRoute
   '/(main)/': typeof mainIndexRoute
   '/presentation/': typeof PresentationIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/presenter' | '/' | '/presentation'
+  fullPaths: '/licenses' | '/presenter' | '/' | '/presentation'
   fileRoutesByTo: FileRoutesByTo
-  to: '/presenter' | '/' | '/presentation'
+  to: '/licenses' | '/presenter' | '/' | '/presentation'
   id:
     | '__root__'
     | '/(main)'
+    | '/(main)/licenses'
     | '/(main)/presenter'
     | '/(main)/'
     | '/presentation/'
@@ -99,15 +109,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof mainPresenterRouteImport
       parentRoute: typeof mainRouteRoute
     }
+    '/(main)/licenses': {
+      id: '/(main)/licenses'
+      path: '/licenses'
+      fullPath: '/licenses'
+      preLoaderRoute: typeof mainLicensesRouteImport
+      parentRoute: typeof mainRouteRoute
+    }
   }
 }
 
 interface mainRouteRouteChildren {
+  mainLicensesRoute: typeof mainLicensesRoute
   mainPresenterRoute: typeof mainPresenterRoute
   mainIndexRoute: typeof mainIndexRoute
 }
 
 const mainRouteRouteChildren: mainRouteRouteChildren = {
+  mainLicensesRoute: mainLicensesRoute,
   mainPresenterRoute: mainPresenterRoute,
   mainIndexRoute: mainIndexRoute,
 }
