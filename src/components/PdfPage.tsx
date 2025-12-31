@@ -3,7 +3,9 @@ import type { PageViewport, PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";
 import {
 	type FulfilledReactPromise,
 	type HTMLAttributes,
+	type PendingReactPromise,
 	type RefObject,
+	type RejectedReactPromise,
 	Suspense,
 	use,
 	useEffect,
@@ -55,26 +57,47 @@ export function PdfPage({
 }
 
 let pdfProxyKey: PDFDocumentProxy | null = null;
-const pdfPageCache: Map<number, PDFPageProxy> = new Map();
+const pdfPageCache: Map<
+	number,
+	| FulfilledReactPromise<PDFPageProxy>
+	| RejectedReactPromise<PDFPageProxy>
+	| PendingReactPromise<PDFPageProxy>
+> = new Map();
 function getPage(pdfProxy: PDFDocumentProxy, pageNumber: number) {
 	if (pdfProxyKey !== pdfProxy) {
 		pdfPageCache.clear();
 		pdfProxyKey = pdfProxy;
 	}
 
-	const cachedPage = pdfPageCache.get(pageNumber);
-	if (cachedPage)
-		return {
-			status: "fulfilled",
-			value: cachedPage,
-			// biome-ignore lint/suspicious/noThenProperty: To satisfy FulfilledReactPromise
-			then: (onFulfilled): any => Promise.resolve(onFulfilled?.(cachedPage)),
-		} satisfies FulfilledReactPromise<PDFPageProxy>;
+	const cachedPagePromise = pdfPageCache.get(pageNumber);
+	if (cachedPagePromise) return cachedPagePromise;
 
-	return pdfProxy.getPage(pageNumber).then((page) => {
-		if (pdfProxyKey === pdfProxy) pdfPageCache.set(pageNumber, page);
-		return page;
+	const getPagePromise = pdfProxy.getPage(pageNumber);
+	const then = getPagePromise.then.bind(getPagePromise);
+	getPagePromise.then((page) => {
+		if (pdfProxyKey === pdfProxy)
+			pdfPageCache.set(pageNumber, {
+				status: "fulfilled",
+				value: page,
+				then,
+			});
 	});
+	getPagePromise.catch((reason) => {
+		if (pdfProxyKey === pdfProxy)
+			pdfPageCache.set(pageNumber, {
+				status: "rejected",
+				reason,
+				then,
+			});
+	});
+
+	const pendingPromise = {
+		status: "pending",
+		then,
+	} satisfies PendingReactPromise<PDFPageProxy>;
+	pdfPageCache.set(pageNumber, pendingPromise);
+
+	return pendingPromise;
 }
 
 function PdfPageCanvas({
@@ -168,6 +191,7 @@ function PdfPageCanvas({
 			canvasContext: context,
 			viewport: scaledViewport,
 		});
+		renderTask.promise.catch(() => {}); // Avoid unhandled rejection
 
 		return () => {
 			renderTask.cancel();

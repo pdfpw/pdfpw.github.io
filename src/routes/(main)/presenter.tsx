@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useLocation } from "@tanstack/react-router";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Suspense, use, useRef, useState } from "react";
+import { Suspense, startTransition, use, useRef, useState } from "react";
 import * as typia from "typia";
 import { Button } from "#src/components/ui/button";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
@@ -169,10 +169,12 @@ function PresenterView({
 	const nextSlideRef = useRef<HTMLDivElement | null>(null);
 	const nextPrevRef = useRef<HTMLDivElement | null>(null);
 
-	useSlideShortcut(() => {
-		setPageNumber((prev) =>
-			pdfpcConfig.totalOverlays > prev ? prev + 1 : pdfpcConfig.totalOverlays,
-		);
+	const nextSlide = () => {
+		startTransition(() => {
+			setPageNumber((prev) =>
+				pdfpcConfig.totalOverlays > prev ? prev + 1 : pdfpcConfig.totalOverlays,
+			);
+		});
 		if (!isFrozen) {
 			const channel = getBroadcastChannel(fileName);
 			channel.postMessage({
@@ -184,8 +186,12 @@ function PresenterView({
 						: pdfpcConfig.totalOverlays,
 			} satisfies BroadcastAction);
 		}
-	}, () => {
-		setPageNumber((prev) => (prev > 1 ? prev - 1 : 1));
+	};
+
+	const prevSlide = () => {
+		startTransition(() => {
+			setPageNumber((prev) => (prev > 1 ? prev - 1 : 1));
+		});
 		if (!isFrozen) {
 			const channel = getBroadcastChannel(fileName);
 			channel.postMessage({
@@ -194,7 +200,13 @@ function PresenterView({
 				pageNumber: pageNumber > 1 ? pageNumber - 1 : 1,
 			} satisfies BroadcastAction);
 		}
-	}, [slideStageRef, nextSlideRef, nextPrevRef]);
+	};
+
+	useSlideShortcut(nextSlide, prevSlide, [
+		slideStageRef,
+		nextSlideRef,
+		nextPrevRef,
+	]);
 
 	usePresenterBroadcast(fileName, pdfpcConfig, pdf);
 
@@ -226,6 +238,8 @@ function PresenterView({
 				pdfpcConfig={pdfpcConfig}
 				currentPageNumber={pageNumber}
 				ref={nextPrevRef}
+				onNextSlide={nextSlide}
+				onPrevSlide={prevSlide}
 			/>
 		</div>
 	);

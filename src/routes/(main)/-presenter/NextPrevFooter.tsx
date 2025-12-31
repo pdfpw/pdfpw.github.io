@@ -1,8 +1,11 @@
+import { ChevronLeftCircleIcon, ChevronRightCircleIcon } from "lucide-react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { type RefObject, Suspense } from "react";
 import { PdfPage } from "#src/components/PdfPage.tsx";
+import { Button } from "#src/components/ui/button.tsx";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
+import { getNextSlidePageNumber } from "./NextSlide";
 
 interface NextPrevFooterProps {
 	pdfProxy: PDFDocumentProxy;
@@ -12,6 +15,8 @@ interface NextPrevFooterProps {
 	 */
 	currentPageNumber: number;
 	ref?: RefObject<HTMLDivElement | null>;
+	onNextSlide: () => void;
+	onPrevSlide: () => void;
 }
 
 export function NextPrevFooter(props: NextPrevFooterProps) {
@@ -37,16 +42,25 @@ function getNextPrev(slidePageNumbers: number[][], currentPageNumber: number) {
 	return { next, current, prev };
 }
 
+function getPrevSlidePageNumber(currentPageNumber: number) {
+	return currentPageNumber > 1 ? currentPageNumber - 1 : null;
+}
+
 function NextPrevFooterCore({
 	pdfProxy,
 	pdfpcConfig,
 	currentPageNumber,
 	ref,
+	onNextSlide,
+	onPrevSlide,
 }: NextPrevFooterProps) {
 	const { next, current, prev } = getNextPrev(
 		pdfpcConfig.pages.map((p) => p.map(({ pageNumber }) => pageNumber)),
 		currentPageNumber,
 	);
+
+	const nextPageNumber = getNextSlidePageNumber(currentPageNumber, pdfpcConfig);
+	const prevPageNumber = getPrevSlidePageNumber(currentPageNumber);
 
 	return (
 		<div className="grid grid-cols-[auto_1fr_auto]" ref={ref}>
@@ -59,8 +73,28 @@ function NextPrevFooterCore({
 					className="h-full w-auto aspect-video"
 				/>
 			)}
-			<div className="text-center">
-				{current + 1} / {pdfpcConfig.pages.length}
+			<div className="flex items-center justify-center gap-4">
+				<Button
+					type="button"
+					disabled={prevPageNumber === null}
+					variant="ghost"
+					size="icon-lg"
+					onClick={onPrevSlide}
+				>
+					<ChevronLeftCircleIcon className="size-10" />
+				</Button>
+				<div className="text-3xl">
+					{current + 1} / {pdfpcConfig.pages.length}
+				</div>
+				<Button
+					type="button"
+					disabled={nextPageNumber === null}
+					variant="ghost"
+					size="icon-lg"
+					onClick={onNextSlide}
+				>
+					<ChevronRightCircleIcon className="size-10" />
+				</Button>
 			</div>
 			{next === null ? (
 				<div className="h-full aspect-video"></div>

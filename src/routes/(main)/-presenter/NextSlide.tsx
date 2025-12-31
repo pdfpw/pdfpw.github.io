@@ -23,7 +23,7 @@ export function NextSlide(props: NextSlideProps) {
 	);
 }
 
-function getNextSlidePageNumber(
+export function getNextSlidePageNumber(
 	currentPageNumber: number,
 	pdfpcConfig: ResolvedPdfpcConfigV2,
 ) {
@@ -43,7 +43,7 @@ function NextSlideCore({
 	ref,
 }: NextSlideProps) {
 	const nextPageNumber = getNextSlidePageNumber(currentSlidePage, pdfpcConfig);
-	console.log({ nextPageNumber, currentSlidePage });
+
 	return nextPageNumber === null ? (
 		<div
 			className="h-auto aspect-video max-h-80 w-full min-h-0"
