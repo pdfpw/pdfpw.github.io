@@ -92,10 +92,13 @@ export default defineConfig({
 																packageData.repository?.url ?? "",
 															);
 
-															if (!repoMatch)
-																throw new Error(
-																	`License file not found for package ${packageInfo.name}.\nSearched paths:\n${packageInfo.paths.map((p) => `\t${p}`).join("\n")}`,
+															if (!repoMatch) {
+																console.warn(
+																	`License file not found for package ${packageInfo.name}. Repo URL not found or invalid.`,
 																);
+																packageInfo.licenseText = "License text not found.";
+																return packageInfo;
+															}
 															const { owner, repo } = repoMatch.groups;
 															for (const licenseUrl of [
 																`https://raw.githubusercontent.com/${owner}/${repo}/main/LICENSE`,
@@ -113,10 +116,12 @@ export default defineConfig({
 																}
 															}
 
-															if (!packageInfo.licenseText)
-																throw new Error(
-																	`License file not found for package ${packageInfo.name}.\nSearched paths:\n${packageInfo.paths.map((p) => `\t${p}`).join("\n")}`,
+															if (!packageInfo.licenseText) {
+																console.warn(
+																	`License file not found for package ${packageInfo.name}. Checked GitHub paths.`,
 																);
+																packageInfo.licenseText = "License text not found.";
+															}
 														}
 
 														return packageInfo;

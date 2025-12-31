@@ -171,11 +171,8 @@ export function getPdfData(fileName: string): Promise<ArrayBuffer> {
 			fileName,
 			pdfData: new Promise<ArrayBuffer>((resolve, reject) => {
 				const channel = getBroadcastChannel(fileName);
-				channel.postMessage({
-					from: "presentation",
-					command: "get-pdf",
-				} satisfies BroadcastActionFromPresentation);
 				const abortController = new AbortController();
+				let resolved = false;
 				channel.addEventListener(
 					"message",
 					(event) => {
@@ -185,10 +182,23 @@ export function getPdfData(fileName: string): Promise<ArrayBuffer> {
 							action.command === "get-pdf-response"
 						) {
 							resolve(action.pdfData);
+							resolved = true;
 						}
 					},
 					{ signal: abortController.signal },
 				);
+				channel.postMessage({
+					from: "presentation",
+					command: "get-pdf",
+				} satisfies BroadcastActionFromPresentation);
+				// In some environments, the message may be lost, so resend after a short delay
+				setTimeout(() => {
+					if (resolved) return;
+					channel.postMessage({
+						from: "presentation",
+						command: "get-pdf",
+					} satisfies BroadcastActionFromPresentation);
+				}, 100);
 				setTimeout(() => {
 					abortController.abort();
 					reject(new Error("TIMEOUT_LOADING_PDF_DATA"));

@@ -1,38 +1,36 @@
-import { Card } from "#src/components/ui/card";
-
 type HeroSectionProps = {
-	title: string;
-	subtitle: string;
+	title?: string;
+	subtitle?: string;
 	status: string | null;
 };
 
-export function HeroSection({ title, subtitle, status }: HeroSectionProps) {
+export function HeroSection({ status }: HeroSectionProps) {
 	return (
-		<div className="max-w-2xl space-y-4">
-			<h1 className="text-4xl font-semibold leading-tight text-foreground md:text-5xl">
-				{title}
-			</h1>
-			<p className="text-lg text-muted-foreground">{subtitle}</p>
-			<div className="grid grid-cols-1 gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-				<Card className="bg-card/80 p-4 shadow-sm gap-2">
-					<p className="font-semibold text-foreground">基本</p>
-					<ul className="mt-2 space-y-1">
-						<li>・ドラッグ＆ドロップ／ファイル選択でPDFを開く</li>
-						<li>・選択後は Presenter View へリダイレクト</li>
-					</ul>
-				</Card>
-				<Card className="bg-card/80 p-4 shadow-sm gap-2">
-					<p className="font-semibold text-foreground">
-						File System Access 対応
-					</p>
-					<ul className="mt-2 space-y-1">
-						<li>・最近開いたファイルを10件まで表示</li>
-						<li>・クリックで即起動／履歴から削除可</li>
-					</ul>
-				</Card>
+		<div className="mx-auto max-w-2xl space-y-8 text-center lg:mx-0 lg:text-left">
+			<div className="space-y-4">
+				<h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-7xl">
+					PDFPW
+				</h1>
+				<p className="text-xl font-medium text-muted-foreground">
+					Web-based Presentater Tool
+				</p>
 			</div>
+			
+			<div className="mx-auto max-w-lg space-y-6 text-lg text-muted-foreground/80 lg:mx-0 leading-relaxed">
+				<p>
+					LaTeX (Beamer) や Typst (Touying) で生成された{" "}
+					<code className="rounded-md bg-muted px-2 py-1 font-mono text-sm font-semibold text-foreground">
+						.pdfpc
+					</code>{" "}
+					ファイルをサポート。<br />
+					スピーカーノート、タイマー、次スライドプレビューなどの機能を利用できます。
+				</p>
+			</div>
+
 			{status ? (
-				<p className="text-sm font-medium text-primary">{status}</p>
+				<div className="rounded-xl bg-primary/10 px-6 py-4 text-sm font-medium text-primary animate-in fade-in slide-in-from-bottom-2 border border-primary/20">
+					{status}
+				</div>
 			) : null}
 		</div>
 	);

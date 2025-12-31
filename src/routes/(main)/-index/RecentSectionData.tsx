@@ -1,9 +1,11 @@
 import { use } from "react";
-import type { RecentFile } from "#src/lib/recent-store";
+import type { RecentFile, Settings } from "#src/lib/recent-store";
 import { RecentSection } from "./RecentSection";
 
 type RecentSectionDataProps = {
 	recentFilesPromise: Promise<RecentFile[]>;
+	settings: Settings;
+	onToggleHistory: (value: boolean) => void;
 	onClearRecent: () => Promise<void> | void;
 	onRecentClick: (item: RecentFile) => Promise<void>;
 	onDeleteRecent: (id: string) => Promise<void>;
@@ -11,6 +13,8 @@ type RecentSectionDataProps = {
 
 export function RecentSectionData({
 	recentFilesPromise,
+	settings,
+	onToggleHistory,
 	onClearRecent,
 	onRecentClick,
 	onDeleteRecent,
@@ -19,8 +23,10 @@ export function RecentSectionData({
 
 	return (
 		<RecentSection
-			supportsFSA
+			supportsFSA={true}
 			recentFiles={recentFiles}
+			settings={settings}
+			onToggleHistory={onToggleHistory}
 			onClearRecent={onClearRecent}
 			onRecentClick={onRecentClick}
 			onDeleteRecent={onDeleteRecent}

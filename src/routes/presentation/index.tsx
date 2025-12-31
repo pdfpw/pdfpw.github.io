@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Suspense, use, useState } from "react";
+import { Suspense, startTransition, use, useState } from "react";
 import * as typia from "typia";
 import { ErrorBoundary } from "#src/components/ErrorBoundary.tsx";
 import { Button } from "#src/components/ui/button.tsx";
@@ -118,7 +118,9 @@ function PresentationView({
 	const pdfProxy = use(pdfPromise);
 	const [pageNumber, setPageNumber] = useState(1);
 
-	usePresentationBroadcast(fileName, setPageNumber);
+	usePresentationBroadcast(fileName, (pageNumber) =>
+		startTransition(() => setPageNumber(pageNumber)),
+	);
 
 	return (
 		<div className="relative grid">

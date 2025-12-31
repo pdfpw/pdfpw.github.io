@@ -1,5 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { Suspense, useId, useReducer, useState } from "react";
+import { Suspense, startTransition, useId, useReducer, useState } from "react";
+import { useLocalStorageSync } from "../../hooks/use-local-storage-sync";
 import {
 	canUseFSA,
 	ensureHandleReadable,
@@ -12,6 +13,7 @@ import {
 	type RecentDb,
 	type RecentFile,
 	removeRecent,
+	type Settings,
 	upsertRecent,
 } from "../../lib/recent-store";
 import { DropzoneSection } from "./-index/DropzoneSection";
@@ -23,11 +25,6 @@ export const Route = createFileRoute("/(main)/")({
 	component: Home,
 });
 
-const HERO_CTA = {
-	title: "ファイルを選択して Presenter View を開始",
-	subtitle: "PDF と同名の .pdfpc を一緒に選ぶと設定も読み込みます。",
-};
-
 function Home() {
 	const [supportsFSA] = useState(() => canUseFSA());
 	const [recentFilesPromise, refreshRecentFiles] = useReducer(
@@ -35,11 +32,31 @@ function Home() {
 		undefined,
 		async () => getRecentFiles(await openDb()),
 	);
+	const [saveHistory, setSaveHistory] = useLocalStorageSync<boolean>(
+		"pdfpw-save-history",
+		true,
+	);
 	const [status, setStatus] = useState<string | null>(null);
 	const inputId = useId();
 	const router = useRouter();
 
+	async function toggleHistory(value: boolean) {
+		setSaveHistory(value);
+		if (!value) {
+			try {
+				const db = await openDb();
+				await clearRecentStore(db);
+				startTransition(() => {
+					refreshRecentFiles(db);
+				});
+			} catch (error) {
+				console.warn("Failed to clear history", error);
+			}
+		}
+	}
+
 	async function saveRecent(entry: RecentFile) {
+		if (!saveHistory) return;
 		try {
 			const db = await openDb();
 			await upsertRecent(db, entry);
@@ -52,7 +69,9 @@ function Home() {
 		try {
 			const db = await openDb();
 			await removeRecent(db, id);
-			refreshRecentFiles(db);
+			startTransition(() => {
+				refreshRecentFiles(db);
+			});
 		} catch (error) {
 			console.warn("Failed to delete recent file", error);
 		}
@@ -62,7 +81,9 @@ function Home() {
 		try {
 			const db = await openDb();
 			await clearRecentStore(db);
-			refreshRecentFiles(db);
+			startTransition(() => {
+				refreshRecentFiles(db);
+			});
 		} catch (error) {
 			console.warn("Failed to clear recent files", error);
 		}
@@ -109,7 +130,23 @@ function Home() {
 				lastOpened: Date.now(),
 			});
 			const db = await openDb();
-			refreshRecentFiles(db);
+			startTransition(() => {
+				refreshRecentFiles(db);
+			});
+		} else if (saveHistory) {
+			// Standard Mode: save snapshot
+			await saveRecent({
+				id: `snapshot-${pdf.name}-${Date.now()}`,
+				name: pdf.name,
+				file: pdf,
+				configFile: pdfpc,
+				configName: pdfpc?.name,
+				lastOpened: Date.now(),
+			});
+			const db = await openDb();
+			startTransition(() => {
+				refreshRecentFiles(db);
+			});
 		}
 
 		setStatus(
@@ -145,38 +182,44 @@ function Home() {
 	}
 
 	async function onRecentClick(item: RecentFile) {
-		if (!item.handle) return;
-		const canRead = await ensureHandleReadable(item.handle);
-		if (!canRead) {
-			setStatus("権限が拒否されました。再度許可してください。");
-			return;
-		}
-		if (item.configHandle) {
-			const baseMatch =
-				item.configName && item.name
-					? item.name.replace(/\.pdf$/i, "").toLowerCase() ===
-						item.configName.replace(/\.pdfpc$/i, "").toLowerCase()
-					: false;
-			if (!baseMatch) {
-				setStatus(
-					"設定ファイル名がPDFと一致しません（example.pdf ↔ example.pdfpc）。",
-				);
+		if (item.handle) {
+			const canRead = await ensureHandleReadable(item.handle);
+			if (!canRead) {
+				setStatus("権限が拒否されました。再度許可してください。");
 				return;
 			}
-			const ok = await ensureHandleWritable(item.configHandle);
-			if (!ok) {
-				setStatus("設定ファイルの権限が拒否されました。");
-				return;
+			if (item.configHandle) {
+				const baseMatch =
+					item.configName && item.name
+						? item.name.replace(/\.pdf$/i, "").toLowerCase() ===
+							item.configName.replace(/\.pdfpc$/i, "").toLowerCase()
+						: false;
+				if (!baseMatch) {
+					setStatus(
+						"設定ファイル名がPDFと一致しません（example.pdf ↔ example.pdfpc）。",
+					);
+					return;
+				}
+				const ok = await ensureHandleWritable(item.configHandle);
+				if (!ok) {
+					setStatus("設定ファイルの権限が拒否されました。");
+					return;
+				}
 			}
+			const file = await item.handle.getFile();
+			const extraFiles = item.configHandle
+				? [await item.configHandle.getFile()]
+				: [];
+			await handleFiles(
+				[file, ...extraFiles],
+				[item.handle, ...(item.configHandle ? [item.configHandle] : [])],
+			);
+		} else if (item.file) {
+			// Restore from snapshot
+			const pdf = item.file;
+			const pdfpc = item.configFile;
+			await handleFiles([pdf, ...(pdfpc ? [pdfpc] : [])]);
 		}
-		const file = await item.handle.getFile();
-		const extraFiles = item.configHandle
-			? [await item.configHandle.getFile()]
-			: [];
-		await handleFiles(
-			[file, ...extraFiles],
-			[item.handle, ...(item.configHandle ? [item.configHandle] : [])],
-		);
 	}
 
 	async function handlePickedHandles(handles: FileSystemFileHandle[]) {
@@ -248,41 +291,47 @@ function Home() {
 	}
 
 	return (
-		<main className="min-h-screen bg-linear-to-br from-background via-background to-secondary/20 text-foreground">
-			<section className="mx-auto max-w-6xl px-6 pt-12 pb-16">
-				<div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-					<HeroSection
-						title={HERO_CTA.title}
-						subtitle={HERO_CTA.subtitle}
-						status={status}
-					/>
-					<DropzoneSection
-						inputId={inputId}
-						supportsFSA={supportsFSA}
-						onOpenPicker={onOpenPicker}
-						onFilesSelected={onFilesSelected}
-					/>
+		<main className="bg-linear-to-br from-background via-background to-secondary/20 text-foreground">
+			<div className="container mx-auto flex min-h-[70vh] max-w-6xl flex-col items-center justify-center px-6 pt-12 pb-16">
+				<div className="grid w-full grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
+					<div className="flex w-full justify-center lg:justify-start">
+						<HeroSection status={status} />
+					</div>
+					<div className="flex w-full justify-center lg:justify-end">
+						<DropzoneSection
+							inputId={inputId}
+							supportsFSA={supportsFSA}
+							onOpenPicker={onOpenPicker}
+							onFilesSelected={onFilesSelected}
+						/>
+					</div>
 				</div>
-			</section>
+			</div>
 
-			{supportsFSA ? (
-				<Suspense fallback={<RecentSectionLoading />}>
-					<RecentSectionData
-						recentFilesPromise={recentFilesPromise}
-						onClearRecent={clearRecent}
-						onRecentClick={onRecentClick}
-						onDeleteRecent={deleteRecent}
+			<div className="border-t border-border/50 bg-secondary/5 pt-16">
+				{supportsFSA ? (
+					<Suspense fallback={<RecentSectionLoading />}>
+						<RecentSectionData
+							recentFilesPromise={recentFilesPromise}
+							settings={{ saveHistory }}
+							onToggleHistory={toggleHistory}
+							onClearRecent={clearRecent}
+							onRecentClick={onRecentClick}
+							onDeleteRecent={deleteRecent}
+						/>
+					</Suspense>
+				) : (
+					<RecentSection
+						supportsFSA={false}
+						recentFiles={[]}
+						settings={{ saveHistory }}
+						onToggleHistory={toggleHistory}
+						onClearRecent={() => {}}
+						onRecentClick={async () => {}}
+						onDeleteRecent={async () => {}}
 					/>
-				</Suspense>
-			) : (
-				<RecentSection
-					supportsFSA={false}
-					recentFiles={[]}
-					onClearRecent={() => {}}
-					onRecentClick={async () => {}}
-					onDeleteRecent={async () => {}}
-				/>
-			)}
+				)}
+			</div>
 		</main>
 	);
 }
