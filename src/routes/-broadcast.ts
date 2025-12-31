@@ -198,7 +198,7 @@ export function getPdfData(fileName: string): Promise<ArrayBuffer> {
 						from: "presentation",
 						command: "get-pdf",
 					} satisfies BroadcastActionFromPresentation);
-				}, 100);
+				}, 300);
 				setTimeout(() => {
 					abortController.abort();
 					reject(new Error("TIMEOUT_LOADING_PDF_DATA"));

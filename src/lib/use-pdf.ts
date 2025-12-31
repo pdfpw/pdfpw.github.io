@@ -10,8 +10,10 @@ async function loadPdf(
 }
 export function usePdf(file: File | FileSystemFileHandle) {
 	return useReducer(
-		(_prev: Promise<PDFDocumentLoadingTask>, nextFile: File | FileSystemFileHandle) =>
-			loadPdf(nextFile),
+		(
+			_prev: Promise<PDFDocumentLoadingTask>,
+			nextFile: File | FileSystemFileHandle,
+		) => loadPdf(nextFile),
 		file,
 		loadPdf,
 	);

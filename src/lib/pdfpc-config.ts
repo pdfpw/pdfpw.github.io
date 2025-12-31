@@ -52,8 +52,8 @@ export type ResolvedPdfpcConfigV2 = Omit<
 	defaultTransition: string;
 	beamerNotePosition: BeamerNotePosition;
 	noteFontSize: PositiveInt;
-	pages: ResolvedPdfpcPageV2[][]; 
-  totalOverlays: number;
+	pages: ResolvedPdfpcPageV2[][];
+	totalOverlays: number;
 };
 
 function groupPagesByConsecutiveLabel(
@@ -134,6 +134,6 @@ export function resolvePdfpcConfig(
 		beamerNotePosition: input?.beamerNotePosition ?? "none",
 		noteFontSize: input?.noteFontSize ?? 20,
 		pages,
-    totalOverlays: linearPages.length,
+		totalOverlays: linearPages.length,
 	};
 }

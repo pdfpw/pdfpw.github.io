@@ -8,7 +8,6 @@ export function useLocalStorageSync<T>(
 		const value = localStorage.getItem(key);
 		if (value === null) return initialValue;
 		try {
-			// biome-ignore lint/suspicious/noExplicitAny: JSON.parse returns any
 			return JSON.parse(value) as T;
 		} catch {
 			return initialValue;

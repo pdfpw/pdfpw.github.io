@@ -2,7 +2,6 @@ declare module "virtual:licenses-info" {
 	export interface License {
 		name: string;
 		versions: string[];
-		paths: string[];
 		license: string;
 		homepage?: string;
 		description?: string;

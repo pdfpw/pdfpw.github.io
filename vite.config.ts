@@ -67,65 +67,69 @@ export default defineConfig({
 											[
 												license,
 												await Promise.all(
-													packageInfos.map(async (packageInfo) => {
-														for (const path of packageInfo.paths.toReversed()) {
-															const files = await readdir(path);
-															const licenseFile = files.find((f) =>
-																f.toUpperCase().startsWith("LICENSE"),
-															);
-															if (licenseFile) {
-																const licenseText = await readFile(
-																	`${path}/${licenseFile}`,
-																	"utf-8",
+													packageInfos.map(
+														async ({ paths, ...packageInfo }) => {
+															for (const path of paths.toReversed()) {
+																const files = await readdir(path);
+																const licenseFile = files.find((f) =>
+																	f.toUpperCase().startsWith("LICENSE"),
 																);
-																packageInfo.licenseText = licenseText;
-																break;
-															}
-														}
-														if (!packageInfo.licenseText) {
-															const packageJson = await readFile(
-																`${packageInfo.paths.at(-1)}/package.json`,
-																"utf-8",
-															);
-															const packageData = JSON.parse(packageJson);
-															const repoMatch = GITHUB_REPO_URL_REGEX.exec(
-																packageData.repository?.url ?? "",
-															);
-
-															if (!repoMatch) {
-																console.warn(
-																	`License file not found for package ${packageInfo.name}. Repo URL not found or invalid.`,
-																);
-																packageInfo.licenseText = "License text not found.";
-																return packageInfo;
-															}
-															const { owner, repo } = repoMatch.groups;
-															for (const licenseUrl of [
-																`https://raw.githubusercontent.com/${owner}/${repo}/main/LICENSE`,
-																`https://raw.githubusercontent.com/${owner}/${repo}/main/LICENSE.md`,
-																`https://raw.githubusercontent.com/${owner}/${repo}/main/LICENSE.txt`,
-																`https://raw.githubusercontent.com/${owner}/${repo}/master/LICENSE`,
-																`https://raw.githubusercontent.com/${owner}/${repo}/master/LICENSE.md`,
-																`https://raw.githubusercontent.com/${owner}/${repo}/master/LICENSE.txt`,
-															]) {
-																const response = await fetch(licenseUrl);
-																if (response.ok) {
-																	const licenseText = await response.text();
+																if (licenseFile) {
+																	const licenseText = await readFile(
+																		`${path}/${licenseFile}`,
+																		"utf-8",
+																	);
 																	packageInfo.licenseText = licenseText;
 																	break;
 																}
 															}
-
 															if (!packageInfo.licenseText) {
-																console.warn(
-																	`License file not found for package ${packageInfo.name}. Checked GitHub paths.`,
+																const packageJson = await readFile(
+																	`${paths.at(-1)}/package.json`,
+																	"utf-8",
 																);
-																packageInfo.licenseText = "License text not found.";
-															}
-														}
+																const packageData = JSON.parse(packageJson);
+																const repoMatch = GITHUB_REPO_URL_REGEX.exec(
+																	packageData.repository?.url ?? "",
+																);
 
-														return packageInfo;
-													}),
+																if (!repoMatch) {
+																	console.warn(
+																		`License file not found for package ${packageInfo.name}. Repo URL not found or invalid.`,
+																	);
+																	packageInfo.licenseText =
+																		"License text not found.";
+																	return packageInfo;
+																}
+																const { owner, repo } = repoMatch.groups;
+																for (const licenseUrl of [
+																	`https://raw.githubusercontent.com/${owner}/${repo}/main/LICENSE`,
+																	`https://raw.githubusercontent.com/${owner}/${repo}/main/LICENSE.md`,
+																	`https://raw.githubusercontent.com/${owner}/${repo}/main/LICENSE.txt`,
+																	`https://raw.githubusercontent.com/${owner}/${repo}/master/LICENSE`,
+																	`https://raw.githubusercontent.com/${owner}/${repo}/master/LICENSE.md`,
+																	`https://raw.githubusercontent.com/${owner}/${repo}/master/LICENSE.txt`,
+																]) {
+																	const response = await fetch(licenseUrl);
+																	if (response.ok) {
+																		const licenseText = await response.text();
+																		packageInfo.licenseText = licenseText;
+																		break;
+																	}
+																}
+
+																if (!packageInfo.licenseText) {
+																	console.warn(
+																		`License file not found for package ${packageInfo.name}. Checked GitHub paths.`,
+																	);
+																	packageInfo.licenseText =
+																		"License text not found.";
+																}
+															}
+
+															return packageInfo;
+														},
+													),
 												),
 											] as const,
 									),

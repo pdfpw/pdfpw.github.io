@@ -15,14 +15,15 @@ export function HeroSection({ status }: HeroSectionProps) {
 					Web-based Presentater Tool
 				</p>
 			</div>
-			
+
 			<div className="mx-auto max-w-lg space-y-6 text-lg text-muted-foreground/80 lg:mx-0 leading-relaxed">
 				<p>
 					LaTeX (Beamer) や Typst (Touying) で生成された{" "}
 					<code className="rounded-md bg-muted px-2 py-1 font-mono text-sm font-semibold text-foreground">
 						.pdfpc
 					</code>{" "}
-					ファイルをサポート。<br />
+					ファイルをサポート。
+					<br />
 					スピーカーノート、タイマー、次スライドプレビューなどの機能を利用できます。
 				</p>
 			</div>

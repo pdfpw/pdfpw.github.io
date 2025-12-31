@@ -78,6 +78,9 @@ export function DropzoneSection({
 						<p className="text-sm text-muted-foreground">
 							またはクリックしてファイルを選択
 						</p>
+						<p className="text-xs text-muted-foreground/80 pt-2">
+							PDFとPDFPCを同時に開くと設定が適用されます
+						</p>
 					</div>
 				</div>
 			</label>
@@ -93,7 +96,7 @@ export function DropzoneSection({
 					<FolderOpenIcon className="h-4 w-4 mr-2" />
 					<span>高機能モードで開く (推奨)</span>
 				</Button>
-				
+
 				<Dialog>
 					<DialogTrigger asChild>
 						<Button
@@ -106,16 +109,22 @@ export function DropzoneSection({
 					</DialogTrigger>
 					<DialogContent>
 						<DialogHeader>
-							<DialogTitle>高機能モード (File System Access) とは？</DialogTitle>
+							<DialogTitle>
+								高機能モード (File System Access) とは？
+							</DialogTitle>
 							<DialogDescription className="space-y-4 pt-4 text-left leading-relaxed">
 								<p>
-									<strong>高機能モード</strong>では、ブラウザの File System Access API を使用して、
-									PC上のファイルを直接読み書きします。
+									<strong>高機能モード</strong>では、ブラウザの File System
+									Access API を使用して、 PC上のファイルを直接読み書きします。
 								</p>
 								<ul className="list-disc pl-5 space-y-1">
 									<li>履歴からすぐにファイルを開き直せます。</li>
-									<li>設定ファイル (.pdfpc) やスピーカーノートを自動で保存します。</li>
-									<li>ページをリロードするだけで、編集中のPDFの最新状態を再描画できます。</li>
+									<li>
+										設定ファイル (.pdfpc) やスピーカーノートを自動で保存します。
+									</li>
+									<li>
+										ページをリロードするだけで、編集中のPDFの最新状態を再描画できます。
+									</li>
 								</ul>
 								<p className="text-xs text-muted-foreground pt-2">
 									<a
@@ -124,7 +133,8 @@ export function DropzoneSection({
 										rel="noreferrer"
 										className="underline hover:text-foreground"
 									>
-										対応ブラウザと権限の要件など、詳細はこちら (Chrome Developers)
+										対応ブラウザと権限の要件など、詳細はこちら (Chrome
+										Developers)
 									</a>
 								</p>
 							</DialogDescription>

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Suspense, startTransition, use, useState } from "react";
+import { Suspense, startTransition, use, useEffect, useState } from "react";
 import * as typia from "typia";
 import { ErrorBoundary } from "#src/components/ErrorBoundary.tsx";
 import { Button } from "#src/components/ui/button.tsx";
@@ -47,7 +47,7 @@ function RouteComponent() {
 		);
 
 	return (
-		<main className="min-h-screen grid">
+		<main className="min-h-screen grid bg-black">
 			<ErrorBoundary
 				fallbackRender={(error) => {
 					if (error instanceof Error) {
@@ -121,6 +121,20 @@ function PresentationView({
 	usePresentationBroadcast(fileName, (pageNumber) =>
 		startTransition(() => setPageNumber(pageNumber)),
 	);
+
+	useEffect(() => {
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "f") {
+				if (document.fullscreenElement) {
+					document.exitFullscreen();
+				} else {
+					document.documentElement.requestFullscreen();
+				}
+			}
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, []);
 
 	return (
 		<div className="relative grid">

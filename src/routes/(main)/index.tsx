@@ -13,13 +13,14 @@ import {
 	type RecentDb,
 	type RecentFile,
 	removeRecent,
-	type Settings,
 	upsertRecent,
 } from "../../lib/recent-store";
 import { DropzoneSection } from "./-index/DropzoneSection";
 import { HeroSection } from "./-index/HeroSection";
 import { RecentSection, RecentSectionLoading } from "./-index/RecentSection";
 import { RecentSectionData } from "./-index/RecentSectionData";
+
+let presentationWindow: Window | null = null;
 
 export const Route = createFileRoute("/(main)/")({
 	component: Home,
@@ -165,16 +166,23 @@ function Home() {
 				pdfpc: pdfpcHandle ?? pdfpc,
 			},
 		});
-		window.open(
-			router.buildLocation({
-				to: "/presentation",
-				search: {
-					file: pdf.name,
-				},
-			}).href,
-			"_blank",
-			"noopener,noreferrer,popup=yes,width=1200,height=675,resizable=yes",
-		);
+		const url = router.buildLocation({
+			to: "/presentation",
+			search: {
+				file: pdf.name,
+			},
+		}).href;
+
+		if (presentationWindow && !presentationWindow.closed) {
+			presentationWindow.location.href = url;
+			presentationWindow.focus();
+		} else {
+			presentationWindow = window.open(
+				url,
+				"_blank",
+				"width=1200,height=675,resizable=yes",
+			);
+		}
 	}
 
 	async function onFilesSelected(files: File[]) {

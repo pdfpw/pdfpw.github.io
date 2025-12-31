@@ -37,7 +37,9 @@ export function useSlideShortcut(
 
 		// 横スクロール(トラックパッド)も拾いたいなら大きい方を採用
 		const delta =
-			Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+			Math.abs(event.deltaX) > Math.abs(event.deltaY)
+				? event.deltaX
+				: event.deltaY;
 
 		wheelAccumRef.current += delta;
 
@@ -55,13 +57,13 @@ export function useSlideShortcut(
 		window.addEventListener("keydown", handleKeyDown, {
 			signal: abortController.signal,
 		});
-		for (const slideStageRef of targetRefs) 
+		for (const slideStageRef of targetRefs)
 			if (slideStageRef.current)
 				slideStageRef.current.addEventListener("wheel", handleWheel, {
 					signal: abortController.signal,
 					passive: false,
 				});
-		return () => { 
+		return () => {
 			abortController.abort();
 		};
 	}, [targetRefs]);
