@@ -18,7 +18,6 @@ export interface PdfpcConfigV2 {
 	endTime?: TimeHHMM;
 	endSlide?: UInt32;
 	savedSlide?: UInt32;
-	lastMinutes?: PositiveInt;
 	disableMarkdown?: boolean;
 	noteFontSize?: PositiveInt;
 	defaultTransition?: string;

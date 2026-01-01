@@ -6,6 +6,7 @@ import { Button } from "#src/components/ui/button.tsx";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
 import { getNextSlidePageNumber } from "./NextSlide";
+import { Timer } from "./Timer";
 
 interface NextPrevFooterProps {
 	pdfProxy: PDFDocumentProxy;
@@ -73,28 +74,33 @@ function NextPrevFooterCore({
 					className="h-full w-auto aspect-video"
 				/>
 			)}
-			<div className="flex items-center justify-center gap-4">
-				<Button
-					type="button"
-					disabled={prevPageNumber === null}
-					variant="ghost"
-					size="icon-lg"
-					onClick={onPrevSlide}
-				>
-					<ChevronLeftCircleIcon className="size-10" />
-				</Button>
-				<div className="text-3xl">
-					{current + 1} / {pdfpcConfig.pages.length}
+			<div className="flex flex-col items-center justify-center gap-2">
+				<div className="flex items-center justify-center gap-4">
+					<Button
+						type="button"
+						disabled={prevPageNumber === null}
+						variant="ghost"
+						size="icon-lg"
+						onClick={onPrevSlide}
+						className="rounded-full"
+					>
+						<ChevronLeftCircleIcon className="size-7" />
+					</Button>
+					<div className="text-2xl">
+						{current + 1} / {pdfpcConfig.pages.length}
+					</div>
+					<Button
+						type="button"
+						disabled={nextPageNumber === null}
+						variant="ghost"
+						size="icon-lg"
+						className="rounded-full"
+						onClick={onNextSlide}
+					>
+						<ChevronRightCircleIcon className="size-7" />
+					</Button>
 				</div>
-				<Button
-					type="button"
-					disabled={nextPageNumber === null}
-					variant="ghost"
-					size="icon-lg"
-					onClick={onNextSlide}
-				>
-					<ChevronRightCircleIcon className="size-10" />
-				</Button>
+				<Timer pdfpcConfig={pdfpcConfig} pageNumber={currentPageNumber} />
 			</div>
 			{next === null ? (
 				<div className="h-full aspect-video"></div>
