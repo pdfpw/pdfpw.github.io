@@ -1,5 +1,12 @@
 import type { ClassValue } from "clsx";
-import { Card, CardContent } from "#src/components/ui/card.tsx";
+import { MonitorOff, Snowflake } from "lucide-react";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "#src/components/ui/card.tsx";
 import { Label } from "#src/components/ui/label.tsx";
 import { Switch } from "#src/components/ui/switch.tsx";
 import { cn } from "#src/lib/utils.ts";
@@ -20,23 +27,44 @@ export function ModeForm({
 	onBlackoutChange,
 }: ModeFormProps) {
 	return (
-		<Card className={cn("p-4 shadow-2xs", className)}>
-			<CardContent className="grid gap-2 px-2">
-				<div className="flex items-center gap-2">
+		<Card className={cn("shadow-2xs", className)}>
+			<CardHeader className="pb-2">
+				<CardTitle className="text-sm font-medium">投影ウィンドウ</CardTitle>
+				<CardDescription>投影ウィンドウの表示設定を変更します</CardDescription>
+			</CardHeader>
+			<CardContent className="grid gap-4">
+				<div className="flex items-center justify-between space-x-2 rounded-lg border p-3 shadow-xs">
+					<div className="flex items-center space-x-2">
+						<div className="bg-primary/10 text-primary flex items-center justify-center rounded-full p-1.5 ring-1 ring-inset">
+							<Snowflake className="h-4 w-4" />
+						</div>
+						<Label htmlFor="frozen-mode" className="font-medium cursor-pointer">
+							投影固定
+						</Label>
+					</div>
 					<Switch
 						id="frozen-mode"
 						checked={isFrozen}
 						onCheckedChange={onFrozenChange}
-					></Switch>
-					<Label htmlFor="frozen-mode">投影固定</Label>
+					/>
 				</div>
-				<div className="flex items-center gap-2">
+				<div className="flex items-center justify-between space-x-2 rounded-lg border p-3 shadow-xs">
+					<div className="flex items-center space-x-2">
+						<div className="bg-destructive/10 text-destructive flex items-center justify-center rounded-full p-1.5 ring-1 ring-inset">
+							<MonitorOff className="h-4 w-4" />
+						</div>
+						<Label
+							htmlFor="stop-presentation"
+							className="font-medium cursor-pointer"
+						>
+							投影停止
+						</Label>
+					</div>
 					<Switch
 						id="stop-presentation"
 						checked={isBlackout}
 						onCheckedChange={onBlackoutChange}
-					></Switch>
-					<Label>投影停止</Label>
+					/>
 				</div>
 			</CardContent>
 		</Card>
