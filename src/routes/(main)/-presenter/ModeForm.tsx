@@ -1,12 +1,7 @@
 import type { ClassValue } from "clsx";
-import { MonitorOff, Snowflake } from "lucide-react";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "#src/components/ui/card.tsx";
+import { MaximizeIcon, MonitorOff, Snowflake } from "lucide-react";
+import { Button } from "#src/components/ui/button.tsx";
+import { Card, CardContent } from "#src/components/ui/card.tsx";
 import { Label } from "#src/components/ui/label.tsx";
 import { Switch } from "#src/components/ui/switch.tsx";
 import { cn } from "#src/lib/utils.ts";
@@ -28,15 +23,11 @@ export function ModeForm({
 }: ModeFormProps) {
 	return (
 		<Card className={cn("shadow-2xs", className)}>
-			<CardHeader className="pb-2">
-				<CardTitle className="text-sm font-medium">投影ウィンドウ</CardTitle>
-				<CardDescription>投影ウィンドウの表示設定を変更します</CardDescription>
-			</CardHeader>
-			<CardContent className="grid gap-4">
-				<div className="flex items-center justify-between space-x-2 rounded-lg border p-3 shadow-xs">
+			<CardContent className="flex gap-4 flex-wrap">
+				<div className="flex-1 flex items-center justify-between space-x-2 rounded-lg border p-3 shadow-xs">
 					<div className="flex items-center space-x-2">
 						<div className="bg-primary/10 text-primary flex items-center justify-center rounded-full p-1.5 ring-1 ring-inset">
-							<Snowflake className="h-4 w-4" />
+							<Snowflake className="size-4" />
 						</div>
 						<Label htmlFor="frozen-mode" className="font-medium cursor-pointer">
 							投影固定
@@ -48,10 +39,10 @@ export function ModeForm({
 						onCheckedChange={onFrozenChange}
 					/>
 				</div>
-				<div className="flex items-center justify-between space-x-2 rounded-lg border p-3 shadow-xs">
+				<div className="flex-1 flex items-center justify-between space-x-2 rounded-lg border p-3 shadow-xs">
 					<div className="flex items-center space-x-2">
 						<div className="bg-destructive/10 text-destructive flex items-center justify-center rounded-full p-1.5 ring-1 ring-inset">
-							<MonitorOff className="h-4 w-4" />
+							<MonitorOff className="size-4" />
 						</div>
 						<Label
 							htmlFor="stop-presentation"
@@ -66,6 +57,12 @@ export function ModeForm({
 						onCheckedChange={onBlackoutChange}
 					/>
 				</div>
+				<Button type="button" variant={"outline"} className="flex-1 h-full p-3">
+					<div className="bg-primary/10 text-primary flex items-center justify-center rounded-full p-1.5 ring-1 ring-inset">
+						<MaximizeIcon className="size-4" />
+					</div>
+					最大化
+				</Button>
 			</CardContent>
 		</Card>
 	);

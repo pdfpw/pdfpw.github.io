@@ -16,7 +16,7 @@ export function usePresenterBroadcast(
 	fileName: string,
 	pairId: string,
 	pdfpcConfig: ResolvedPdfpcConfigV2,
-	pdf: File  ,
+	pdf: File,
 	isBlackout: boolean,
 ) {
 	const channel = getBroadcastChannel(fileName, pairId);
@@ -29,15 +29,16 @@ export function usePresenterBroadcast(
 					pdfpcConfig,
 				} satisfies BroadcastAction);
 				break;
-			case "get-pdf": {
-						const channel = getBroadcastChannel(fileName, pairId);
-						const buffer = await pdf.arrayBuffer();
-						channel.postMessage({
-							from: "presenter",
-							command: "get-pdf-response",
-							pdfData: buffer,
-						} satisfies BroadcastAction);
-					} 
+			case "get-pdf":
+				{
+					const channel = getBroadcastChannel(fileName, pairId);
+					const buffer = await pdf.arrayBuffer();
+					channel.postMessage({
+						from: "presenter",
+						command: "get-pdf-response",
+						pdfData: buffer,
+					} satisfies BroadcastAction);
+				}
 				break;
 			case "get-blackout-state":
 				channel.postMessage({
