@@ -7,6 +7,7 @@ import { routeTree } from "./routeTree.gen";
 
 import "./styles.css";
 import reportWebVitals from "./reportWebVitals.ts";
+import { subscribePresenterRoute } from "./routes/(main)/-presenter/state.ts";
 
 // Create a new router instance
 const router = createRouter({
@@ -18,6 +19,8 @@ const router = createRouter({
 	defaultStructuralSharing: true,
 	defaultPreloadStaleTime: 0,
 });
+
+subscribePresenterRoute(router);
 
 // Register the router instance for type safety
 declare module "@tanstack/react-router" {

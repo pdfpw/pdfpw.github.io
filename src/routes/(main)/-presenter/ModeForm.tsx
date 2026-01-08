@@ -7,13 +7,17 @@ import { cn } from "#src/lib/utils.ts";
 interface ModeFormProps {
 	className?: ClassValue;
 	isFrozen: boolean;
-	onChangeIsFrozen: (isFrozen: boolean) => void;
+	onFrozenChange: (isFrozen: boolean) => void;
+	isBlackout: boolean;
+	onBlackoutChange: (isBlackout: boolean) => void;
 }
 
 export function ModeForm({
 	className,
 	isFrozen,
-	onChangeIsFrozen,
+	onFrozenChange,
+	isBlackout,
+	onBlackoutChange,
 }: ModeFormProps) {
 	return (
 		<Card className={cn("p-4 shadow-2xs", className)}>
@@ -22,9 +26,17 @@ export function ModeForm({
 					<Switch
 						id="frozen-mode"
 						checked={isFrozen}
-						onCheckedChange={onChangeIsFrozen}
+						onCheckedChange={onFrozenChange}
 					></Switch>
-					<Label htmlFor="frozen-mode">Frozen Mode</Label>
+					<Label htmlFor="frozen-mode">投影固定</Label>
+				</div>
+				<div className="flex items-center gap-2">
+					<Switch
+						id="stop-presentation"
+						checked={isBlackout}
+						onCheckedChange={onBlackoutChange}
+					></Switch>
+					<Label>投影停止</Label>
 				</div>
 			</CardContent>
 		</Card>

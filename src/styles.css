@@ -44,6 +44,7 @@ code {
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
+  --blackout: oklch(0 0 0);
   --timer-pretalk: var(--color-green-500);
   --timer-too-fast: var(--color-sky-700);
   --timer-too-slow: var(--color-amber-500);
@@ -84,6 +85,7 @@ code {
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
+  --blackout: oklch(0 0 0);
   --timer-pretalk: var(--color-green-400);
   --timer-too-fast: var(--color-sky-500);
   --timer-too-slow: var(--color-amber-400);
@@ -123,6 +125,7 @@ code {
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-blackout: var(--blackout);
   --color-timer-pretalk: var(--timer-pretalk);
   --color-timer-too-fast: var(--timer-too-fast);
   --color-timer-too-slow: var(--timer-too-slow);

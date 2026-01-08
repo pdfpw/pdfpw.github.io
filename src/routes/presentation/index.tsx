@@ -1,15 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { atom, useAtom } from "jotai";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Suspense, startTransition, use, useEffect, useState } from "react";
+import { Suspense, startTransition, use, useEffect } from "react";
 import * as typia from "typia";
+import {
+	getPdfData,
+	getPresentationPairId,
+	useConfig,
+	usePresentationBroadcast,
+} from "#src/broadcast";
 import { ErrorBoundary } from "#src/components/ErrorBoundary.tsx";
 import { Button } from "#src/components/ui/button.tsx";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
 import { getRecentFileById, openDb } from "#src/lib/recent-store.ts";
 import { createUseMemoried } from "#src/lib/use-memoried.ts";
-import { getPdfData, useConfig, usePresentationBroadcast } from "../-broadcast";
+import { cn } from "#src/lib/utils.ts";
 import { Menu } from "./-Menu";
 import { SlideStage } from "./-SlideStage";
 
@@ -23,6 +30,9 @@ export const Route = createFileRoute("/presentation/")({
 	component: RouteComponent,
 	validateSearch: typia.createValidate<PresentationSearch>(),
 });
+
+const pageNumberAtom = atom(1);
+const isBlackoutAtom = atom(false);
 
 function RouteComponent() {
 	const { file } = Route.useSearch({
@@ -47,11 +57,17 @@ function RouteComponent() {
 		);
 
 	return (
-		<main className="min-h-screen grid bg-black">
+		<main className="min-h-screen grid bg-blackout">
 			<ErrorBoundary
 				fallbackRender={(error) => {
 					if (error instanceof Error) {
 						switch (error.message) {
+							case "TIMEOUT_PAIRING_PRESENTATION":
+								return (
+									<div className="h-full flex items-center justify-center">
+										ペアリングに失敗しました。プレゼンター画面を開き直すか、同名のファイルで開いているか確認してください。
+									</div>
+								);
 							case "TIMEOUT_LOADING_PDFPC_CONFIG":
 								return (
 									<div className="h-full flex items-center justify-center">
@@ -86,12 +102,23 @@ function RouteComponent() {
 const useGetRecentFileById = createUseMemoried(async (fileName: string) =>
 	getRecentFileById(await openDb(), fileName),
 );
+const usePairId = createUseMemoried((fileName: string) =>
+	getPresentationPairId(fileName),
+);
 function RecentPdfResolver({ fileName }: { fileName: string }) {
 	const recentFilePromise = useGetRecentFileById(fileName);
 	const recentFile = use(recentFilePromise);
 	const pdf = recentFile?.handle;
-	const pdfpc = useConfig(fileName);
-	return <PresentationView pdf={pdf} pdfpc={pdfpc} fileName={fileName} />;
+	const pairId = use(usePairId(fileName));
+	const pdfpc = useConfig(fileName, pairId);
+	return (
+		<PresentationView
+			pdf={pdf}
+			pdfpc={pdfpc}
+			fileName={fileName}
+			pairId={pairId}
+		/>
+	);
 }
 
 const getPdfBuffer = createUseMemoried(
@@ -108,19 +135,25 @@ function PresentationView({
 	pdf,
 	pdfpc,
 	fileName,
+	pairId,
 }: {
 	pdf: File | FileSystemFileHandle | undefined;
 	pdfpc: ResolvedPdfpcConfigV2;
 	fileName: string;
+	pairId: string;
 }) {
-	const pdfBuffer = use(pdf ? getPdfBuffer(pdf) : getPdfData(fileName));
+	const pdfBuffer = use(pdf ? getPdfBuffer(pdf) : getPdfData(fileName, pairId));
 	const pdfPromise = usePdfPromise(pdfBuffer);
 	const pdfProxy = use(pdfPromise);
-	const [pageNumber, setPageNumber] = useState(1);
+	const [pageNumber, setPageNumber] = useAtom(pageNumberAtom);
+	const [isBlackout, setIsBlackout] = useAtom(isBlackoutAtom);
 
-	usePresentationBroadcast(fileName, (pageNumber) =>
-		startTransition(() => setPageNumber(pageNumber)),
-	);
+	usePresentationBroadcast(fileName, pairId, {
+		onPageNumberChange: (pageNumber) =>
+			startTransition(() => setPageNumber(pageNumber)),
+		onBlackoutChange: (nextIsBlackout) =>
+			startTransition(() => setIsBlackout(nextIsBlackout)),
+	});
 
 	useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {
@@ -142,8 +175,16 @@ function PresentationView({
 				pdfProxy={pdfProxy}
 				pdfpcConfig={pdfpc}
 				currentPageNumber={pageNumber}
+				isBlackout={isBlackout}
 			/>
-			<div className="absolute bottom-24 w-full flex justify-center">
+			<div
+				className={cn([
+					"absolute bottom-24 w-full flex justify-center",
+					{
+						"opacity-0 pointer-events-none": isBlackout,
+					},
+				])}
+			>
 				<Menu pdfpcConfig={pdfpc} currentPageNumber={pageNumber} />
 			</div>
 		</div>

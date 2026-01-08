@@ -8,6 +8,7 @@ interface SlideStageProps {
 	pdfProxy: PDFDocumentProxy;
 	pdfpcConfig: ResolvedPdfpcConfigV2;
 	currentPageNumber: number;
+	isBlackout: boolean;
 	className?: ClassValue;
 }
 
@@ -28,6 +29,7 @@ export function SlideStage({
 	pdfProxy,
 	pdfpcConfig,
 	currentPageNumber,
+	isBlackout,
 	className,
 }: SlideStageProps) {
 	const preloadPages = preloadSlide(pdfpcConfig, currentPageNumber);
@@ -41,7 +43,8 @@ export function SlideStage({
 					className={[
 						"absolute inset-0",
 						{
-							"opacity-0 pointer-events-none": pageNumber !== currentPageNumber,
+							"opacity-0 pointer-events-none":
+								pageNumber !== currentPageNumber || isBlackout,
 						},
 					]}
 				/>
