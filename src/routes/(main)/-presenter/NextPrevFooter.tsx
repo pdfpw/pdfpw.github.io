@@ -5,8 +5,8 @@ import { PdfPage } from "#src/components/PdfPage.tsx";
 import { Button } from "#src/components/ui/button.tsx";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
+import { Timer, type TimerHandle } from "./Timer";
 import { getNextSlidePageNumber } from "./NextSlide";
-import { Timer } from "./Timer";
 
 interface NextPrevFooterProps {
 	pdfProxy: PDFDocumentProxy;
@@ -16,6 +16,7 @@ interface NextPrevFooterProps {
 	 */
 	currentPageNumber: number;
 	ref?: RefObject<HTMLDivElement | null>;
+	timerRef?: RefObject<TimerHandle | null>;
 	onNextSlide: () => void;
 	onPrevSlide: () => void;
 }
@@ -52,6 +53,7 @@ function NextPrevFooterCore({
 	pdfpcConfig,
 	currentPageNumber,
 	ref,
+	timerRef,
 	onNextSlide,
 	onPrevSlide,
 }: NextPrevFooterProps) {
@@ -100,7 +102,7 @@ function NextPrevFooterCore({
 						<ChevronRightCircleIcon className="size-7" />
 					</Button>
 				</div>
-				<Timer pdfpcConfig={pdfpcConfig} pageNumber={currentPageNumber} />
+				<Timer pdfpcConfig={pdfpcConfig} pageNumber={currentPageNumber} ref={timerRef} />
 			</div>
 			{next === null ? (
 				<div className="h-full aspect-video"></div>

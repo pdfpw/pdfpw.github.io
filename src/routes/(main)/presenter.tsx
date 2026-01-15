@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtomValue } from "jotai";
 import { GlobalWorkerOptions } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Suspense, startTransition, useRef, useState } from "react";
+import { Suspense, startTransition, useCallback, useRef, useState } from "react";
 import * as typia from "typia";
 import {
 	type BroadcastAction,
@@ -11,13 +11,20 @@ import {
 	usePresenterBroadcast,
 } from "#src/broadcast";
 import { Button } from "#src/components/ui/button";
+import { OverviewDialog } from "#src/components/OverviewDialog";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
+import {
+	clampPageNumber,
+	getNextUserSlidePageNumber,
+	getPrevUserSlidePageNumber,
+} from "#src/lib/navigation-utils.ts";
 import { useSlideShortcut } from "../-hooks/use-slide-shortcut";
 import { ModeForm } from "./-presenter/ModeForm";
 import { NextPrevFooter } from "./-presenter/NextPrevFooter";
 import { NextSlide } from "./-presenter/NextSlide";
 import { Note } from "./-presenter/Note";
 import { SlideStage } from "./-presenter/SlideStage";
+import type { TimerHandle } from "./-presenter/Timer";
 import {
 	fileNameOrFileAtom,
 	pdfFileAtom,
@@ -99,41 +106,120 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 	const [pageNumber, setPageNumber] = useState(1);
 	const [isFrozen, setIsFrozen] = useState(false);
 	const [isBlackout, setIsBlackout] = useState(false);
+	// 履歴管理（ジャンプ操作時の位置を記録）
+	const [history, setHistory] = useState<number[]>([]);
+	// オーバービューモード
+	const [isOverviewMode, setIsOverviewMode] = useState(false);
 
 	const slideStageRef = useRef<HTMLElement | null>(null);
 	const nextSlideRef = useRef<HTMLDivElement | null>(null);
 	const nextPrevRef = useRef<HTMLDivElement | null>(null);
+	const timerRef = useRef<TimerHandle | null>(null);
 
-	const getNextPageNumber = () =>
-		pdfpcConfig.totalOverlays > pageNumber
-			? pageNumber + 1
-			: pdfpcConfig.totalOverlays;
-	const getPrevPageNumber = () => (pageNumber > 1 ? pageNumber - 1 : 1);
-	const sendCurrentPageNumber = (nextPageNumber: number) => {
-		const channel = getBroadcastChannel(fileName, pairId);
-		channel.postMessage({
-			from: "presenter",
-			command: "send-current-page-number",
-			pageNumber: nextPageNumber,
-		} satisfies BroadcastAction);
+	// ページ番号を設定して、プレゼンテーション画面に送信するヘルパー関数
+	const setPageNumberWithBroadcast = useCallback(
+		(nextPageNumber: number, recordHistory: boolean = false) => {
+			const clampedPageNumber = clampPageNumber(
+				nextPageNumber,
+				pdfpcConfig.totalOverlays,
+			);
+			startTransition(() => {
+				if (recordHistory) {
+					setHistory((prev) => [...prev, pageNumber]);
+				}
+				setPageNumber(clampedPageNumber);
+			});
+			if (!isFrozen) {
+				const channel = getBroadcastChannel(fileName, pairId);
+				channel.postMessage({
+					from: "presenter",
+					command: "send-current-page-number",
+					pageNumber: clampedPageNumber,
+				} satisfies BroadcastAction);
+			}
+		},
+		[fileName, isFrozen, pageNumber, pairId, pdfpcConfig.totalOverlays],
+	);
+
+	const getNextPageNumber = () => {
+		const next = pageNumber + 1;
+		return next <= pdfpcConfig.totalOverlays ? next : pdfpcConfig.totalOverlays;
+	};
+
+	const getPrevPageNumber = () => {
+		const prev = pageNumber - 1;
+		return prev >= 1 ? prev : 1;
 	};
 
 	const nextSlide = () => {
-		startTransition(() => {
-			setPageNumber(() => getNextPageNumber());
-		});
-		if (!isFrozen) {
-			sendCurrentPageNumber(getNextPageNumber());
-		}
+		setPageNumberWithBroadcast(getNextPageNumber());
 	};
 
 	const prevSlide = () => {
-		startTransition(() => {
-			setPageNumber(() => getPrevPageNumber());
-		});
-		if (!isFrozen) {
-			sendCurrentPageNumber(getPrevPageNumber());
+		setPageNumberWithBroadcast(getPrevPageNumber());
+	};
+
+	// 10スライドスキップ
+	const next10Slides = () => {
+		setPageNumberWithBroadcast(pageNumber + 10);
+	};
+
+	const prev10Slides = () => {
+		setPageNumberWithBroadcast(pageNumber - 10);
+	};
+
+	// 最初/最後のスライドへジャンプ
+	const jumpToFirstSlide = () => {
+		setPageNumberWithBroadcast(1, true);
+	};
+
+	const jumpToLastSlide = () => {
+		setPageNumberWithBroadcast(pdfpcConfig.totalOverlays, true);
+	};
+
+	// ユーザースライド（オーバーレイグループ）単位の移動
+	const nextUserSlide = () => {
+		const nextPageNumber = getNextUserSlidePageNumber(
+			pdfpcConfig.pages,
+			pageNumber,
+		);
+		if (nextPageNumber !== null) {
+			setPageNumberWithBroadcast(nextPageNumber);
 		}
+	};
+
+	const prevUserSlide = () => {
+		const prevPageNumber = getPrevUserSlidePageNumber(
+			pdfpcConfig.pages,
+			pageNumber,
+		);
+		if (prevPageNumber !== null) {
+			setPageNumberWithBroadcast(prevPageNumber);
+		}
+	};
+
+	// スライド番号指定ジャンプ
+	const jumpToSlide = (slideNumber: number) => {
+		setPageNumberWithBroadcast(slideNumber, true);
+	};
+
+	// 履歴を戻る
+	const goBackInHistory = () => {
+		if (history.length > 0) {
+			const prevPage = history[history.length - 1];
+			setHistory((prev) => prev.slice(0, -1));
+			setPageNumberWithBroadcast(prevPage, false);
+		}
+	};
+
+	// オーバービューモードの切り替え
+	const toggleOverviewMode = () => {
+		setIsOverviewMode((prev) => !prev);
+	};
+
+	// タイマーリセット
+	const resetTimer = () => {
+		timerRef.current?.reset();
 	};
 
 	const handleBlackoutChange = (nextIsBlackout: boolean) => {
@@ -148,53 +234,79 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 	const handleFrozenChange = (nextIsFrozen: boolean) => {
 		setIsFrozen(nextIsFrozen);
 		if (!nextIsFrozen) {
-			sendCurrentPageNumber(pageNumber);
+			// フリーズ解除時に現在のページを送信
+			setPageNumberWithBroadcast(pageNumber);
 		}
 	};
 
-	useSlideShortcut(nextSlide, prevSlide, [
-		slideStageRef,
-		nextSlideRef,
-		nextPrevRef,
-	]);
+	useSlideShortcut(
+		{
+			moveNextSlide: nextSlide,
+			movePrevSlide: prevSlide,
+			moveNext10Slides: next10Slides,
+			movePrev10Slides: prev10Slides,
+			jumpToFirstSlide,
+			jumpToLastSlide,
+			moveNextUserSlide: nextUserSlide,
+			movePrevUserSlide: prevUserSlide,
+			startJumpToSlide: () => {}, // ハンドルは useSlideShortcut 内部で行われる
+			jumpToSlide,
+			goBackInHistory,
+			toggleOverviewMode,
+			resetTimer,
+		},
+		[slideStageRef, nextSlideRef, nextPrevRef],
+	);
 
 	usePresenterBroadcast(fileName, pairId, pdfpcConfig, pdf, isBlackout);
 
 	return (
-		<div className="grid h-full max-h-full grid-cols-[auto_1fr] grid-rows-[3fr_1fr] p-4 gap-4">
-			<SlideStage
-				pdfProxy={pdfProxy}
-				pageNumber={pageNumber}
-				className="aspect-video min-h-[calc((100vh-100px)/4*3)]"
-				ref={slideStageRef}
-			/>
-			<div className="row-span-2 flex flex-col gap-4">
-				<NextSlide
-					currentSlidePage={pageNumber}
+		<>
+			<div className="grid h-full max-h-full grid-cols-[auto_1fr] grid-rows-[3fr_1fr] p-4 gap-4">
+				<SlideStage
+					pdfProxy={pdfProxy}
+					pageNumber={pageNumber}
+					className="aspect-video min-h-[calc((100vh-100px)/4*3)]"
+					ref={slideStageRef}
+				/>
+				<div className="row-span-2 flex flex-col gap-4">
+					<NextSlide
+						currentSlidePage={pageNumber}
+						pdfProxy={pdfProxy}
+						pdfpcConfig={pdfpcConfig}
+						ref={nextSlideRef}
+					></NextSlide>
+					<ModeForm
+						isFrozen={isFrozen}
+						onFrozenChange={handleFrozenChange}
+						isBlackout={isBlackout}
+						onBlackoutChange={handleBlackoutChange}
+						onOverviewModeOpen={() => setIsOverviewMode(true)}
+					/>
+					<Note
+						className="flex-1"
+						pdfpcConfig={pdfpcConfig}
+						pageNumber={pageNumber}
+					/>
+				</div>
+				<NextPrevFooter
 					pdfProxy={pdfProxy}
 					pdfpcConfig={pdfpcConfig}
-					ref={nextSlideRef}
-				></NextSlide>
-				<ModeForm
-					isFrozen={isFrozen}
-					onFrozenChange={handleFrozenChange}
-					isBlackout={isBlackout}
-					onBlackoutChange={handleBlackoutChange}
-				/>
-				<Note
-					className="flex-1"
-					pdfpcConfig={pdfpcConfig}
-					pageNumber={pageNumber}
+					currentPageNumber={pageNumber}
+					ref={nextPrevRef}
+					timerRef={timerRef}
+					onNextSlide={nextSlide}
+					onPrevSlide={prevSlide}
 				/>
 			</div>
-			<NextPrevFooter
+			<OverviewDialog
 				pdfProxy={pdfProxy}
 				pdfpcConfig={pdfpcConfig}
-				currentPageNumber={pageNumber}
-				ref={nextPrevRef}
-				onNextSlide={nextSlide}
-				onPrevSlide={prevSlide}
+				currentSlide={pageNumber}
+				open={isOverviewMode}
+				onClose={() => setIsOverviewMode(false)}
+				onSlideSelect={jumpToSlide}
 			/>
-		</div>
+		</>
 	);
 }

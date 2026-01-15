@@ -11,6 +11,7 @@ import {
 	usePresentationBroadcast,
 } from "#src/broadcast";
 import { ErrorBoundary } from "#src/components/ErrorBoundary.tsx";
+import { OverviewDialog } from "#src/components/OverviewDialog";
 import { Button } from "#src/components/ui/button.tsx";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/presentation/")({
 
 const pageNumberAtom = atom(1);
 const isBlackoutAtom = atom(false);
+const isOverviewModeAtom = atom(false);
 
 function RouteComponent() {
 	const { file } = Route.useSearch({
@@ -147,6 +149,7 @@ function PresentationView({
 	const pdfProxy = use(pdfPromise);
 	const [pageNumber, setPageNumber] = useAtom(pageNumberAtom);
 	const [isBlackout, setIsBlackout] = useAtom(isBlackoutAtom);
+	const [isOverviewMode, setIsOverviewMode] = useAtom(isOverviewModeAtom);
 
 	usePresentationBroadcast(fileName, pairId, {
 		onPageNumberChange: (pageNumber) =>
@@ -163,11 +166,17 @@ function PresentationView({
 				} else {
 					document.documentElement.requestFullscreen();
 				}
+			} else if (e.key === "Tab") {
+				e.preventDefault();
+				setIsOverviewMode((prev) => !prev);
+			} else if (e.key === "Escape" && isOverviewMode) {
+				e.preventDefault();
+				setIsOverviewMode(false);
 			}
 		};
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, []);
+	}, [isOverviewMode]);
 
 	return (
 		<div className="relative grid">
@@ -187,6 +196,16 @@ function PresentationView({
 			>
 				<Menu pdfpcConfig={pdfpc} currentPageNumber={pageNumber} />
 			</div>
+			<OverviewDialog
+				pdfProxy={pdfProxy}
+				pdfpcConfig={pdfpc}
+				currentSlide={pageNumber}
+				open={isOverviewMode}
+				onClose={() => setIsOverviewMode(false)}
+				onSlideSelect={(slideNumber) =>
+					startTransition(() => setPageNumber(slideNumber))
+				}
+			/>
 		</div>
 	);
 }
