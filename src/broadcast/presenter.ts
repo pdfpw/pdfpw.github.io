@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent } from "react";
+import type { EmptyObject } from "type-fest";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
 import { getBroadcastChannel } from "./channel";
 import { getLobbyChannel, replyPairOffer } from "./pairing";
@@ -6,11 +7,11 @@ import type { BroadcastAction, PresentationAction } from "./types";
 
 declare global {
 	interface PresentationCommandMap {
-		initialize: Record<string, never>;
-		"get-config": Record<string, never>;
-		"get-pdf": Record<string, never>;
-		"get-blackout-state": Record<string, never>;
-		"get-current-page-number": Record<string, never>;
+		initialize: EmptyObject;
+		"get-config": EmptyObject;
+		"get-pdf": EmptyObject;
+		"get-blackout-state": EmptyObject;
+		"get-current-page-number": EmptyObject;
 	}
 }
 
@@ -92,13 +93,17 @@ export function usePresenterBroadcast(
 
 	useEffect(() => {
 		const abortController = new AbortController();
-		channel.addEventListener("message", onMessage, {
-			signal: abortController.signal,
-		});
+		getBroadcastChannel(fileName, pairId).addEventListener(
+			"message",
+			onMessage,
+			{
+				signal: abortController.signal,
+			},
+		);
 		return () => {
 			abortController.abort();
 		};
-	}, [channel]);
+	}, [fileName, pairId]);
 
 	const handleLobbyMessage = useEffectEvent((event: MessageEvent) => {
 		const message = event.data as { kind?: string; requestId?: string };

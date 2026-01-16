@@ -300,8 +300,8 @@ function Home() {
 
 	return (
 		<main className="bg-linear-to-br from-background via-background to-secondary/20 text-foreground">
-			<div className="container mx-auto flex min-h-[70vh] max-w-6xl flex-col items-center justify-center px-6 pt-12 pb-16">
-				<div className="grid w-full grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
+			<div className="container mx-auto flex min-h-[50vh] max-w-6xl flex-col items-center justify-center px-6 pt-8 pb-8">
+				<div className="grid w-full grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12">
 					<div className="flex w-full justify-center lg:justify-start">
 						<HeroSection status={status} />
 					</div>
@@ -316,7 +316,7 @@ function Home() {
 				</div>
 			</div>
 
-			<div className="border-t border-border/50 bg-secondary/5 pt-16">
+			<div className="border-t border-border/50 bg-secondary/5 pt-8">
 				{supportsFSA ? (
 					<Suspense fallback={<RecentSectionLoading />}>
 						<RecentSectionData

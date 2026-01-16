@@ -279,7 +279,7 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 				<SlideStage
 					pdfProxy={pdfProxy}
 					pageNumber={pageNumber}
-					className="aspect-video min-h-[calc((100vh-100px)/4*3)]"
+					className="aspect-video h-full"
 					ref={slideStageRef}
 				/>
 				<div className="row-span-2 flex flex-col gap-4">

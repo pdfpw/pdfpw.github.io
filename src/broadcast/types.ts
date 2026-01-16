@@ -1,20 +1,28 @@
+import type { Merge } from "type-fest";
+
 declare global {
 	interface PresenterCommandMap {}
 	interface PresentationCommandMap {}
 }
 
 type PresenterActionInternal = {
-	[K in keyof PresenterCommandMap]: {
-		command: K;
-		from: "presenter";
-	} & PresenterCommandMap[K];
+	[K in keyof PresenterCommandMap]: Merge<
+		PresenterCommandMap[K],
+		{
+			command: K;
+			from: "presenter";
+		}
+	>;
 }[keyof PresenterCommandMap];
 
 type PresentationActionInternal = {
-	[K in keyof PresentationCommandMap]: {
-		command: K;
-		from: "presentation";
-	} & PresentationCommandMap[K];
+	[K in keyof PresentationCommandMap]: Merge<
+		PresentationCommandMap[K],
+		{
+			command: K;
+			from: "presentation";
+		}
+	>;
 }[keyof PresentationCommandMap];
 
 export type PresenterAction = PresenterActionInternal;
