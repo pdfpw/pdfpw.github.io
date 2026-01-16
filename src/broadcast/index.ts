@@ -1,4 +1,4 @@
-export { getBroadcastChannel } from "./channel";
+export { closeBroadcastChannel, getBroadcastChannel } from "./channel";
 export { useConfig } from "./config";
 export {
 	ensurePresenterPairId,

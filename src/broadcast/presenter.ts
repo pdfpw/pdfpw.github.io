@@ -6,9 +6,11 @@ import type { BroadcastAction, PresentationAction } from "./types";
 
 declare global {
 	interface PresentationCommandMap {
+		"initialize": {};
 		"get-config": {};
 		"get-pdf": {};
 		"get-blackout-state": {};
+		"get-current-page-number": {};
 	}
 }
 
@@ -18,11 +20,27 @@ export function usePresenterBroadcast(
 	pdfpcConfig: ResolvedPdfpcConfigV2,
 	pdf: File,
 	isBlackout: boolean,
+	pageNumber: number,
 ) {
 	const channel = getBroadcastChannel(fileName, pairId);
 	const handleMessage = useEffectEvent(async (action: PresentationAction) => {
+		console.log("[Presenter Broadcast] Received:", action);
 		switch (action.command) {
+			case "initialize":
+				console.log("[Presenter Broadcast] Initializing presentation window");
+				// Send all initialization data together
+				const buffer = await pdf.arrayBuffer();
+				channel.postMessage({
+					from: "presenter",
+					command: "initialize-response",
+					pdfpcConfig,
+					pdfData: buffer,
+					pageNumber,
+					isBlackout,
+				} satisfies BroadcastAction);
+				break;
 			case "get-config":
+				console.log("[Presenter Broadcast] Sending config");
 				channel.postMessage({
 					from: "presenter",
 					command: "get-config-response",
@@ -31,6 +49,7 @@ export function usePresenterBroadcast(
 				break;
 			case "get-pdf":
 				{
+					console.log("[Presenter Broadcast] Sending PDF");
 					const channel = getBroadcastChannel(fileName, pairId);
 					const buffer = await pdf.arrayBuffer();
 					channel.postMessage({
@@ -41,10 +60,19 @@ export function usePresenterBroadcast(
 				}
 				break;
 			case "get-blackout-state":
+				console.log("[Presenter Broadcast] Sending blackout state:", isBlackout);
 				channel.postMessage({
 					from: "presenter",
 					command: "send-blackout-state",
 					isBlackout,
+				} satisfies BroadcastAction);
+				break;
+			case "get-current-page-number":
+				console.log("[Presenter Broadcast] Sending current page number:", pageNumber);
+				channel.postMessage({
+					from: "presenter",
+					command: "get-current-page-number-response",
+					pageNumber,
 				} satisfies BroadcastAction);
 				break;
 		}
@@ -63,7 +91,7 @@ export function usePresenterBroadcast(
 		return () => {
 			abortController.abort();
 		};
-	}, [channel]);
+	}, [fileName, pairId]);
 
 	useEffect(() => {
 		const lobby = getLobbyChannel(fileName);

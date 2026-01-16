@@ -258,7 +258,7 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 		[slideStageRef, nextSlideRef, nextPrevRef],
 	);
 
-	usePresenterBroadcast(fileName, pairId, pdfpcConfig, pdf, isBlackout);
+	usePresenterBroadcast(fileName, pairId, pdfpcConfig, pdf, isBlackout, pageNumber);
 
 	return (
 		<>

@@ -53,21 +53,69 @@ export function PdfPage({
 	);
 }
 
+// PDF page cache with LRU eviction
+const MAX_CACHE_SIZE = 50; // Maximum number of pages to cache
+
 let pdfProxyKey: PDFDocumentProxy | null = null;
-const pdfPageCache: Map<number, Promise<PDFPageProxy>> = new Map();
+const pdfPageCache = new Map<
+	number,
+	{ promise: Promise<PDFPageProxy>; timestamp: number }
+>();
+
 function getPage(pdfProxy: PDFDocumentProxy, pageNumber: number) {
 	if (pdfProxyKey !== pdfProxy) {
+		// Clear cache when PDF changes
 		pdfPageCache.clear();
 		pdfProxyKey = pdfProxy;
 	}
 
-	const cachedPagePromise = pdfPageCache.get(pageNumber);
-	if (cachedPagePromise) return cachedPagePromise;
+	const cached = pdfPageCache.get(pageNumber);
+	if (cached) {
+		// Update timestamp for LRU (most recently used)
+		cached.timestamp = Date.now();
+		return cached.promise;
+	}
+
+	// Cache is full, evict least recently used page
+	if (pdfPageCache.size >= MAX_CACHE_SIZE) {
+		let oldestKey: number | null = null;
+		let oldestTimestamp = Infinity;
+
+		for (const [key, value] of pdfPageCache.entries()) {
+			if (value.timestamp < oldestTimestamp) {
+				oldestTimestamp = value.timestamp;
+				oldestKey = key;
+			}
+		}
+
+		if (oldestKey !== null) {
+			pdfPageCache.delete(oldestKey);
+			console.debug(`[PdfPage] Evicted page ${oldestKey} from cache (LRU)`);
+		}
+	}
 
 	const getPagePromise = pdfProxy.getPage(pageNumber);
-	pdfPageCache.set(pageNumber, getPagePromise);
+	pdfPageCache.set(pageNumber, {
+		promise: getPagePromise,
+		timestamp: Date.now(),
+	});
 
 	return getPagePromise;
+}
+
+// Cleanup function for manual cache clearing
+export function clearPdfPageCache() {
+	pdfPageCache.clear();
+	console.debug("[PdfPage] Cache cleared");
+}
+
+// Get cache stats for monitoring
+export function getPdfPageCacheStats() {
+	return {
+		size: pdfPageCache.size,
+		maxSize: MAX_CACHE_SIZE,
+		keys: Array.from(pdfPageCache.keys()),
+	};
 }
 
 function PdfPageCanvas({

@@ -1,8 +1,9 @@
 import * as React from "react";
 
 interface ErrorBoundaryProps {
-	fallbackRender: (error: unknown) => React.ReactNode;
+	fallbackRender: (error: unknown, reset: () => void) => React.ReactNode;
 	children?: React.ReactNode;
+	onError?: (error: unknown, errorInfo: React.ErrorInfo) => void;
 }
 
 export class ErrorBoundary extends React.Component<
@@ -15,14 +16,38 @@ export class ErrorBoundary extends React.Component<
 	}
 
 	static getDerivedStateFromError(error: unknown) {
-		// Update state so the next render will show the fallback UI.
 		return { error };
 	}
+
+	componentDidCatch(error: unknown, errorInfo: React.ErrorInfo) {
+		// Log error to console
+		console.error("[ErrorBoundary] Caught error:", {
+			error,
+			errorInfo,
+		});
+
+		// Call custom error handler if provided
+		this.props.onError?.(error, errorInfo);
+
+		// Log additional context
+		if (error instanceof Error) {
+			console.error("[ErrorBoundary] Error details:", {
+				message: error.message,
+				stack: error.stack,
+				componentStack: errorInfo.componentStack,
+			});
+		}
+	}
+
+	handleReset = () => {
+		console.log("[ErrorBoundary] Resetting error boundary");
+		this.setState({ error: undefined });
+	};
 
 	render() {
 		if (this.state.error) {
 			// You can render any custom fallback UI
-			return this.props.fallbackRender(this.state.error);
+			return this.props.fallbackRender(this.state.error, this.handleReset);
 		}
 
 		return this.props.children;

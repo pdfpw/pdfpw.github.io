@@ -91,9 +91,9 @@ This document lists missing features compared to pdfpc (PDF Presenter Console) a
 ## Bug Fixes & Polish
 
 ### Stability
-- [ ] **Connection recovery** - Auto-reconnect if broadcast channel disconnects
-- [ ] **Error boundaries** - Better error handling and recovery
-- [ ] **Memory leak prevention** - Proper cleanup of cached slides
+- [x] **Connection recovery** - Auto-reconnect if broadcast channel disconnects
+- [x] **Error boundaries** - Better error handling and recovery
+- [x] **Memory leak prevention** - Proper cleanup of cached slides
 
 ### User Experience
 - [ ] **Loading indicators** - Better visual feedback during PDF loading

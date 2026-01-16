@@ -38,7 +38,6 @@ export function subscribePresenterRoute(router: Register["router"]) {
 			}
 		};
 
-		console.log(router.state.location);
 		sync({
 			toLocation: router.state.location,
 		});

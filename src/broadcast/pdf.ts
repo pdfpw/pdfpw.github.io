@@ -19,6 +19,7 @@ export function getPdfData(
 	fileName: string,
 	pairId: string,
 ): Promise<ArrayBuffer> {
+	
 	if (pdfCache?.fileName !== fileName || pdfCache?.pairId !== pairId) {
 		pdfCache = {
 			fileName,
@@ -81,7 +82,7 @@ export function getPdfData(
 					settled = true;
 					cleanup();
 					reject(new Error("TIMEOUT_LOADING_PDF_DATA"));
-				}, 5000);
+				}, retryDelaysMs.reduce((a, b) => a + b, 0) + 2000);
 			}),
 		};
 	}

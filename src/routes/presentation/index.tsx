@@ -2,12 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { atom, useAtom } from "jotai";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Suspense, startTransition, use, useEffect } from "react";
+import { Suspense, startTransition, use, useEffect, useState, useTransition } from "react";
 import * as typia from "typia";
 import {
-	getPdfData,
 	getPresentationPairId,
-	useConfig,
 	usePresentationBroadcast,
 } from "#src/broadcast";
 import { ErrorBoundary } from "#src/components/ErrorBoundary.tsx";
@@ -61,7 +59,7 @@ function RouteComponent() {
 	return (
 		<main className="min-h-screen grid bg-blackout">
 			<ErrorBoundary
-				fallbackRender={(error) => {
+				fallbackRender={(error, reset) => {
 					if (error instanceof Error) {
 						switch (error.message) {
 							case "TIMEOUT_PAIRING_PRESENTATION":
@@ -84,13 +82,42 @@ function RouteComponent() {
 								);
 							default:
 								return (
-									<div className="h-full flex items-center justify-center">
-										エラーが発生しました: {error.message}
+									<div className="h-full flex flex-col items-center justify-center gap-4 p-6">
+										<div className="text-center">
+											<div className="text-red-500 font-semibold mb-2">
+												エラーが発生しました
+											</div>
+											<div className="text-muted-foreground">
+												{error.message}
+											</div>
+										</div>
+										<button
+											type="button"
+											onClick={reset}
+											className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+										>
+											リロードして再試行
+										</button>
 									</div>
 								);
 						}
 					}
-					return <div>予期しないエラーが発生しました。</div>;
+					return (
+						<div className="h-full flex flex-col items-center justify-center gap-4 p-6">
+							<div className="text-center">
+								<div className="text-red-500 font-semibold mb-2">
+									予期しないエラーが発生しました
+								</div>
+							</div>
+							<button
+								type="button"
+								onClick={reset}
+								className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+							>
+								リロードして再試行
+							</button>
+						</div>
+					);
 				}}
 			>
 				<Suspense fallback={<Skeleton></Skeleton>}>
@@ -107,20 +134,79 @@ const useGetRecentFileById = createUseMemoried(async (fileName: string) =>
 const usePairId = createUseMemoried((fileName: string) =>
 	getPresentationPairId(fileName),
 );
+
 function RecentPdfResolver({ fileName }: { fileName: string }) {
 	const recentFilePromise = useGetRecentFileById(fileName);
 	const recentFile = use(recentFilePromise);
 	const pdf = recentFile?.handle;
 	const pairId = use(usePairId(fileName));
-	const pdfpc = useConfig(fileName, pairId);
 	return (
-		<PresentationView
-			pdf={pdf}
-			pdfpc={pdfpc}
+		<PresentationBroadcastData
 			fileName={fileName}
 			pairId={pairId}
+			pdf={pdf}
 		/>
 	);
+}
+
+interface PresentationBroadcastDataProps {
+	fileName: string;
+	pairId: string;
+	pdf?: File | FileSystemFileHandle;
+}
+
+function PresentationBroadcastData({
+	fileName,
+	pairId,
+	pdf,
+}: PresentationBroadcastDataProps) {
+	const [, startTransition] = useTransition();
+	const [initData, setInitData] = useState<{
+		pdfpcConfig: ResolvedPdfpcConfigV2;
+		pdfData: ArrayBuffer;
+		pageNumber: number;
+		isBlackout: boolean;
+	} | null>(null);
+
+	usePresentationBroadcast(fileName, pairId, {
+		onPageNumberChange: (pageNumber) => {
+			startTransition(() => {
+				setInitData((prev) => (prev ? { ...prev, pageNumber } : null));
+			});
+		},
+		onBlackoutChange: (isBlackout) => {
+			startTransition(() => {
+				setInitData((prev) => (prev ? { ...prev, isBlackout } : null));
+			});
+		},
+		onInitialize: (data) => {
+			console.log("[PresentationBroadcastData] Received initialize data");
+			startTransition(() => {
+				setInitData({
+					pdfpcConfig: data.pdfpcConfig,
+					pdfData: data.pdfData,
+					pageNumber: data.pageNumber,
+					isBlackout: data.isBlackout,
+				});
+			});
+		},
+	});
+
+	if (!initData) {
+		// Show loading state while waiting for initialization
+		return (
+			<div className="h-full flex items-center justify-center">
+				<div className="text-center">
+					<div className="text-lg mb-2">接続中...</div>
+					<div className="text-sm text-muted-foreground">
+						プレゼンター画面を開いているか確認してください
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	return <PresentationView {...initData} localPdf={pdf} />;
 }
 
 const getPdfBuffer = createUseMemoried(
@@ -134,28 +220,38 @@ const usePdfPromise = createUseMemoried(
 );
 
 function PresentationView({
-	pdf,
-	pdfpc,
-	fileName,
-	pairId,
+	pdfpcConfig,
+	pdfData,
+	pageNumber,
+	isBlackout,
+	localPdf,
 }: {
-	pdf: File | FileSystemFileHandle | undefined;
-	pdfpc: ResolvedPdfpcConfigV2;
-	fileName: string;
-	pairId: string;
+	pdfpcConfig: ResolvedPdfpcConfigV2;
+	pdfData: ArrayBuffer;
+	pageNumber: number;
+	isBlackout: boolean;
+	localPdf?: File | FileSystemFileHandle;
 }) {
-	const pdfBuffer = use(pdf ? getPdfBuffer(pdf) : getPdfData(fileName, pairId));
+	const pdfBuffer = use(localPdf ? getPdfBuffer(localPdf) : Promise.resolve(pdfData));
 	const pdfPromise = usePdfPromise(pdfBuffer);
 	const pdfProxy = use(pdfPromise);
-	const [pageNumber, setPageNumber] = useAtom(pageNumberAtom);
-	const [isBlackout, setIsBlackout] = useAtom(isBlackoutAtom);
+	const [currentPageNumber, setCurrentPageNumber] = useAtom(pageNumberAtom);
+	const [currentIsBlackout, setCurrentIsBlackout] = useAtom(isBlackoutAtom);
 	const [isOverviewMode, setIsOverviewMode] = useAtom(isOverviewModeAtom);
 
-	usePresentationBroadcast(fileName, pairId, {
-		onPageNumberChange: (pageNumber) =>
-			startTransition(() => setPageNumber(pageNumber)),
-		onBlackoutChange: (nextIsBlackout) =>
-			startTransition(() => setIsBlackout(nextIsBlackout)),
+	// Update atoms when props change
+	useEffect(() => {
+		setCurrentPageNumber(pageNumber);
+	}, [pageNumber, setCurrentPageNumber]);
+	useEffect(() => {
+		setCurrentIsBlackout(isBlackout);
+	}, [isBlackout, setCurrentIsBlackout]);
+
+	console.log("[PresentationView] Render with:", {
+		currentPageNumber,
+		currentIsBlackout,
+		pdfProxy: !!pdfProxy,
+		pdfpcPages: pdfpcConfig.pages.length,
 	});
 
 	useEffect(() => {
@@ -182,28 +278,28 @@ function PresentationView({
 		<div className="relative grid">
 			<SlideStage
 				pdfProxy={pdfProxy}
-				pdfpcConfig={pdfpc}
-				currentPageNumber={pageNumber}
-				isBlackout={isBlackout}
+				pdfpcConfig={pdfpcConfig}
+				currentPageNumber={currentPageNumber}
+				isBlackout={currentIsBlackout}
 			/>
 			<div
 				className={cn([
 					"absolute bottom-24 w-full flex justify-center",
 					{
-						"opacity-0 pointer-events-none": isBlackout,
+						"opacity-0 pointer-events-none": currentIsBlackout,
 					},
 				])}
 			>
-				<Menu pdfpcConfig={pdfpc} currentPageNumber={pageNumber} />
+				<Menu pdfpcConfig={pdfpcConfig} currentPageNumber={currentPageNumber} />
 			</div>
 			<OverviewDialog
 				pdfProxy={pdfProxy}
-				pdfpcConfig={pdfpc}
-				currentSlide={pageNumber}
+				pdfpcConfig={pdfpcConfig}
+				currentSlide={currentPageNumber}
 				open={isOverviewMode}
 				onClose={() => setIsOverviewMode(false)}
 				onSlideSelect={(slideNumber) =>
-					startTransition(() => setPageNumber(slideNumber))
+					startTransition(() => setCurrentPageNumber(slideNumber))
 				}
 			/>
 		</div>

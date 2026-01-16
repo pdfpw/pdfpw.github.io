@@ -22,8 +22,8 @@ export function ModeForm({
 	onOverviewModeOpen,
 }: ModeFormProps) {
 	return (
-		<Card className={cn("shadow-2xs", className)}>
-			<CardContent className="p-2">
+		<Card className={cn("shadow-2xs py-3", className)}>
+			<CardContent className="px-3">
 				<div className="flex gap-2">
 					<Button
 						type="button"
