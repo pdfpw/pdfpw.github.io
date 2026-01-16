@@ -6,11 +6,11 @@ import type { BroadcastAction, PresentationAction } from "./types";
 
 declare global {
 	interface PresentationCommandMap {
-		"initialize": {};
-		"get-config": {};
-		"get-pdf": {};
-		"get-blackout-state": {};
-		"get-current-page-number": {};
+		initialize: Record<string, never>;
+		"get-config": Record<string, never>;
+		"get-pdf": Record<string, never>;
+		"get-blackout-state": Record<string, never>;
+		"get-current-page-number": Record<string, never>;
 	}
 }
 
@@ -26,7 +26,7 @@ export function usePresenterBroadcast(
 	const handleMessage = useEffectEvent(async (action: PresentationAction) => {
 		console.log("[Presenter Broadcast] Received:", action);
 		switch (action.command) {
-			case "initialize":
+			case "initialize": {
 				console.log("[Presenter Broadcast] Initializing presentation window");
 				// Send all initialization data together
 				const buffer = await pdf.arrayBuffer();
@@ -39,6 +39,7 @@ export function usePresenterBroadcast(
 					isBlackout,
 				} satisfies BroadcastAction);
 				break;
+			}
 			case "get-config":
 				console.log("[Presenter Broadcast] Sending config");
 				channel.postMessage({
@@ -60,7 +61,10 @@ export function usePresenterBroadcast(
 				}
 				break;
 			case "get-blackout-state":
-				console.log("[Presenter Broadcast] Sending blackout state:", isBlackout);
+				console.log(
+					"[Presenter Broadcast] Sending blackout state:",
+					isBlackout,
+				);
 				channel.postMessage({
 					from: "presenter",
 					command: "send-blackout-state",
@@ -68,7 +72,10 @@ export function usePresenterBroadcast(
 				} satisfies BroadcastAction);
 				break;
 			case "get-current-page-number":
-				console.log("[Presenter Broadcast] Sending current page number:", pageNumber);
+				console.log(
+					"[Presenter Broadcast] Sending current page number:",
+					pageNumber,
+				);
 				channel.postMessage({
 					from: "presenter",
 					command: "get-current-page-number-response",
@@ -78,36 +85,36 @@ export function usePresenterBroadcast(
 		}
 	});
 
+	const onMessage = useEffectEvent((event: MessageEvent) => {
+		const action = event.data as BroadcastAction;
+		if (action.from === "presentation") handleMessage(action);
+	});
+
 	useEffect(() => {
 		const abortController = new AbortController();
-		channel.addEventListener(
-			"message",
-			(event) => {
-				const action = event.data as BroadcastAction;
-				if (action.from === "presentation") handleMessage(action);
-			},
-			{ signal: abortController.signal },
-		);
+		channel.addEventListener("message", onMessage, {
+			signal: abortController.signal,
+		});
 		return () => {
 			abortController.abort();
 		};
-	}, [fileName, pairId]);
+	}, [channel]);
+
+	const handleLobbyMessage = useEffectEvent((event: MessageEvent) => {
+		const message = event.data as { kind?: string; requestId?: string };
+		if (message.kind !== "pair-request" || !message.requestId) return;
+		replyPairOffer(fileName, pairId, message.requestId);
+	});
 
 	useEffect(() => {
 		const lobby = getLobbyChannel(fileName);
 		const abortController = new AbortController();
-		lobby.addEventListener(
-			"message",
-			(event) => {
-				const message = event.data as { kind?: string; requestId?: string };
-				if (message.kind !== "pair-request" || !message.requestId) return;
-				replyPairOffer(fileName, pairId, message.requestId);
-			},
-			{ signal: abortController.signal },
-		);
+		lobby.addEventListener("message", handleLobbyMessage, {
+			signal: abortController.signal,
+		});
 		return () => {
 			abortController.abort();
 			lobby.close();
 		};
-	}, [fileName, pairId]);
+	}, [fileName]);
 }

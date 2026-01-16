@@ -2,7 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { atom, useAtom } from "jotai";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Suspense, startTransition, use, useEffect, useState, useTransition } from "react";
+import {
+	Suspense,
+	startTransition,
+	use,
+	useEffect,
+	useEffectEvent,
+	useState,
+	useTransition,
+} from "react";
 import * as typia from "typia";
 import {
 	getPresentationPairId,
@@ -141,11 +149,7 @@ function RecentPdfResolver({ fileName }: { fileName: string }) {
 	const pdf = recentFile?.handle;
 	const pairId = use(usePairId(fileName));
 	return (
-		<PresentationBroadcastData
-			fileName={fileName}
-			pairId={pairId}
-			pdf={pdf}
-		/>
+		<PresentationBroadcastData fileName={fileName} pairId={pairId} pdf={pdf} />
 	);
 }
 
@@ -232,7 +236,9 @@ function PresentationView({
 	isBlackout: boolean;
 	localPdf?: File | FileSystemFileHandle;
 }) {
-	const pdfBuffer = use(localPdf ? getPdfBuffer(localPdf) : Promise.resolve(pdfData));
+	const pdfBuffer = use(
+		localPdf ? getPdfBuffer(localPdf) : Promise.resolve(pdfData),
+	);
 	const pdfPromise = usePdfPromise(pdfBuffer);
 	const pdfProxy = use(pdfPromise);
 	const [currentPageNumber, setCurrentPageNumber] = useAtom(pageNumberAtom);
@@ -254,25 +260,26 @@ function PresentationView({
 		pdfpcPages: pdfpcConfig.pages.length,
 	});
 
-	useEffect(() => {
-		const onKeyDown = (e: KeyboardEvent) => {
-			if (e.key === "f") {
-				if (document.fullscreenElement) {
-					document.exitFullscreen();
-				} else {
-					document.documentElement.requestFullscreen();
-				}
-			} else if (e.key === "Tab") {
-				e.preventDefault();
-				setIsOverviewMode((prev) => !prev);
-			} else if (e.key === "Escape" && isOverviewMode) {
-				e.preventDefault();
-				setIsOverviewMode(false);
+	const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
+		if (e.key === "f") {
+			if (document.fullscreenElement) {
+				document.exitFullscreen();
+			} else {
+				document.documentElement.requestFullscreen();
 			}
-		};
+		} else if (e.key === "Tab") {
+			e.preventDefault();
+			setIsOverviewMode((prev) => !prev);
+		} else if (e.key === "Escape" && isOverviewMode) {
+			e.preventDefault();
+			setIsOverviewMode(false);
+		}
+	});
+
+	useEffect(() => {
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [isOverviewMode]);
+	}, []);
 
 	return (
 		<div className="relative grid">

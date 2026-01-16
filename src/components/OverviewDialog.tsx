@@ -1,6 +1,6 @@
-import { type PDFDocumentProxy } from "pdfjs-dist";
-import { useCallback, useEffect, useRef } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import type { PDFDocumentProxy } from "pdfjs-dist";
+import { useCallback, useEffect, useRef } from "react";
 import { OverviewThumbnail } from "#src/components/OverviewThumbnail";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
 import { cn } from "#src/lib/utils";
@@ -86,6 +86,7 @@ export function OverviewDialog({
 								strokeLinecap="round"
 								strokeLinejoin="round"
 							>
+								<title>閉じる</title>
 								<path d="M18 6 6 18" />
 								<path d="M6 6l12 12" />
 							</svg>

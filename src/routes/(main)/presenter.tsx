@@ -2,7 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtomValue } from "jotai";
 import { GlobalWorkerOptions } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { Suspense, startTransition, useCallback, useRef, useState } from "react";
+import {
+	Suspense,
+	startTransition,
+	useCallback,
+	useRef,
+	useState,
+} from "react";
 import * as typia from "typia";
 import {
 	type BroadcastAction,
@@ -10,8 +16,8 @@ import {
 	getBroadcastChannel,
 	usePresenterBroadcast,
 } from "#src/broadcast";
-import { Button } from "#src/components/ui/button";
 import { OverviewDialog } from "#src/components/OverviewDialog";
+import { Button } from "#src/components/ui/button";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
 import {
 	clampPageNumber,
@@ -24,13 +30,13 @@ import { NextPrevFooter } from "./-presenter/NextPrevFooter";
 import { NextSlide } from "./-presenter/NextSlide";
 import { Note } from "./-presenter/Note";
 import { SlideStage } from "./-presenter/SlideStage";
-import type { TimerHandle } from "./-presenter/Timer";
 import {
 	fileNameOrFileAtom,
 	pdfFileAtom,
 	pdfProxyAtom,
 	pdfpcConfigAtom,
 } from "./-presenter/state";
+import type { TimerHandle } from "./-presenter/Timer";
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -258,7 +264,14 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 		[slideStageRef, nextSlideRef, nextPrevRef],
 	);
 
-	usePresenterBroadcast(fileName, pairId, pdfpcConfig, pdf, isBlackout, pageNumber);
+	usePresenterBroadcast(
+		fileName,
+		pairId,
+		pdfpcConfig,
+		pdf,
+		isBlackout,
+		pageNumber,
+	);
 
 	return (
 		<>

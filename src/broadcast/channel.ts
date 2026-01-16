@@ -25,7 +25,7 @@ export function getBroadcastChannel(
 		channelCache.pairId !== pairId;
 
 	if (needsNewChannel) {
-		console.log(pairId)
+		console.log(pairId);
 		// Close existing channel if it exists
 		if (channelCache && !channelCache.isClosed) {
 			channelCache.channel.close();
@@ -47,7 +47,9 @@ export function getBroadcastChannel(
 		// Set up error handler with auto-reconnect
 		channel.addEventListener("error", (error) => {
 			console.error("[BroadcastChannel] Error:", error);
-			channelCache?.onError.forEach((handler) => handler(error));
+			for (const handler of channelCache?.onError ?? []) {
+				handler(error);
+			}
 
 			// Attempt to reconnect
 			attemptReconnect(fileName, pairId, options);
@@ -104,47 +106,50 @@ function attemptReconnect(
 		clearTimeout(reconnectTimeoutId);
 	}
 
-	reconnectTimeoutId = setTimeout(() => {
-		console.log(
-			`[BroadcastChannel] Reconnection attempt ${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS}`,
-		);
+	reconnectTimeoutId = setTimeout(
+		() => {
+			console.log(
+				`[BroadcastChannel] Reconnection attempt ${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS}`,
+			);
 
-		try {
-			// Mark current channel as closed
-			if (channelCache) {
-				channelCache.isClosed = true;
+			try {
+				// Mark current channel as closed
+				if (channelCache) {
+					channelCache.isClosed = true;
+				}
+
+				// Create new channel (will trigger on next getBroadcastChannel call)
+				const channelName = `pdfpw:${fileName}:${pairId}`;
+				const newChannel = new BroadcastChannel(channelName);
+
+				// Update cache with new channel
+				channelCache = {
+					fileName,
+					pairId,
+					channel: newChannel,
+					onMessage: channelCache?.onMessage || new Set(),
+					onError: channelCache?.onError || new Set(),
+					isClosed: false,
+				};
+
+				// Re-attach all message handlers
+				channelCache.onMessage.forEach((handler) => {
+					newChannel.addEventListener("message", handler);
+				});
+				channelCache.onError.forEach((handler) => {
+					newChannel.addEventListener("error", handler);
+				});
+
+				reconnectAttempts = 0;
+				console.log("[BroadcastChannel] Reconnected successfully");
+			} catch (error) {
+				console.error("[BroadcastChannel] Reconnection failed:", error);
+				reconnectAttempts++;
+				attemptReconnect(fileName, pairId, options);
 			}
-
-			// Create new channel (will trigger on next getBroadcastChannel call)
-			const channelName = `pdfpw:${fileName}:${pairId}`;
-			const newChannel = new BroadcastChannel(channelName);
-
-			// Update cache with new channel
-			channelCache = {
-				fileName,
-				pairId,
-				channel: newChannel,
-				onMessage: channelCache?.onMessage || new Set(),
-				onError: channelCache?.onError || new Set(),
-				isClosed: false,
-			};
-
-			// Re-attach all message handlers
-			channelCache.onMessage.forEach((handler) => {
-				newChannel.addEventListener("message", handler);
-			});
-			channelCache.onError.forEach((handler) => {
-				newChannel.addEventListener("error", handler);
-			});
-
-			reconnectAttempts = 0;
-			console.log("[BroadcastChannel] Reconnected successfully");
-		} catch (error) {
-			console.error("[BroadcastChannel] Reconnection failed:", error);
-			reconnectAttempts++;
-			attemptReconnect(fileName, pairId, options);
-		}
-	}, RECONNECT_DELAY * (reconnectAttempts + 1)); // Exponential backoff
+		},
+		RECONNECT_DELAY * (reconnectAttempts + 1),
+	); // Exponential backoff
 }
 
 export function closeBroadcastChannel() {

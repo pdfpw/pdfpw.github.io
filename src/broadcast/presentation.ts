@@ -54,15 +54,24 @@ export function usePresentationBroadcast(
 				onBlackoutChange?.(action.isBlackout);
 				break;
 			case "send-current-page-number":
-				console.log("[Presentation Broadcast] Page number change:", action.pageNumber);
+				console.log(
+					"[Presentation Broadcast] Page number change:",
+					action.pageNumber,
+				);
 				onPageNumberChange(action.pageNumber);
 				break;
 			case "send-blackout-state":
-				console.log("[Presentation Broadcast] Blackout state change:", action.isBlackout);
+				console.log(
+					"[Presentation Broadcast] Blackout state change:",
+					action.isBlackout,
+				);
 				onBlackoutChange?.(action.isBlackout);
 				break;
 			case "get-current-page-number-response":
-				console.log("[Presentation Broadcast] Page number response:", action.pageNumber);
+				console.log(
+					"[Presentation Broadcast] Page number response:",
+					action.pageNumber,
+				);
 				onPageNumberChange(action.pageNumber);
 				break;
 		}
@@ -102,8 +111,7 @@ export function usePresentationBroadcast(
 
 		const scheduleRetry = () => {
 			if (initialized || abortController.signal.aborted) return;
-			const delay =
-				retryDelaysMs[Math.min(attempts, retryDelaysMs.length - 1)];
+			const delay = retryDelaysMs[Math.min(attempts, retryDelaysMs.length - 1)];
 			const timer = setTimeout(() => {
 				if (initialized || abortController.signal.aborted) return;
 				attempts++;
@@ -112,7 +120,9 @@ export function usePresentationBroadcast(
 					scheduleRetry();
 				}
 			}, delay);
-			abortController.signal.addEventListener("abort", () => clearTimeout(timer));
+			abortController.signal.addEventListener("abort", () =>
+				clearTimeout(timer),
+			);
 		};
 
 		sendInitialize();

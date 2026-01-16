@@ -1,6 +1,11 @@
 import { PauseIcon, PlayIcon, RotateCcwIcon } from "lucide-react";
-import { useEffect, useImperativeHandle, useReducer, useState } from "react";
-import { forwardRef } from "react";
+import {
+	forwardRef,
+	useEffect,
+	useImperativeHandle,
+	useReducer,
+	useState,
+} from "react";
 import { Button } from "#src/components/ui/button.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config";
 import { cn } from "#src/lib/utils";
@@ -332,35 +337,37 @@ function buildTimerView(
 	};
 }
 
-export const Timer = forwardRef<TimerHandle, TimerProps>(
-	function Timer({ pdfpcConfig, pageNumber = 1 }, ref) {
-		const nowMs = useNowMs(1000);
+export const Timer = forwardRef<TimerHandle, TimerProps>(function Timer(
+	{ pdfpcConfig, pageNumber = 1 },
+	ref,
+) {
+	const nowMs = useNowMs(1000);
 
-		const [timerState, dispatch] = useReducer(
-			timerReducer,
-			undefined,
-			(): TimerState => ({
-				isRunning: false,
-				hasStarted: false,
-				startMs: null,
-				accumulatedMs: 0,
-				anchorMs: Date.now(),
-			}),
-		);
+	const [timerState, dispatch] = useReducer(
+		timerReducer,
+		undefined,
+		(): TimerState => ({
+			isRunning: false,
+			hasStarted: false,
+			startMs: null,
+			accumulatedMs: 0,
+			anchorMs: Date.now(),
+		}),
+	);
 
-		useImperativeHandle(
-			ref,
-			() => ({
-				reset: () => {
-					dispatch({
-						type: "RESET",
-						nowMs: Date.now(),
-						hasStartedAfterReset: pageNumber > 1,
-					});
-				},
-			}),
-			[pageNumber],
-		);
+	useImperativeHandle(
+		ref,
+		() => ({
+			reset: () => {
+				dispatch({
+					type: "RESET",
+					nowMs: Date.now(),
+					hasStartedAfterReset: pageNumber > 1,
+				});
+			},
+		}),
+		[pageNumber],
+	);
 
 	// 前回値での render 中条件付き更新パターン
 	const [prevPageNumber, setPrevPageNumber] = useState<number>(pageNumber);
@@ -419,5 +426,4 @@ export const Timer = forwardRef<TimerHandle, TimerProps>(
 			</div>
 		</div>
 	);
-	},
-);
+});

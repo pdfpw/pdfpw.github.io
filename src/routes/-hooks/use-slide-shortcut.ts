@@ -54,7 +54,10 @@ export function useSlideShortcut(
 				exitJumpToSlideMode();
 			} else if (event.key === "Backspace") {
 				event.preventDefault();
-				jumpToSlideBufferRef.current = jumpToSlideBufferRef.current.slice(0, -1);
+				jumpToSlideBufferRef.current = jumpToSlideBufferRef.current.slice(
+					0,
+					-1,
+				);
 			}
 			return;
 		}

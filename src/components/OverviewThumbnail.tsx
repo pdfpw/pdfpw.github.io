@@ -1,5 +1,5 @@
-import { memo } from "react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
+import { memo } from "react";
 import { PdfPage } from "#src/components/PdfPage";
 import { cn } from "#src/lib/utils";
 
@@ -31,7 +31,11 @@ export const OverviewThumbnail = memo(function OverviewThumbnail({
 			)}
 		>
 			<div className="relative aspect-video w-40 overflow-hidden rounded bg-background">
-				<PdfPage pdfProxy={pdfProxy} pageNumber={pageNumber} className="w-full h-full" />
+				<PdfPage
+					pdfProxy={pdfProxy}
+					pageNumber={pageNumber}
+					className="w-full h-full"
+				/>
 			</div>
 			{(label || pageNumber) && (
 				<span className="text-xs font-medium text-foreground">
