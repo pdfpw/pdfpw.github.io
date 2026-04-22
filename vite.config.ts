@@ -7,6 +7,7 @@ import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { regex } from "arkregex";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 const GITHUB_REPO_URL_REGEX = regex(
 	"^git\\+https://github\\.com/(?<owner>[\\w-]+)/(?<repo>[\\w.-]+)\\.git$",
@@ -140,6 +141,55 @@ export default defineConfig({
 				},
 			},
 		},
+		VitePWA({
+			registerType: "prompt",
+			injectRegister: null,
+			includeAssets: [
+				"favicon.ico",
+				"robots.txt",
+				"logo192.png",
+				"logo512.png",
+			],
+			manifest: {
+				name: "PDF Presenter Web",
+				short_name: "PDFPW",
+				description: "Browser-based PDF presenter console (pdfpc-compatible).",
+				start_url: "/",
+				scope: "/",
+				display: "standalone",
+				orientation: "any",
+				theme_color: "#000000",
+				background_color: "#ffffff",
+				icons: [
+					{
+						src: "/favicon.ico",
+						sizes: "64x64 32x32 24x24 16x16",
+						type: "image/x-icon",
+					},
+					{
+						src: "/logo192.png",
+						type: "image/png",
+						sizes: "192x192",
+						purpose: "any",
+					},
+					{
+						src: "/logo512.png",
+						type: "image/png",
+						sizes: "512x512",
+						purpose: "any maskable",
+					},
+				],
+			},
+			workbox: {
+				maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+				globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,wasm,mjs}"],
+				navigateFallback: "/index.html",
+				cleanupOutdatedCaches: true,
+				clientsClaim: false,
+				skipWaiting: false,
+			},
+			devOptions: { enabled: false },
+		}),
 	],
 });
 

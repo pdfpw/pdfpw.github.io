@@ -22,6 +22,12 @@ const router = createRouter({
 
 subscribePresenterRoute(router);
 
+if (import.meta.env.PROD) {
+	import("./lib/pwa").then((m) => {
+		m.registerPwa();
+	});
+}
+
 // Register the router instance for type safety
 declare module "@tanstack/react-router" {
 	interface Register {
