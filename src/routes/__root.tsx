@@ -1,11 +1,19 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import {
+	createRootRoute,
+	Outlet,
+	useRouterState,
+} from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import UpdateToast from "../components/UpdateToast";
 
-export const Route = createRootRoute({
-	component: () => (
+function RootLayout() {
+	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	const showToast = !pathname.startsWith("/presentation");
+	return (
 		<>
 			<Outlet />
+			{showToast && <UpdateToast />}
 			<TanStackDevtools
 				config={{
 					position: "bottom-right",
@@ -18,5 +26,9 @@ export const Route = createRootRoute({
 				]}
 			/>
 		</>
-	),
+	);
+}
+
+export const Route = createRootRoute({
+	component: RootLayout,
 });
