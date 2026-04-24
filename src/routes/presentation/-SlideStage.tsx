@@ -1,5 +1,6 @@
 import type { ClassValue } from "clsx";
 import type { PDFDocumentProxy } from "pdfjs-dist";
+import type { ReactNode, RefObject } from "react";
 import { PdfPage } from "#src/components/PdfPage.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
 import { cn } from "#src/lib/utils.ts";
@@ -10,6 +11,8 @@ interface SlideStageProps {
 	currentPageNumber: number;
 	isBlackout: boolean;
 	className?: ClassValue;
+	stageRef?: RefObject<HTMLDivElement | null>;
+	children?: ReactNode;
 }
 
 function preloadSlide(
@@ -31,10 +34,12 @@ export function SlideStage({
 	currentPageNumber,
 	isBlackout,
 	className,
+	stageRef,
+	children,
 }: SlideStageProps) {
 	const preloadPages = preloadSlide(pdfpcConfig, currentPageNumber);
 	return (
-		<div className={cn("relative", className)}>
+		<div className={cn("relative", className)} ref={stageRef}>
 			{preloadPages.map((pageNumber) => (
 				<PdfPage
 					key={pageNumber}
@@ -49,6 +54,7 @@ export function SlideStage({
 					]}
 				/>
 			))}
+			{children}
 		</div>
 	);
 }
