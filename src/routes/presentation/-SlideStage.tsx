@@ -12,6 +12,7 @@ interface SlideStageProps {
 	isBlackout: boolean;
 	className?: ClassValue;
 	stageRef?: RefObject<HTMLDivElement | null>;
+	pdfAreaRef?: RefObject<HTMLDivElement | null>;
 	children?: ReactNode;
 }
 
@@ -35,26 +36,31 @@ export function SlideStage({
 	isBlackout,
 	className,
 	stageRef,
+	pdfAreaRef,
 	children,
 }: SlideStageProps) {
 	const preloadPages = preloadSlide(pdfpcConfig, currentPageNumber);
 	return (
 		<div className={cn("relative", className)} ref={stageRef}>
-			{preloadPages.map((pageNumber) => (
-				<PdfPage
-					key={pageNumber}
-					pdfProxy={pdfProxy}
-					pageNumber={pageNumber}
-					className={[
-						"absolute inset-0",
-						{
-							"opacity-0 pointer-events-none":
-								pageNumber !== currentPageNumber || isBlackout,
-						},
-					]}
-				/>
-			))}
-			{children}
+			{preloadPages.map((pageNumber) => {
+				const isCurrent = pageNumber === currentPageNumber;
+				return (
+					<PdfPage
+						key={pageNumber}
+						pdfProxy={pdfProxy}
+						pageNumber={pageNumber}
+						className={[
+							"absolute inset-0",
+							{
+								"opacity-0 pointer-events-none": !isCurrent || isBlackout,
+							},
+						]}
+						pdfAreaRef={isCurrent ? pdfAreaRef : undefined}
+					>
+						{isCurrent ? children : null}
+					</PdfPage>
+				);
+			})}
 		</div>
 	);
 }

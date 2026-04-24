@@ -9,12 +9,14 @@ export const SlideStage = function SlideStage({
 	pageNumber,
 	className,
 	ref,
+	pdfAreaRef,
 	children,
 }: {
 	pdfProxy: PDFDocumentProxy;
 	pageNumber: number;
 	className?: ClassValue;
 	ref?: RefObject<HTMLElement | null>;
+	pdfAreaRef?: RefObject<HTMLDivElement | null>;
 	children?: ReactNode;
 }) {
 	return (
@@ -23,8 +25,10 @@ export const SlideStage = function SlideStage({
 				pdfProxy={pdfProxy}
 				pageNumber={pageNumber}
 				className="absolute inset-0"
-			/>
-			{children}
+				pdfAreaRef={pdfAreaRef}
+			>
+				{children}
+			</PdfPage>
 		</section>
 	);
 };

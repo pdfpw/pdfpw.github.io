@@ -1,5 +1,6 @@
-import { useAtomValue } from "jotai";
-import { memo } from "react";
+import { useAtomValue, useStore } from "jotai";
+import { memo, type RefObject, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	laserPosAtom,
 	type PenStroke,
@@ -10,6 +11,7 @@ import { cn } from "#src/lib/utils.ts";
 
 interface PointerOverlayProps {
 	className?: string;
+	containerRef: RefObject<HTMLElement | null>;
 }
 
 const PEN_COLOR = "#ef4444";
@@ -31,33 +33,147 @@ const Stroke = memo(function Stroke({ stroke }: { stroke: PenStroke }) {
 	);
 });
 
-export function PointerOverlay({ className }: PointerOverlayProps) {
+export function PointerOverlay({
+	className,
+	containerRef,
+}: PointerOverlayProps) {
 	const toolMode = useAtomValue(toolModeAtom);
-	const laserPos = useAtomValue(laserPosAtom);
 	const strokes = useAtomValue(penStrokesAtom);
+	const rect = useContainerRect(containerRef);
+	const store = useStore();
+	const laserRef = useRef<HTMLDivElement | null>(null);
+
+	// laser モード中はレーザードットが指示点を示すのでネイティブカーソルを消す
+	useEffect(() => {
+		const el = containerRef.current;
+		if (!el) return;
+		if (toolMode === "laser") {
+			el.style.cursor = "none";
+			return () => {
+				el.style.cursor = "";
+			};
+		}
+	}, [toolMode, containerRef]);
+
+	// laser 位置は React 再レンダーをバイパスして直接 DOM を更新する (追従性向上)
+	useEffect(() => {
+		const applyPos = () => {
+			const el = laserRef.current;
+			if (!el) return;
+			const pos = store.get(laserPosAtom);
+			if (pos === null || store.get(toolModeAtom) !== "laser") {
+				el.style.display = "none";
+			} else {
+				el.style.display = "";
+				el.style.left = `${pos.x * 100}%`;
+				el.style.top = `${pos.y * 100}%`;
+			}
+		};
+		applyPos();
+		const unsubPos = store.sub(laserPosAtom, applyPos);
+		const unsubMode = store.sub(toolModeAtom, applyPos);
+		return () => {
+			unsubPos();
+			unsubMode();
+		};
+	}, [store]);
 
 	if (toolMode === "none" && strokes.length === 0) return null;
+	if (!rect) return null;
 
-	return (
-		<svg
-			className={cn("absolute inset-0 pointer-events-none", className)}
-			viewBox="0 0 1 1"
-			preserveAspectRatio="none"
+	// viewport 内の固定レイヤーとして document.body に portal することで、
+	// Menu 等の兄弟要素とのスタッキング順に巻き込まれないようにする
+	return createPortal(
+		<div
 			aria-hidden="true"
+			className={cn("fixed pointer-events-none z-50", className)}
+			style={{
+				left: rect.left,
+				top: rect.top,
+				width: rect.width,
+				height: rect.height,
+			}}
 		>
-			{strokes.map((stroke) => (
-				<Stroke key={stroke.id} stroke={stroke} />
-			))}
-			{toolMode === "laser" && laserPos !== null ? (
-				<circle
-					cx={laserPos.x}
-					cy={laserPos.y}
-					r={0.008}
-					fill={PEN_COLOR}
-					opacity={0.8}
-					style={{ mixBlendMode: "multiply" }}
-				/>
+			{strokes.length > 0 ? (
+				<svg
+					className="absolute inset-0 h-full w-full pointer-events-none"
+					viewBox="0 0 1 1"
+					preserveAspectRatio="none"
+					aria-hidden="true"
+				>
+					<title>pen strokes</title>
+					{strokes.map((stroke) => (
+						<Stroke key={stroke.id} stroke={stroke} />
+					))}
+				</svg>
 			) : null}
-		</svg>
+			<LaserDot ref={laserRef} />
+		</div>,
+		document.body,
 	);
 }
+
+function useContainerRect(ref: RefObject<HTMLElement | null>) {
+	const [rect, setRect] = useState<DOMRect | null>(null);
+	useEffect(() => {
+		const el = ref.current;
+		if (!el) return;
+		const update = () => setRect(el.getBoundingClientRect());
+		update();
+		const observer = new ResizeObserver(update);
+		observer.observe(el);
+		window.addEventListener("resize", update);
+		window.addEventListener("scroll", update, true);
+		return () => {
+			observer.disconnect();
+			window.removeEventListener("resize", update);
+			window.removeEventListener("scroll", update, true);
+		};
+	}, [ref]);
+	return rect;
+}
+
+const LaserDot = function LaserDot({
+	ref,
+}: {
+	ref: RefObject<HTMLDivElement | null>;
+}) {
+	// 1 つのラッパー (0x0 の点) を ref で直接更新することで、halo/core の位置を一括で動かす
+	return (
+		<div
+			ref={ref}
+			className="absolute"
+			style={{ display: "none", width: 0, height: 0 }}
+		>
+			<div
+				className="absolute"
+				style={{
+					left: 0,
+					top: 0,
+					width: 32,
+					height: 32,
+					transform: "translate(-50%, -50%)",
+					borderRadius: "9999px",
+					background:
+						"radial-gradient(circle, rgba(255,120,120,0.6) 0%, rgba(239,68,68,0.45) 35%, rgba(239,68,68,0) 75%)",
+					filter: "blur(1px)",
+				}}
+			/>
+			<div
+				className="absolute"
+				style={{
+					left: 0,
+					top: 0,
+					width: 12,
+					height: 12,
+					transform: "translate(-50%, -50%)",
+					borderRadius: "9999px",
+					background:
+						"radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,240,240,1) 25%, rgba(239,68,68,1) 70%, rgba(200,30,30,1) 100%)",
+					boxShadow:
+						"0 0 4px 1px rgba(239,68,68,0.9), 0 0 10px 3px rgba(239,68,68,0.55)",
+				}}
+			/>
+		</div>
+	);
+};

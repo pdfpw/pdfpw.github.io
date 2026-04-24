@@ -2,6 +2,7 @@ import type { ClassValue } from "clsx";
 import type { PageViewport, PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";
 import {
 	type HTMLAttributes,
+	type ReactNode,
 	type RefObject,
 	Suspense,
 	use,
@@ -15,11 +16,13 @@ import { cn } from "#src/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 
 interface PdfPageProps
-	extends Omit<HTMLAttributes<HTMLDivElement>, "className"> {
+	extends Omit<HTMLAttributes<HTMLDivElement>, "className" | "children"> {
 	pdfProxy: PDFDocumentProxy;
 	pageNumber: number;
 	className?: ClassValue;
 	ref?: RefObject<HTMLDivElement | null>;
+	pdfAreaRef?: RefObject<HTMLDivElement | null>;
+	children?: ReactNode;
 }
 
 export function PdfPage({
@@ -27,6 +30,8 @@ export function PdfPage({
 	pageNumber,
 	className,
 	ref,
+	pdfAreaRef,
+	children,
 	...props
 }: PdfPageProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
@@ -47,7 +52,10 @@ export function PdfPage({
 					pdfProxy={pdfProxy}
 					pageNumber={pageNumber}
 					containerRef={ref ? ref : containerRef}
-				/>
+					pdfAreaRef={pdfAreaRef}
+				>
+					{children}
+				</PdfPageCanvas>
 			</Suspense>
 		</div>
 	);
@@ -122,10 +130,14 @@ function PdfPageCanvas({
 	pdfProxy,
 	pageNumber,
 	containerRef,
+	pdfAreaRef,
+	children,
 }: {
 	pdfProxy: PDFDocumentProxy;
 	pageNumber: number;
 	containerRef: RefObject<HTMLDivElement | null>;
+	pdfAreaRef?: RefObject<HTMLDivElement | null>;
+	children?: ReactNode;
 }) {
 	const page = use(getPage(pdfProxy, pageNumber));
 	const baseViewport = useMemo(() => page.getViewport({ scale: 1 }), [page]);
@@ -201,8 +213,6 @@ function PdfPageCanvas({
 		});
 		canvas.width = Math.floor(scaledViewport.width);
 		canvas.height = Math.floor(scaledViewport.height);
-		canvas.style.width = `${Math.floor(viewport.width)}px`;
-		canvas.style.height = `${Math.floor(viewport.height)}px`;
 
 		const renderTask = page.render({
 			canvas,
@@ -216,7 +226,23 @@ function PdfPageCanvas({
 		};
 	}, [page, viewport]);
 
-	return <canvas ref={canvasRef} className="block max-h-full max-w-full" />;
+	const wrapperStyle = viewport
+		? {
+				width: `${Math.floor(viewport.width)}px`,
+				height: `${Math.floor(viewport.height)}px`,
+			}
+		: undefined;
+
+	return (
+		<div
+			ref={pdfAreaRef}
+			className="relative max-h-full max-w-full"
+			style={wrapperStyle}
+		>
+			<canvas ref={canvasRef} className="block h-full w-full" />
+			{children}
+		</div>
+	);
 }
 function getContentBoxSize(el: HTMLElement): DOMRectReadOnly {
 	const style = window.getComputedStyle(el);
