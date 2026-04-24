@@ -80,9 +80,7 @@ export function HeroSection({
 					)}
 				</div>
 				{status && (
-					<p className="mt-6 text-[12px] text-muted" role="status">
-						{status}
-					</p>
+					<output className="mt-6 text-[12px] text-muted">{status}</output>
 				)}
 			</div>
 
