@@ -10,3 +10,6 @@ count.txt
 .wrangler
 
 .claude/
+
+# Superpowers workflow artifacts (screenshots etc.)
+docs/superpowers/screenshots/

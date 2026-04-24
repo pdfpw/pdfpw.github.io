@@ -66,14 +66,17 @@ function NextPrevFooterCore({
 	const prevPageNumber = getPrevSlidePageNumber(currentPageNumber);
 
 	return (
-		<div className="grid grid-cols-[auto_1fr_auto]" ref={ref}>
+		<div
+			className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-2"
+			ref={ref}
+		>
 			{prev === null ? (
-				<div className="h-full aspect-video"></div>
+				<div className="aspect-video h-full max-w-full justify-self-end"></div>
 			) : (
 				<PdfPage
 					pdfProxy={pdfProxy}
 					pageNumber={prev}
-					className="h-full w-auto aspect-video"
+					className="aspect-video h-full max-w-full justify-self-end"
 				/>
 			)}
 			<div className="flex flex-col items-center justify-center gap-2">
@@ -109,12 +112,12 @@ function NextPrevFooterCore({
 				/>
 			</div>
 			{next === null ? (
-				<div className="h-full aspect-video"></div>
+				<div className="aspect-video h-full max-w-full justify-self-start"></div>
 			) : (
 				<PdfPage
 					pdfProxy={pdfProxy}
 					pageNumber={next}
-					className="h-full w-auto aspect-video"
+					className="aspect-video h-full max-w-full justify-self-start"
 				/>
 			)}
 		</div>

@@ -22,38 +22,41 @@ export function ModeForm({
 	onOverviewModeOpen,
 }: ModeFormProps) {
 	return (
-		<Card className={cn("shadow-2xs py-3", className)}>
+		<Card className={cn("shadow-2xs py-3 @container", className)}>
 			<CardContent className="px-3">
 				<div className="flex gap-2">
 					<Button
 						type="button"
 						variant={isFrozen ? "default" : "outline"}
-						className="flex-1 gap-2 h-9"
+						className="flex-1 gap-2 h-9 min-w-0"
 						size={"default"}
 						onClick={() => onFrozenChange(!isFrozen)}
+						aria-label="投影固定"
 					>
-						<Snowflake className="size-4" />
-						<span>投影固定</span>
+						<Snowflake className="size-4 shrink-0" />
+						<span className="hidden @[20rem]:inline">投影固定</span>
 					</Button>
 					<Button
 						type="button"
 						variant={isBlackout ? "default" : "outline"}
-						className="flex-1 gap-2 h-9"
+						className="flex-1 gap-2 h-9 min-w-0"
 						size={"default"}
 						onClick={() => onBlackoutChange(!isBlackout)}
+						aria-label="投影停止"
 					>
-						<MonitorOff className="size-4" />
-						<span>投影停止</span>
+						<MonitorOff className="size-4 shrink-0" />
+						<span className="hidden @[20rem]:inline">投影停止</span>
 					</Button>
 					<Button
 						type="button"
 						variant="outline"
-						className="flex-1 gap-2 h-9"
+						className="flex-1 gap-2 h-9 min-w-0"
 						size={"default"}
 						onClick={onOverviewModeOpen}
+						aria-label="一覧表示"
 					>
-						<Grid className="size-4" />
-						<span>一覧表示</span>
+						<Grid className="size-4 shrink-0" />
+						<span className="hidden @[20rem]:inline">一覧表示</span>
 					</Button>
 				</div>
 			</CardContent>
