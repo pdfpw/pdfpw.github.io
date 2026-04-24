@@ -319,7 +319,7 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 
 	return (
 		<>
-			<div className="grid h-full max-h-full grid-cols-[minmax(0,1fr)_clamp(280px,28vw,420px)] grid-rows-[3fr_1fr] p-4 gap-4">
+			<div className="grid h-full max-h-full grid-cols-[minmax(0,1fr)_clamp(280px,28vw,420px)] grid-rows-[3fr_1fr] gap-3 bg-bg p-4">
 				<SlideStage
 					pdfProxy={pdfProxy}
 					pageNumber={pageNumber}
