@@ -37,16 +37,8 @@ export const addPenPoint = atom(
 	null,
 	(get, set, payload: { strokeId: string; x: number; y: number }) => {
 		const strokes = get(penStrokesAtom);
-		const existing = strokes.find((s) => s.id === payload.strokeId);
-		if (!existing) {
-			set(penStrokesAtom, [
-				...strokes,
-				{
-					id: payload.strokeId,
-					points: [{ x: payload.x, y: payload.y }],
-					ended: false,
-				},
-			]);
+		if (!strokes.some((s) => s.id === payload.strokeId)) {
+			set(addPenStroke, payload);
 			return;
 		}
 		set(
@@ -73,6 +65,7 @@ export const endPenStroke = atom(
 	},
 );
 
-export const clearPenStrokes = atom(null, (_get, set) => {
+export const clearPenStrokes = atom(null, (get, set) => {
+	if (get(penStrokesAtom).length === 0) return;
 	set(penStrokesAtom, []);
 });

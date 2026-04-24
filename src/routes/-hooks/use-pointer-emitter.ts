@@ -9,6 +9,23 @@ import {
 	toolModeAtom,
 } from "#src/lib/pointer-state.ts";
 
+function normalizedPointer(
+	event: PointerEvent,
+	el: HTMLElement,
+): { x: number; y: number } {
+	const rect = el.getBoundingClientRect();
+	return {
+		x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
+		y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)),
+	};
+}
+
+function newStrokeId(): string {
+	return typeof crypto.randomUUID === "function"
+		? crypto.randomUUID()
+		: `stroke-${Date.now()}-${Math.random()}`;
+}
+
 /**
  * 指定要素内でのマウス移動/クリックを観察し、tool-mode に応じて
  * ローカルの pointer-state を更新 + broadcast する。
@@ -31,7 +48,6 @@ export function usePointerEmitter(
 	const pendingPointRef = useRef<{ x: number; y: number } | null>(null);
 	const rafHandleRef = useRef<number | null>(null);
 
-	// useEffectEvent: 最新の toolMode/atoms/props を参照しつつ安定参照を保つ
 	const flushPendingPoint = useEffectEvent(() => {
 		rafHandleRef.current = null;
 		const p = pendingPointRef.current;
@@ -56,8 +72,10 @@ export function usePointerEmitter(
 		}
 	});
 
-	const schedule = useEffectEvent((p: { x: number; y: number }) => {
-		pendingPointRef.current = p;
+	const handleMove = useEffectEvent((event: PointerEvent) => {
+		const el = containerRef.current;
+		if (!el) return;
+		pendingPointRef.current = normalizedPointer(event, el);
 		if (rafHandleRef.current !== null) return;
 		rafHandleRef.current = requestAnimationFrame(flushPendingPoint);
 	});
@@ -70,23 +88,14 @@ export function usePointerEmitter(
 		}
 	});
 
-	const handleDown = useEffectEvent((event: PointerEvent, el: HTMLElement) => {
+	const handleDown = useEffectEvent((event: PointerEvent) => {
 		if (toolMode !== "pen") return;
 		if (event.button !== 0) return;
+		const el = containerRef.current;
+		if (!el) return;
 		event.preventDefault();
-		const rect = el.getBoundingClientRect();
-		const x = Math.max(
-			0,
-			Math.min(1, (event.clientX - rect.left) / rect.width),
-		);
-		const y = Math.max(
-			0,
-			Math.min(1, (event.clientY - rect.top) / rect.height),
-		);
-		const strokeId =
-			typeof crypto.randomUUID === "function"
-				? crypto.randomUUID()
-				: `stroke-${Date.now()}-${Math.random()}`;
+		const { x, y } = normalizedPointer(event, el);
+		const strokeId = newStrokeId();
 		strokeIdRef.current = strokeId;
 		doAddPenStroke({ strokeId, x, y });
 		sendTool(fileName, pairId, selfSide, {
@@ -116,42 +125,13 @@ export function usePointerEmitter(
 		if (toolMode === "none") return;
 
 		const abortController = new AbortController();
+		const signal = abortController.signal;
 
-		const toNormalized = (event: PointerEvent): { x: number; y: number } => {
-			const rect = el.getBoundingClientRect();
-			const x = (event.clientX - rect.left) / rect.width;
-			const y = (event.clientY - rect.top) / rect.height;
-			return {
-				x: Math.max(0, Math.min(1, x)),
-				y: Math.max(0, Math.min(1, y)),
-			};
-		};
-
-		el.addEventListener(
-			"pointermove",
-			(event: PointerEvent) => schedule(toNormalized(event)),
-			{ signal: abortController.signal },
-		);
-		el.addEventListener("pointerleave", () => handleLeave(), {
-			signal: abortController.signal,
-		});
-		el.addEventListener(
-			"pointerdown",
-			(event: PointerEvent) => handleDown(event, el),
-			{
-				signal: abortController.signal,
-			},
-		);
-		el.addEventListener("pointerup", (event: PointerEvent) => handleUp(event), {
-			signal: abortController.signal,
-		});
-		el.addEventListener(
-			"pointercancel",
-			(event: PointerEvent) => handleUp(event),
-			{
-				signal: abortController.signal,
-			},
-		);
+		el.addEventListener("pointermove", handleMove, { signal });
+		el.addEventListener("pointerleave", handleLeave, { signal });
+		el.addEventListener("pointerdown", handleDown, { signal });
+		el.addEventListener("pointerup", handleUp, { signal });
+		el.addEventListener("pointercancel", handleUp, { signal });
 
 		return () => {
 			abortController.abort();

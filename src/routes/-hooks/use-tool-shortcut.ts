@@ -38,27 +38,26 @@ export function useToolShortcut(
 			return;
 		}
 
-		switch (event.key) {
+		if (event.key === "Escape") {
+			if (toolMode !== "none") {
+				event.preventDefault();
+				changeMode("none");
+			}
+			return;
+		}
+
+		switch (event.key.toLowerCase()) {
 			case "l":
-			case "L":
 				event.preventDefault();
 				changeMode(toolMode === "laser" ? "none" : "laser");
 				break;
 			case "d":
-			case "D":
 				event.preventDefault();
 				changeMode(toolMode === "pen" ? "none" : "pen");
 				break;
 			case "e":
-			case "E":
 				event.preventDefault();
 				clearPen();
-				break;
-			case "Escape":
-				if (toolMode !== "none") {
-					event.preventDefault();
-					changeMode("none");
-				}
 				break;
 		}
 	});

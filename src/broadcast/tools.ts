@@ -17,27 +17,30 @@ import type {
 	PresenterAction,
 } from "./types";
 
-// 双方向コマンド: 両方のマップに宣言することで from 問わず送信可能に
-declare global {
-	interface PresenterCommandMap {
-		"tool-mode": { mode: "none" | "laser" | "pen" };
-		"pointer-move": { x: number; y: number };
-		"pointer-leave": EmptyObject;
-		"pen-stroke-start": { strokeId: string; x: number; y: number };
-		"pen-stroke-point": { strokeId: string; x: number; y: number };
-		"pen-stroke-end": { strokeId: string };
-		"pen-clear": EmptyObject;
-	}
-	interface PresentationCommandMap {
-		"tool-mode": { mode: "none" | "laser" | "pen" };
-		"pointer-move": { x: number; y: number };
-		"pointer-leave": EmptyObject;
-		"pen-stroke-start": { strokeId: string; x: number; y: number };
-		"pen-stroke-point": { strokeId: string; x: number; y: number };
-		"pen-stroke-end": { strokeId: string };
-		"pen-clear": EmptyObject;
-	}
+interface ToolCommandMap {
+	"tool-mode": { mode: ToolMode };
+	"pointer-move": { x: number; y: number };
+	"pointer-leave": EmptyObject;
+	"pen-stroke-start": { strokeId: string; x: number; y: number };
+	"pen-stroke-point": { strokeId: string; x: number; y: number };
+	"pen-stroke-end": { strokeId: string };
+	"pen-clear": EmptyObject;
 }
+
+declare global {
+	interface PresenterCommandMap extends ToolCommandMap {}
+	interface PresentationCommandMap extends ToolCommandMap {}
+}
+
+const TOOL_COMMAND_NAMES = new Set<string>([
+	"tool-mode",
+	"pointer-move",
+	"pointer-leave",
+	"pen-stroke-start",
+	"pen-stroke-point",
+	"pen-stroke-end",
+	"pen-clear",
+]);
 
 export type ToolSide = "presenter" | "presentation";
 
@@ -66,22 +69,13 @@ export function sendTool(
 
 export type ToolAction = Extract<
 	PresenterAction | PresentationAction,
-	{
-		command:
-			| "tool-mode"
-			| "pointer-move"
-			| "pointer-leave"
-			| "pen-stroke-start"
-			| "pen-stroke-point"
-			| "pen-stroke-end"
-			| "pen-clear";
-	}
+	{ command: keyof ToolCommandMap }
 >;
 
 /**
  * ツール系コマンドを受信して pointer-state atoms を更新する。
- * 自身が送信したメッセージは BroadcastChannel の仕様により受信されないため、
- * 送信側は別途 local atom を更新すること。
+ * BroadcastChannel の仕様により自身が送信したメッセージは届かないが、
+ * 念のため selfSide チェックで二重防御する。
  */
 export function useToolBroadcast(
 	fileName: string,
@@ -135,15 +129,7 @@ export function useToolBroadcast(
 		const listener = (event: MessageEvent) => {
 			const action = event.data as BroadcastAction;
 			if (action.from === selfSide) return;
-			if (
-				action.command === "tool-mode" ||
-				action.command === "pointer-move" ||
-				action.command === "pointer-leave" ||
-				action.command === "pen-stroke-start" ||
-				action.command === "pen-stroke-point" ||
-				action.command === "pen-stroke-end" ||
-				action.command === "pen-clear"
-			) {
+			if (TOOL_COMMAND_NAMES.has(action.command)) {
 				onAction(action as ToolAction);
 			}
 		};

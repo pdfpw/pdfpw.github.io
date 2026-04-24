@@ -1,6 +1,8 @@
 import { useAtomValue } from "jotai";
+import { memo } from "react";
 import {
 	laserPosAtom,
+	type PenStroke,
 	penStrokesAtom,
 	toolModeAtom,
 } from "#src/lib/pointer-state.ts";
@@ -12,6 +14,21 @@ interface PointerOverlayProps {
 
 const PEN_COLOR = "#ef4444";
 const PEN_WIDTH = 0.004;
+
+const Stroke = memo(function Stroke({ stroke }: { stroke: PenStroke }) {
+	if (stroke.points.length === 0) return null;
+	return (
+		<polyline
+			points={stroke.points.map((p) => `${p.x},${p.y}`).join(" ")}
+			fill="none"
+			stroke={PEN_COLOR}
+			strokeWidth={PEN_WIDTH}
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			vectorEffect="non-scaling-stroke"
+		/>
+	);
+});
 
 export function PointerOverlay({ className }: PointerOverlayProps) {
 	const toolMode = useAtomValue(toolModeAtom);
@@ -27,20 +44,9 @@ export function PointerOverlay({ className }: PointerOverlayProps) {
 			preserveAspectRatio="none"
 			aria-hidden="true"
 		>
-			{strokes.map((stroke) =>
-				stroke.points.length === 0 ? null : (
-					<polyline
-						key={stroke.id}
-						points={stroke.points.map((p) => `${p.x},${p.y}`).join(" ")}
-						fill="none"
-						stroke={PEN_COLOR}
-						strokeWidth={PEN_WIDTH}
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-				),
-			)}
+			{strokes.map((stroke) => (
+				<Stroke key={stroke.id} stroke={stroke} />
+			))}
 			{toolMode === "laser" && laserPos !== null ? (
 				<circle
 					cx={laserPos.x}
