@@ -102,9 +102,8 @@ export function PointerOverlay({
 					className="absolute inset-0 h-full w-full pointer-events-none"
 					viewBox="0 0 1 1"
 					preserveAspectRatio="none"
-					aria-hidden="true"
+					role="presentation"
 				>
-					<title>pen strokes</title>
 					{strokes.map((stroke) => (
 						<Stroke key={stroke.id} stroke={stroke} />
 					))}
@@ -136,11 +135,7 @@ function useContainerRect(ref: RefObject<HTMLElement | null>) {
 	return rect;
 }
 
-const LaserDot = function LaserDot({
-	ref,
-}: {
-	ref: RefObject<HTMLDivElement | null>;
-}) {
+function LaserDot({ ref }: { ref: RefObject<HTMLDivElement | null> }) {
 	// 1 つのラッパー (0x0 の点) を ref で直接更新することで、halo/core の位置を一括で動かす
 	return (
 		<div
@@ -179,4 +174,4 @@ const LaserDot = function LaserDot({
 			/>
 		</div>
 	);
-};
+}
