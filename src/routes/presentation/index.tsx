@@ -286,6 +286,7 @@ function PresentationView({
 	usePointerEmitter(stageRef, fileName, pairId, "presentation");
 
 	const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
+		if (e.defaultPrevented) return;
 		if (e.key === "f") {
 			if (document.fullscreenElement) {
 				document.exitFullscreen();

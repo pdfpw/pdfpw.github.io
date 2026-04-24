@@ -32,7 +32,7 @@ declare global {
 	interface PresentationCommandMap extends ToolCommandMap {}
 }
 
-const TOOL_COMMAND_NAMES = new Set<string>([
+const TOOL_COMMAND_NAMES: ReadonlySet<string> = new Set([
 	"tool-mode",
 	"pointer-move",
 	"pointer-leave",
@@ -40,7 +40,7 @@ const TOOL_COMMAND_NAMES = new Set<string>([
 	"pen-stroke-point",
 	"pen-stroke-end",
 	"pen-clear",
-]);
+] satisfies (keyof ToolCommandMap)[]);
 
 export type ToolSide = "presenter" | "presentation";
 
