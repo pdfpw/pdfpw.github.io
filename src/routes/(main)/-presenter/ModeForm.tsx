@@ -22,12 +22,13 @@ export function ModeForm({
 	onOverviewModeOpen,
 }: ModeFormProps) {
 	return (
-		<Card className={cn("shadow-2xs py-3 @container", className)}>
+		<Card className={cn("py-3 @container", className)}>
 			<CardContent className="px-3">
 				<div className="flex gap-2">
 					<Button
 						type="button"
-						variant={isFrozen ? "default" : "outline"}
+						variant={isFrozen ? "accent-ghost" : "ghost"}
+						aria-pressed={isFrozen}
 						className="flex-1 gap-2 h-9 min-w-0"
 						size={"default"}
 						onClick={() => onFrozenChange(!isFrozen)}
@@ -38,7 +39,8 @@ export function ModeForm({
 					</Button>
 					<Button
 						type="button"
-						variant={isBlackout ? "default" : "outline"}
+						variant={isBlackout ? "accent-ghost" : "ghost"}
+						aria-pressed={isBlackout}
 						className="flex-1 gap-2 h-9 min-w-0"
 						size={"default"}
 						onClick={() => onBlackoutChange(!isBlackout)}
