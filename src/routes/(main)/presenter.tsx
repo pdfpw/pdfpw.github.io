@@ -306,10 +306,12 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 	useToolShortcut(fileName, pairId, "presenter");
 	usePointerEmitter(slideStageRef, fileName, pairId, "presenter");
 
-	// ページ遷移時にペンストロークを自動クリア
+	// ページ遷移時にペンストロークを自動クリア（初回マウント時の無駄な broadcast は避ける）
 	const doClearStrokes = useSetAtom(clearPenStrokes);
-	// biome-ignore lint/correctness/useExhaustiveDependencies: pageNumber の変化をトリガーとして意図的に依存配列に含める
+	const prevPageNumberRef = useRef(pageNumber);
 	useEffect(() => {
+		if (prevPageNumberRef.current === pageNumber) return;
+		prevPageNumberRef.current = pageNumber;
 		doClearStrokes();
 		sendTool(fileName, pairId, "presenter", { command: "pen-clear" });
 	}, [pageNumber, fileName, pairId, doClearStrokes]);

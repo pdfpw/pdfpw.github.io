@@ -1,5 +1,6 @@
 import { useSetAtom } from "jotai";
 import { useEffect, useEffectEvent } from "react";
+import type { EmptyObject } from "type-fest";
 import type { ToolMode } from "#src/lib/pointer-state.ts";
 import {
 	addPenPoint,
@@ -21,20 +22,20 @@ declare global {
 	interface PresenterCommandMap {
 		"tool-mode": { mode: "none" | "laser" | "pen" };
 		"pointer-move": { x: number; y: number };
-		"pointer-leave": Record<string, never>;
+		"pointer-leave": EmptyObject;
 		"pen-stroke-start": { strokeId: string; x: number; y: number };
 		"pen-stroke-point": { strokeId: string; x: number; y: number };
 		"pen-stroke-end": { strokeId: string };
-		"pen-clear": Record<string, never>;
+		"pen-clear": EmptyObject;
 	}
 	interface PresentationCommandMap {
 		"tool-mode": { mode: "none" | "laser" | "pen" };
 		"pointer-move": { x: number; y: number };
-		"pointer-leave": Record<string, never>;
+		"pointer-leave": EmptyObject;
 		"pen-stroke-start": { strokeId: string; x: number; y: number };
 		"pen-stroke-point": { strokeId: string; x: number; y: number };
 		"pen-stroke-end": { strokeId: string };
-		"pen-clear": Record<string, never>;
+		"pen-clear": EmptyObject;
 	}
 }
 
@@ -56,9 +57,11 @@ export function sendTool(
 	cmd: ToolCommand,
 ): void {
 	const channel = getBroadcastChannel(fileName, pairId);
-	// postMessage は any を受け付けるため厳密な satisfies は不要。
-	// 型安全性は呼び出し側の引数型 (ToolCommand, ToolSide) で担保される
-	channel.postMessage({ from, ...cmd });
+	if (from === "presenter") {
+		channel.postMessage({ from, ...cmd } satisfies PresenterAction);
+	} else {
+		channel.postMessage({ from, ...cmd } satisfies PresentationAction);
+	}
 }
 
 export type ToolAction = Extract<
