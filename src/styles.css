@@ -211,6 +211,5 @@ code {
   :focus-visible {
     outline: none;
     box-shadow: var(--shadow-focus);
-    border-radius: inherit;
   }
 }
