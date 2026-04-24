@@ -264,6 +264,27 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 		[slideStageRef, nextSlideRef, nextPrevRef],
 	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: nextSlide 等は毎レンダーで作り直される
+	const handleNavigate = useCallback(
+		(direction: "next" | "prev" | "home" | "end") => {
+			switch (direction) {
+				case "next":
+					nextSlide();
+					break;
+				case "prev":
+					prevSlide();
+					break;
+				case "home":
+					jumpToFirstSlide();
+					break;
+				case "end":
+					jumpToLastSlide();
+					break;
+			}
+		},
+		[pageNumber, pdfpcConfig.totalOverlays],
+	);
+
 	usePresenterBroadcast(
 		fileName,
 		pairId,
@@ -271,6 +292,7 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 		pdf,
 		isBlackout,
 		pageNumber,
+		handleNavigate,
 	);
 
 	return (
