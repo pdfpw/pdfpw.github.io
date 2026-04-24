@@ -13,3 +13,4 @@ count.txt
 
 # Superpowers workflow artifacts (screenshots etc.)
 docs/superpowers/screenshots/
+.superpowers/
