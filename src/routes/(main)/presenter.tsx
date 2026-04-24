@@ -125,6 +125,7 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 	const [isOverviewMode, setIsOverviewMode] = useState(false);
 
 	const slideStageRef = useRef<HTMLElement | null>(null);
+	const pdfAreaRef = useRef<HTMLDivElement | null>(null);
 	const nextSlideRef = useRef<HTMLDivElement | null>(null);
 	const nextPrevRef = useRef<HTMLDivElement | null>(null);
 	const timerRef = useRef<TimerHandle | null>(null);
@@ -304,7 +305,7 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 
 	useToolBroadcast(fileName, pairId, "presenter");
 	useToolShortcut(fileName, pairId, "presenter");
-	usePointerEmitter(slideStageRef, fileName, pairId, "presenter");
+	usePointerEmitter(pdfAreaRef, fileName, pairId, "presenter");
 
 	// ページ遷移時にペンストロークを自動クリア（初回マウント時の無駄な broadcast は避ける）
 	const doClearStrokes = useSetAtom(clearPenStrokes);
@@ -324,9 +325,9 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 					pageNumber={pageNumber}
 					className="aspect-video h-full max-w-full place-self-center"
 					ref={slideStageRef}
-				>
-					<PointerOverlay />
-				</SlideStage>
+					pdfAreaRef={pdfAreaRef}
+				/>
+				<PointerOverlay containerRef={pdfAreaRef} />
 				<div className="row-span-2 flex flex-col gap-4">
 					<NextSlide
 						currentSlidePage={pageNumber}

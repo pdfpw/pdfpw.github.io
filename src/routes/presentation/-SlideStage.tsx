@@ -1,6 +1,6 @@
 import type { ClassValue } from "clsx";
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import type { ReactNode, RefObject } from "react";
+import type { RefObject } from "react";
 import { PdfPage } from "#src/components/PdfPage.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
 import { cn } from "#src/lib/utils.ts";
@@ -12,7 +12,7 @@ interface SlideStageProps {
 	isBlackout: boolean;
 	className?: ClassValue;
 	stageRef?: RefObject<HTMLDivElement | null>;
-	children?: ReactNode;
+	pdfAreaRef?: RefObject<HTMLDivElement | null>;
 }
 
 function preloadSlide(
@@ -35,26 +35,28 @@ export function SlideStage({
 	isBlackout,
 	className,
 	stageRef,
-	children,
+	pdfAreaRef,
 }: SlideStageProps) {
 	const preloadPages = preloadSlide(pdfpcConfig, currentPageNumber);
 	return (
 		<div className={cn("relative", className)} ref={stageRef}>
-			{preloadPages.map((pageNumber) => (
-				<PdfPage
-					key={pageNumber}
-					pdfProxy={pdfProxy}
-					pageNumber={pageNumber}
-					className={[
-						"absolute inset-0",
-						{
-							"opacity-0 pointer-events-none":
-								pageNumber !== currentPageNumber || isBlackout,
-						},
-					]}
-				/>
-			))}
-			{children}
+			{preloadPages.map((pageNumber) => {
+				const isCurrent = pageNumber === currentPageNumber;
+				return (
+					<PdfPage
+						key={pageNumber}
+						pdfProxy={pdfProxy}
+						pageNumber={pageNumber}
+						className={[
+							"absolute inset-0",
+							{
+								"opacity-0 pointer-events-none": !isCurrent || isBlackout,
+							},
+						]}
+						pdfAreaRef={isCurrent ? pdfAreaRef : undefined}
+					/>
+				);
+			})}
 		</div>
 	);
 }

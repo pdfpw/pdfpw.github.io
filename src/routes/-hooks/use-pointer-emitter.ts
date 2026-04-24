@@ -9,15 +9,20 @@ import {
 	toolModeAtom,
 } from "#src/lib/pointer-state.ts";
 
+interface Point {
+	x: number;
+	y: number;
+}
+
 function normalizedPointer(
-	event: PointerEvent,
-	el: HTMLElement,
-): { x: number; y: number } | null {
-	const rect = el.getBoundingClientRect();
+	clientX: number,
+	clientY: number,
+	rect: DOMRect,
+): Point | null {
 	if (rect.width === 0 || rect.height === 0) return null;
 	return {
-		x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
-		y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)),
+		x: Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)),
+		y: Math.max(0, Math.min(1, (clientY - rect.top) / rect.height)),
 	};
 }
 
@@ -40,16 +45,17 @@ export function usePointerEmitter(
 	const doEndPenStroke = useSetAtom(endPenStroke);
 
 	const strokeIdRef = useRef<string | null>(null);
-	const pendingPointRef = useRef<{ x: number; y: number } | null>(null);
+	const pendingLaserRef = useRef<Point | null>(null);
+	const pendingPenPointsRef = useRef<Point[]>([]);
 	const rafHandleRef = useRef<number | null>(null);
 
-	const flushPendingPoint = useEffectEvent(() => {
+	const flushPending = useEffectEvent(() => {
 		rafHandleRef.current = null;
-		const p = pendingPointRef.current;
-		if (!p) return;
-		pendingPointRef.current = null;
 
 		if (toolMode === "laser") {
+			const p = pendingLaserRef.current;
+			if (!p) return;
+			pendingLaserRef.current = null;
 			setLaserPos(p);
 			sendTool(fileName, pairId, selfSide, {
 				command: "pointer-move",
@@ -57,30 +63,51 @@ export function usePointerEmitter(
 				y: p.y,
 			});
 		} else if (toolMode === "pen" && strokeIdRef.current) {
-			doAddPenPoint({ strokeId: strokeIdRef.current, x: p.x, y: p.y });
-			sendTool(fileName, pairId, selfSide, {
-				command: "pen-stroke-point",
-				strokeId: strokeIdRef.current,
-				x: p.x,
-				y: p.y,
-			});
+			const pts = pendingPenPointsRef.current;
+			if (pts.length === 0) return;
+			pendingPenPointsRef.current = [];
+			const strokeId = strokeIdRef.current;
+			for (const p of pts) {
+				doAddPenPoint({ strokeId, x: p.x, y: p.y });
+				sendTool(fileName, pairId, selfSide, {
+					command: "pen-stroke-point",
+					strokeId,
+					x: p.x,
+					y: p.y,
+				});
+			}
 		}
 	});
 
 	const handleMove = useEffectEvent((event: PointerEvent) => {
-		// ペンモード中、未 down の間は rAF スケジュールしない
+		// ペンモード中、未 down の間は何もしない
 		if (toolMode === "pen" && !strokeIdRef.current) return;
 		const el = containerRef.current;
 		if (!el) return;
-		const point = normalizedPointer(event, el);
-		if (!point) return;
-		pendingPointRef.current = point;
+		const rect = el.getBoundingClientRect();
+
+		// サブフレームのイベントまで拾ってペンストロークを滑らかに/レーザーは最新位置を採用
+		const coalesced = event.getCoalescedEvents?.() ?? [];
+		const samples = coalesced.length > 0 ? coalesced : [event];
+
+		if (toolMode === "laser") {
+			const latest = samples[samples.length - 1];
+			const p = normalizedPointer(latest.clientX, latest.clientY, rect);
+			if (p) pendingLaserRef.current = p;
+		} else if (toolMode === "pen") {
+			for (const e of samples) {
+				const p = normalizedPointer(e.clientX, e.clientY, rect);
+				if (p) pendingPenPointsRef.current.push(p);
+			}
+		}
+
 		if (rafHandleRef.current !== null) return;
-		rafHandleRef.current = requestAnimationFrame(flushPendingPoint);
+		rafHandleRef.current = requestAnimationFrame(flushPending);
 	});
 
 	const handleLeave = useEffectEvent(() => {
-		pendingPointRef.current = null;
+		pendingLaserRef.current = null;
+		pendingPenPointsRef.current = [];
 		if (toolMode === "laser") {
 			setLaserPos(null);
 			sendTool(fileName, pairId, selfSide, { command: "pointer-leave" });
@@ -92,7 +119,8 @@ export function usePointerEmitter(
 		if (event.button !== 0) return;
 		const el = containerRef.current;
 		if (!el) return;
-		const point = normalizedPointer(event, el);
+		const rect = el.getBoundingClientRect();
+		const point = normalizedPointer(event.clientX, event.clientY, rect);
 		if (!point) return;
 		event.preventDefault();
 		const strokeId = crypto.randomUUID();

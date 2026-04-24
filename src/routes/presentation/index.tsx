@@ -280,10 +280,11 @@ function PresentationView({
 	usePresentationShortcut(fileName, pairId);
 
 	const stageRef = useRef<HTMLDivElement | null>(null);
+	const pdfAreaRef = useRef<HTMLDivElement | null>(null);
 
 	useToolBroadcast(fileName, pairId, "presentation");
 	useToolShortcut(fileName, pairId, "presentation");
-	usePointerEmitter(stageRef, fileName, pairId, "presentation");
+	usePointerEmitter(pdfAreaRef, fileName, pairId, "presentation");
 
 	const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
 		if (e.defaultPrevented) return;
@@ -315,14 +316,14 @@ function PresentationView({
 				currentPageNumber={currentPageNumber}
 				isBlackout={currentIsBlackout}
 				stageRef={stageRef}
-			>
-				<PointerOverlay />
-			</SlideStage>
+				pdfAreaRef={pdfAreaRef}
+			/>
+			<PointerOverlay containerRef={pdfAreaRef} />
 			<div
 				className={cn([
-					"absolute bottom-24 w-full flex justify-center",
+					"absolute bottom-24 w-full flex justify-center pointer-events-none",
 					{
-						"opacity-0 pointer-events-none": currentIsBlackout,
+						"opacity-0": currentIsBlackout,
 					},
 				])}
 			>

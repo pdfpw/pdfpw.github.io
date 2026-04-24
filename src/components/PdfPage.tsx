@@ -20,6 +20,7 @@ interface PdfPageProps
 	pageNumber: number;
 	className?: ClassValue;
 	ref?: RefObject<HTMLDivElement | null>;
+	pdfAreaRef?: RefObject<HTMLDivElement | null>;
 }
 
 export function PdfPage({
@@ -27,6 +28,7 @@ export function PdfPage({
 	pageNumber,
 	className,
 	ref,
+	pdfAreaRef,
 	...props
 }: PdfPageProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
@@ -47,6 +49,7 @@ export function PdfPage({
 					pdfProxy={pdfProxy}
 					pageNumber={pageNumber}
 					containerRef={ref ? ref : containerRef}
+					pdfAreaRef={pdfAreaRef}
 				/>
 			</Suspense>
 		</div>
@@ -122,10 +125,12 @@ function PdfPageCanvas({
 	pdfProxy,
 	pageNumber,
 	containerRef,
+	pdfAreaRef,
 }: {
 	pdfProxy: PDFDocumentProxy;
 	pageNumber: number;
 	containerRef: RefObject<HTMLDivElement | null>;
+	pdfAreaRef?: RefObject<HTMLDivElement | null>;
 }) {
 	const page = use(getPage(pdfProxy, pageNumber));
 	const baseViewport = useMemo(() => page.getViewport({ scale: 1 }), [page]);
@@ -201,8 +206,6 @@ function PdfPageCanvas({
 		});
 		canvas.width = Math.floor(scaledViewport.width);
 		canvas.height = Math.floor(scaledViewport.height);
-		canvas.style.width = `${Math.floor(viewport.width)}px`;
-		canvas.style.height = `${Math.floor(viewport.height)}px`;
 
 		const renderTask = page.render({
 			canvas,
@@ -216,7 +219,22 @@ function PdfPageCanvas({
 		};
 	}, [page, viewport]);
 
-	return <canvas ref={canvasRef} className="block max-h-full max-w-full" />;
+	const wrapperStyle = viewport
+		? {
+				width: `${Math.floor(viewport.width)}px`,
+				height: `${Math.floor(viewport.height)}px`,
+			}
+		: undefined;
+
+	return (
+		<div
+			ref={pdfAreaRef}
+			className="relative max-h-full max-w-full"
+			style={wrapperStyle}
+		>
+			<canvas ref={canvasRef} className="block h-full w-full" />
+		</div>
+	);
 }
 function getContentBoxSize(el: HTMLElement): DOMRectReadOnly {
 	const style = window.getComputedStyle(el);
