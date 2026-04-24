@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import { GlobalWorkerOptions } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
 	Suspense,
 	startTransition,
 	useCallback,
+	useEffect,
 	useRef,
 	useState,
 } from "react";
@@ -14,9 +15,12 @@ import {
 	type BroadcastAction,
 	ensurePresenterPairId,
 	getBroadcastChannel,
+	sendTool,
 	usePresenterBroadcast,
+	useToolBroadcast,
 } from "#src/broadcast";
 import { OverviewDialog } from "#src/components/OverviewDialog";
+import { PointerOverlay } from "#src/components/PointerOverlay.tsx";
 import { Button } from "#src/components/ui/button";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
 import {
@@ -24,7 +28,10 @@ import {
 	getNextUserSlidePageNumber,
 	getPrevUserSlidePageNumber,
 } from "#src/lib/navigation-utils.ts";
+import { clearPenStrokes } from "#src/lib/pointer-state.ts";
+import { usePointerEmitter } from "../-hooks/use-pointer-emitter";
 import { useSlideShortcut } from "../-hooks/use-slide-shortcut";
+import { useToolShortcut } from "../-hooks/use-tool-shortcut";
 import { ModeForm } from "./-presenter/ModeForm";
 import { NextPrevFooter } from "./-presenter/NextPrevFooter";
 import { NextSlide } from "./-presenter/NextSlide";
@@ -295,6 +302,18 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 		handleNavigate,
 	);
 
+	useToolBroadcast(fileName, pairId, "presenter");
+	useToolShortcut(fileName, pairId, "presenter");
+	usePointerEmitter(slideStageRef, fileName, pairId, "presenter");
+
+	// ページ遷移時にペンストロークを自動クリア
+	const doClearStrokes = useSetAtom(clearPenStrokes);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: pageNumber の変化をトリガーとして意図的に依存配列に含める
+	useEffect(() => {
+		doClearStrokes();
+		sendTool(fileName, pairId, "presenter", { command: "pen-clear" });
+	}, [pageNumber, fileName, pairId, doClearStrokes]);
+
 	return (
 		<>
 			<div className="grid h-full max-h-full grid-cols-[minmax(0,1fr)_clamp(280px,28vw,420px)] grid-rows-[3fr_1fr] p-4 gap-4">
@@ -303,7 +322,9 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 					pageNumber={pageNumber}
 					className="aspect-video h-full max-w-full place-self-center"
 					ref={slideStageRef}
-				/>
+				>
+					<PointerOverlay />
+				</SlideStage>
 				<div className="row-span-2 flex flex-col gap-4">
 					<NextSlide
 						currentSlidePage={pageNumber}
