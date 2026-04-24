@@ -3,6 +3,7 @@ import { useEffect, useEffectEvent } from "react";
 import { sendTool, type ToolSide } from "#src/broadcast";
 import {
 	clearPenStrokes,
+	laserPosAtom,
 	type ToolMode,
 	toolModeAtom,
 } from "#src/lib/pointer-state.ts";
@@ -14,8 +15,11 @@ export function useToolShortcut(
 ): void {
 	const [toolMode, setToolMode] = useAtom(toolModeAtom);
 	const doClearStrokes = useSetAtom(clearPenStrokes);
+	const setLaserPos = useSetAtom(laserPosAtom);
 
 	const changeMode = useEffectEvent((next: ToolMode) => {
+		// 前モードの残像を避けるため、切替時にレーザー位置をリセット
+		setLaserPos(null);
 		setToolMode(next);
 		sendTool(fileName, pairId, selfSide, { command: "tool-mode", mode: next });
 	});

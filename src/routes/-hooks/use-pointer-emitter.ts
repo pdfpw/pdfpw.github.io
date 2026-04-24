@@ -12,18 +12,13 @@ import {
 function normalizedPointer(
 	event: PointerEvent,
 	el: HTMLElement,
-): { x: number; y: number } {
+): { x: number; y: number } | null {
 	const rect = el.getBoundingClientRect();
+	if (rect.width === 0 || rect.height === 0) return null;
 	return {
 		x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
 		y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)),
 	};
-}
-
-function newStrokeId(): string {
-	return typeof crypto.randomUUID === "function"
-		? crypto.randomUUID()
-		: `stroke-${Date.now()}-${Math.random()}`;
 }
 
 /**
@@ -73,9 +68,13 @@ export function usePointerEmitter(
 	});
 
 	const handleMove = useEffectEvent((event: PointerEvent) => {
+		// ペンモード中、未 down の間は rAF スケジュールしない
+		if (toolMode === "pen" && !strokeIdRef.current) return;
 		const el = containerRef.current;
 		if (!el) return;
-		pendingPointRef.current = normalizedPointer(event, el);
+		const point = normalizedPointer(event, el);
+		if (!point) return;
+		pendingPointRef.current = point;
 		if (rafHandleRef.current !== null) return;
 		rafHandleRef.current = requestAnimationFrame(flushPendingPoint);
 	});
@@ -93,16 +92,17 @@ export function usePointerEmitter(
 		if (event.button !== 0) return;
 		const el = containerRef.current;
 		if (!el) return;
+		const point = normalizedPointer(event, el);
+		if (!point) return;
 		event.preventDefault();
-		const { x, y } = normalizedPointer(event, el);
-		const strokeId = newStrokeId();
+		const strokeId = crypto.randomUUID();
 		strokeIdRef.current = strokeId;
-		doAddPenStroke({ strokeId, x, y });
+		doAddPenStroke({ strokeId, x: point.x, y: point.y });
 		sendTool(fileName, pairId, selfSide, {
 			command: "pen-stroke-start",
 			strokeId,
-			x,
-			y,
+			x: point.x,
+			y: point.y,
 		});
 		(event.target as Element).setPointerCapture?.(event.pointerId);
 	});

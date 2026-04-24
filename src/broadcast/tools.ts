@@ -92,6 +92,8 @@ export function useToolBroadcast(
 	const onAction = useEffectEvent((action: ToolAction) => {
 		switch (action.command) {
 			case "tool-mode":
+				// 前モードのレーザー残像を避けるため、切替時は位置をリセット
+				setLaserPos(null);
 				setToolMode(action.mode);
 				break;
 			case "pointer-move":

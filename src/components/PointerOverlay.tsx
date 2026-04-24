@@ -13,7 +13,8 @@ interface PointerOverlayProps {
 }
 
 const PEN_COLOR = "#ef4444";
-const PEN_WIDTH = 0.004;
+// vectorEffect="non-scaling-stroke" は strokeWidth を CSS pixel で解釈するため px 値で指定する
+const PEN_WIDTH_PX = 3;
 
 const Stroke = memo(function Stroke({ stroke }: { stroke: PenStroke }) {
 	if (stroke.points.length === 0) return null;
@@ -22,7 +23,7 @@ const Stroke = memo(function Stroke({ stroke }: { stroke: PenStroke }) {
 			points={stroke.points.map((p) => `${p.x},${p.y}`).join(" ")}
 			fill="none"
 			stroke={PEN_COLOR}
-			strokeWidth={PEN_WIDTH}
+			strokeWidth={PEN_WIDTH_PX}
 			strokeLinecap="round"
 			strokeLinejoin="round"
 			vectorEffect="non-scaling-stroke"
