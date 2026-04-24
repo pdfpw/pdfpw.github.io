@@ -93,7 +93,7 @@ export function Menu({ pdfpcConfig, currentPageNumber, className }: MenuProps) {
 	return (
 		<div
 			className={cn(
-				"bg-black/50 flex gap-4 py-2 pr-4 pl-6 rounded-xl text-white drop-shadow items-center justify-center",
+				"flex items-center gap-3 rounded-[10px] border border-border bg-overlay/90 px-3 py-2 text-fg shadow-[var(--shadow-lg)] backdrop-blur-md",
 				"transition-opacity duration-200",
 				visible
 					? "opacity-100 pointer-events-auto"
@@ -103,17 +103,18 @@ export function Menu({ pdfpcConfig, currentPageNumber, className }: MenuProps) {
 			onPointerEnter={() => setVisible(true)}
 			onPointerLeave={() => scheduleHide()}
 		>
-			<span>
+			<span className="font-mono text-[11px] text-fg tabular-nums">
 				{currentSlidePage} / {pdfpcConfig.pages.length}
 			</span>
 			<Button
-				variant={"ghost"}
+				variant="ghost"
 				type="button"
-				size="icon"
+				size="icon-sm"
 				onClick={() => {
 					if (document.fullscreenElement) document.exitFullscreen();
 					else document.documentElement.requestFullscreen();
 				}}
+				aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
 			>
 				{isFullscreen ? <MinimizeIcon /> : <MaximizeIcon />}
 			</Button>
