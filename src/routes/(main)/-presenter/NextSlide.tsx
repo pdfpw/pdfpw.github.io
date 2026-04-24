@@ -45,10 +45,7 @@ function NextSlideCore({
 	const nextPageNumber = getNextSlidePageNumber(currentSlidePage, pdfpcConfig);
 
 	return (
-		<div
-			ref={ref}
-			className="rounded-lg border border-border bg-raised p-2.5"
-		>
+		<div ref={ref} className="rounded-lg border border-border bg-raised p-2.5">
 			<div className="mb-1.5 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.12em] text-muted">
 				<span>Next</span>
 				{nextPageNumber !== null && (
