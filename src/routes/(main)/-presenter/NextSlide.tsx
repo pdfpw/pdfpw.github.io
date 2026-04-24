@@ -15,7 +15,7 @@ export function NextSlide(props: NextSlideProps) {
 	return (
 		<Suspense
 			fallback={
-				<Skeleton className="h-auto aspect-video max-h-80 w-full"></Skeleton>
+				<Skeleton className="h-auto aspect-video max-h-80 w-full rounded-lg" />
 			}
 		>
 			<NextSlideCore {...props} />
@@ -44,17 +44,28 @@ function NextSlideCore({
 }: NextSlideProps) {
 	const nextPageNumber = getNextSlidePageNumber(currentSlidePage, pdfpcConfig);
 
-	return nextPageNumber === null ? (
+	return (
 		<div
-			className="h-auto aspect-video max-h-80 w-full min-h-0"
 			ref={ref}
-		></div>
-	) : (
-		<PdfPage
-			pdfProxy={pdfProxy}
-			pageNumber={nextPageNumber}
-			className="h-auto aspect-video max-h-80"
-			ref={ref}
-		/>
+			className="rounded-lg border border-border bg-raised p-2.5"
+		>
+			<div className="mb-1.5 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.12em] text-muted">
+				<span>Next</span>
+				{nextPageNumber !== null && (
+					<span>
+						{nextPageNumber} / {pdfProxy.numPages}
+					</span>
+				)}
+			</div>
+			{nextPageNumber === null ? (
+				<div className="aspect-video w-full max-h-80 rounded-md bg-surface" />
+			) : (
+				<PdfPage
+					pdfProxy={pdfProxy}
+					pageNumber={nextPageNumber}
+					className="aspect-video w-full max-h-80 rounded-md overflow-hidden"
+				/>
+			)}
+		</div>
 	);
 }

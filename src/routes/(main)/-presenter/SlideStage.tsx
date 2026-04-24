@@ -18,13 +18,22 @@ export const SlideStage = function SlideStage({
 	pdfAreaRef?: RefObject<HTMLDivElement | null>;
 }) {
 	return (
-		<section className={cn("relative", className)} ref={ref}>
+		<section
+			className={cn(
+				"relative overflow-hidden rounded-lg border border-border bg-raised",
+				className,
+			)}
+			ref={ref}
+		>
 			<PdfPage
 				pdfProxy={pdfProxy}
 				pageNumber={pageNumber}
 				className="absolute inset-0"
 				pdfAreaRef={pdfAreaRef}
 			/>
+			<span className="pointer-events-none absolute bottom-2.5 left-3 font-mono text-[10px] uppercase tracking-[0.12em] text-muted">
+				SLIDE {pageNumber} / {pdfProxy.numPages}
+			</span>
 		</section>
 	);
 };
