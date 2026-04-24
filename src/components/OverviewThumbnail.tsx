@@ -23,14 +23,14 @@ export const OverviewThumbnail = memo(function OverviewThumbnail({
 			type="button"
 			onClick={onSelect}
 			className={cn(
-				"relative flex flex-col items-center gap-2 p-2 rounded-lg border-2 transition-all duration-200",
-				"hover:scale-105 hover:shadow-lg",
+				"relative flex flex-col items-center gap-2 p-2 rounded-lg border transition-all duration-200",
+				"hover:border-border-strong hover:-translate-y-px",
 				isSelected
-					? "border-primary bg-primary/10 shadow-md"
-					: "border-border bg-card hover:border-primary/50",
+					? "border-accent bg-accent-soft shadow-sm"
+					: "border-border bg-raised hover:border-border-strong",
 			)}
 		>
-			<div className="relative aspect-video w-40 overflow-hidden rounded bg-background">
+			<div className="relative aspect-video w-40 overflow-hidden rounded-md bg-surface">
 				<PdfPage
 					pdfProxy={pdfProxy}
 					pageNumber={pageNumber}
@@ -38,7 +38,7 @@ export const OverviewThumbnail = memo(function OverviewThumbnail({
 				/>
 			</div>
 			{(label || pageNumber) && (
-				<span className="text-xs font-medium text-foreground">
+				<span className="font-mono text-[10px] text-muted tabular-nums">
 					{label || `${pageNumber}`}
 				</span>
 			)}

@@ -54,25 +54,25 @@ export function OverviewDialog({
 			<DialogPrimitive.Portal>
 				<DialogPrimitive.Overlay
 					className={cn(
-						"fixed inset-0 z-50 bg-black/80 backdrop-blur-sm",
+						"fixed inset-0 z-50 bg-black/70 backdrop-blur-md",
 						"data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
 					)}
 				/>
 				<DialogPrimitive.Content
 					className={cn(
-						"fixed left-[50%] top-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:max-w-5xl sm:max-h-[80vh]",
+						"fixed left-[50%] top-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-overlay text-fg p-6 shadow-[var(--shadow-lg)] duration-200 sm:max-w-5xl sm:max-h-[80vh]",
 						"data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
 						"rounded-xl",
 					)}
 				>
-					<div className="flex items-center justify-between border-b pb-4 mb-4">
-						<DialogPrimitive.Title className="text-lg font-semibold">
-							スライド一覧 ({pdfpcConfig.totalOverlays} 枚)
+					<div className="flex items-center justify-between border-b border-border pb-4 mb-4">
+						<DialogPrimitive.Title className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
+							OVERVIEW · {pdfpcConfig.totalOverlays} slides
 						</DialogPrimitive.Title>
 						<DialogPrimitive.Close
 							className={cn(
-								"rounded-md opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none",
-								"absolute right-4 top-4",
+								"rounded-md text-muted transition-colors hover:bg-surface hover:text-fg focus:outline-none focus:shadow-[var(--shadow-focus)] disabled:pointer-events-none",
+								"absolute right-4 top-4 p-1",
 							)}
 						>
 							<svg
@@ -86,7 +86,7 @@ export function OverviewDialog({
 								strokeLinecap="round"
 								strokeLinejoin="round"
 							>
-								<title>閉じる</title>
+								<title>Close</title>
 								<path d="M18 6 6 18" />
 								<path d="M6 6l12 12" />
 							</svg>
@@ -98,7 +98,7 @@ export function OverviewDialog({
 						ref={containerRef}
 						className="overflow-y-auto max-h-[calc(80vh-140px)]"
 					>
-						<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+						<div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 							{allSlides.map((slide) => (
 								<OverviewThumbnail
 									key={slide.pageNumber}
@@ -112,8 +112,8 @@ export function OverviewDialog({
 						</div>
 					</div>
 
-					<div className="border-t pt-4 mt-4 text-sm text-muted-foreground">
-						Tabキー: 表示/非表示 | Escキー: 閉じる | クリック: スライドを選択
+					<div className="border-t border-border pt-4 mt-4 font-mono text-[11px] text-muted">
+						Tab: toggle · Esc: close · Click: select
 					</div>
 				</DialogPrimitive.Content>
 			</DialogPrimitive.Portal>
