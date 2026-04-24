@@ -24,6 +24,7 @@ import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
 import { getRecentFileById, openDb } from "#src/lib/recent-store.ts";
 import { createUseMemoried } from "#src/lib/use-memoried.ts";
 import { cn } from "#src/lib/utils.ts";
+import { usePresentationShortcut } from "./-hooks/use-presentation-shortcut";
 import { Menu } from "./-Menu";
 import { SlideStage } from "./-SlideStage";
 
@@ -210,7 +211,14 @@ function PresentationBroadcastData({
 		);
 	}
 
-	return <PresentationView {...initData} localPdf={pdf} />;
+	return (
+		<PresentationView
+			{...initData}
+			localPdf={pdf}
+			fileName={fileName}
+			pairId={pairId}
+		/>
+	);
 }
 
 const getPdfBuffer = createUseMemoried(
@@ -229,12 +237,16 @@ function PresentationView({
 	pageNumber,
 	isBlackout,
 	localPdf,
+	fileName,
+	pairId,
 }: {
 	pdfpcConfig: ResolvedPdfpcConfigV2;
 	pdfData: ArrayBuffer;
 	pageNumber: number;
 	isBlackout: boolean;
 	localPdf?: File | FileSystemFileHandle;
+	fileName: string;
+	pairId: string;
 }) {
 	const pdfBuffer = use(
 		localPdf ? getPdfBuffer(localPdf) : Promise.resolve(pdfData),
@@ -259,6 +271,8 @@ function PresentationView({
 		pdfProxy: !!pdfProxy,
 		pdfpcPages: pdfpcConfig.pages.length,
 	});
+
+	usePresentationShortcut(fileName, pairId);
 
 	const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
 		if (e.key === "f") {
