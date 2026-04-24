@@ -67,8 +67,8 @@ function MissingFileScreen({ title }: { title: string }) {
 
 function LoadingSkeleton() {
 	return (
-		<div className="grid h-full max-h-full grid-cols-[auto_1fr] grid-rows-[3fr_1fr] p-4 gap-4">
-			<Skeleton className="aspect-video min-h-[calc((100vh-60px)/4*3)]"></Skeleton>
+		<div className="grid h-full max-h-full grid-cols-[minmax(0,1fr)_clamp(280px,28vw,420px)] grid-rows-[3fr_1fr] p-4 gap-4">
+			<Skeleton className="aspect-video h-full max-w-full place-self-center"></Skeleton>
 			<div className="row-span-2 flex flex-col gap-4">
 				<Skeleton className="h-auto aspect-video max-h-80 w-full"></Skeleton>
 				<Skeleton className="flex-1"></Skeleton>
@@ -275,11 +275,11 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 
 	return (
 		<>
-			<div className="grid h-full max-h-full grid-cols-[auto_1fr] grid-rows-[3fr_1fr] p-4 gap-4">
+			<div className="grid h-full max-h-full grid-cols-[minmax(0,1fr)_clamp(280px,28vw,420px)] grid-rows-[3fr_1fr] p-4 gap-4">
 				<SlideStage
 					pdfProxy={pdfProxy}
 					pageNumber={pageNumber}
-					className="aspect-video h-full"
+					className="aspect-video h-full max-w-full place-self-center"
 					ref={slideStageRef}
 				/>
 				<div className="row-span-2 flex flex-col gap-4">
