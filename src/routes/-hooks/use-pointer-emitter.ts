@@ -107,6 +107,7 @@ export function usePointerEmitter(
 
 	const handleLeave = useEffectEvent(() => {
 		pendingLaserRef.current = null;
+		pendingPenPointsRef.current = [];
 		if (toolMode === "laser") {
 			setLaserPos(null);
 			sendTool(fileName, pairId, selfSide, { command: "pointer-leave" });

@@ -55,7 +55,10 @@ export function PointerOverlay({
 		}
 	}, [toolMode, containerRef]);
 
-	// laser 位置は React 再レンダーをバイパスして直接 DOM を更新する (追従性向上)
+	// laser 位置は React 再レンダーをバイパスして直接 DOM を更新する (追従性向上)。
+	// 操作側 (usePointerEmitter の setLaserPos) と同期受信側 (useToolBroadcast の
+	// setLaserPos) 双方が同じ atom を更新するため、この store.sub 経由の DOM 更新に
+	// 一本化することで、ローカル操作とブロードキャスト受信の両方が同経路で流れる。
 	useEffect(() => {
 		const applyPos = () => {
 			const el = laserRef.current;

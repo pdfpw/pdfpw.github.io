@@ -2,7 +2,6 @@ import type { ClassValue } from "clsx";
 import type { PageViewport, PDFDocumentProxy, PDFPageProxy } from "pdfjs-dist";
 import {
 	type HTMLAttributes,
-	type ReactNode,
 	type RefObject,
 	Suspense,
 	use,
@@ -16,13 +15,12 @@ import { cn } from "#src/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 
 interface PdfPageProps
-	extends Omit<HTMLAttributes<HTMLDivElement>, "className" | "children"> {
+	extends Omit<HTMLAttributes<HTMLDivElement>, "className"> {
 	pdfProxy: PDFDocumentProxy;
 	pageNumber: number;
 	className?: ClassValue;
 	ref?: RefObject<HTMLDivElement | null>;
 	pdfAreaRef?: RefObject<HTMLDivElement | null>;
-	children?: ReactNode;
 }
 
 export function PdfPage({
@@ -31,7 +29,6 @@ export function PdfPage({
 	className,
 	ref,
 	pdfAreaRef,
-	children,
 	...props
 }: PdfPageProps) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
@@ -53,9 +50,7 @@ export function PdfPage({
 					pageNumber={pageNumber}
 					containerRef={ref ? ref : containerRef}
 					pdfAreaRef={pdfAreaRef}
-				>
-					{children}
-				</PdfPageCanvas>
+				/>
 			</Suspense>
 		</div>
 	);
@@ -131,13 +126,11 @@ function PdfPageCanvas({
 	pageNumber,
 	containerRef,
 	pdfAreaRef,
-	children,
 }: {
 	pdfProxy: PDFDocumentProxy;
 	pageNumber: number;
 	containerRef: RefObject<HTMLDivElement | null>;
 	pdfAreaRef?: RefObject<HTMLDivElement | null>;
-	children?: ReactNode;
 }) {
 	const page = use(getPage(pdfProxy, pageNumber));
 	const baseViewport = useMemo(() => page.getViewport({ scale: 1 }), [page]);
@@ -240,7 +233,6 @@ function PdfPageCanvas({
 			style={wrapperStyle}
 		>
 			<canvas ref={canvasRef} className="block h-full w-full" />
-			{children}
 		</div>
 	);
 }
