@@ -7,6 +7,7 @@ export {
 export { getPdfData } from "./pdf";
 export { sendNavigate, usePresentationBroadcast } from "./presentation";
 export { usePresenterBroadcast } from "./presenter";
+export { sendTool, type ToolAction, type ToolSide } from "./tools";
 export type {
 	BroadcastAction,
 	PresentationAction,
