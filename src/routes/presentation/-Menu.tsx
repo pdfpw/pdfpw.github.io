@@ -1,9 +1,11 @@
 import type { ClassValue } from "clsx";
+import { useAtomValue } from "jotai";
 import { MaximizeIcon, MinimizeIcon } from "lucide-react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { Button } from "#src/components/ui/button.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
+import { toolModeAtom } from "#src/lib/pointer-state.ts";
 import { cn } from "#src/lib/utils.ts";
 
 interface MenuProps {
@@ -23,6 +25,7 @@ export function Menu({ pdfpcConfig, currentPageNumber, className }: MenuProps) {
 	// ここで表示/非表示を制御します
 	const [visible, setVisible] = useState<boolean>(true);
 	const hideTimerRef = useRef<number | null>(null);
+	const toolMode = useAtomValue(toolModeAtom);
 
 	const scheduleHide = useEffectEvent((): void => {
 		if (hideTimerRef.current) {
@@ -41,13 +44,21 @@ export function Menu({ pdfpcConfig, currentPageNumber, className }: MenuProps) {
 	});
 
 	useEffect(() => {
+		if (toolMode !== "none") {
+			// ツール使用中はメニューを出さない
+			if (hideTimerRef.current) {
+				window.clearTimeout(hideTimerRef.current);
+				hideTimerRef.current = null;
+			}
+			setVisible(false);
+			return;
+		}
+
 		scheduleHide();
 
 		const onPointerMove = (): void => {
 			showAndResetTimer();
 		};
-
-		// クリック/タップでも表示したい場合
 		const onPointerDown = (): void => {
 			showAndResetTimer();
 		};
@@ -63,7 +74,7 @@ export function Menu({ pdfpcConfig, currentPageNumber, className }: MenuProps) {
 				hideTimerRef.current = null;
 			}
 		};
-	}, []);
+	}, [toolMode]);
 	const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
 	useEffect(() => {
