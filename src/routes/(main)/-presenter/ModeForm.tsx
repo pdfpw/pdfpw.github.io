@@ -31,6 +31,7 @@ export function ModeForm({
 						className="flex-1 gap-2 h-9 min-w-0"
 						size={"default"}
 						onClick={() => onFrozenChange(!isFrozen)}
+						aria-label="投影固定"
 					>
 						<Snowflake className="size-4 shrink-0" />
 						<span className="hidden @[20rem]:inline">投影固定</span>
@@ -41,6 +42,7 @@ export function ModeForm({
 						className="flex-1 gap-2 h-9 min-w-0"
 						size={"default"}
 						onClick={() => onBlackoutChange(!isBlackout)}
+						aria-label="投影停止"
 					>
 						<MonitorOff className="size-4 shrink-0" />
 						<span className="hidden @[20rem]:inline">投影停止</span>
@@ -51,6 +53,7 @@ export function ModeForm({
 						className="flex-1 gap-2 h-9 min-w-0"
 						size={"default"}
 						onClick={onOverviewModeOpen}
+						aria-label="一覧表示"
 					>
 						<Grid className="size-4 shrink-0" />
 						<span className="hidden @[20rem]:inline">一覧表示</span>
