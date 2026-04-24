@@ -3,6 +3,7 @@
 @import '@fontsource/geist-sans/400.css';
 @import '@fontsource/geist-sans/500.css';
 @import '@fontsource/geist-sans/600.css';
+@import '@fontsource/geist-sans/700.css';
 @import '@fontsource/geist-mono/400.css';
 @import '@fontsource/geist-mono/500.css';
 @plugin "@tailwindcss/typography";
@@ -200,9 +201,6 @@ code {
   }
   body {
     @apply bg-bg text-fg;
-    /* Default to dark theme until useTheme hook decides */
-    background: var(--bg);
-    color: var(--fg);
   }
   html {
     color-scheme: dark;
