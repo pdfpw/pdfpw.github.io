@@ -12,6 +12,9 @@ declare global {
 		"get-pdf": EmptyObject;
 		"get-blackout-state": EmptyObject;
 		"get-current-page-number": EmptyObject;
+		navigate: {
+			direction: "next" | "prev" | "home" | "end";
+		};
 	}
 }
 
@@ -22,6 +25,7 @@ export function usePresenterBroadcast(
 	pdf: File,
 	isBlackout: boolean,
 	pageNumber: number,
+	onNavigate?: (direction: "next" | "prev" | "home" | "end") => void,
 ) {
 	const channel = getBroadcastChannel(fileName, pairId);
 	const handleMessage = useEffectEvent(async (action: PresentationAction) => {
@@ -82,6 +86,10 @@ export function usePresenterBroadcast(
 					command: "get-current-page-number-response",
 					pageNumber,
 				} satisfies BroadcastAction);
+				break;
+			case "navigate":
+				console.log("[Presenter Broadcast] Navigate:", action.direction);
+				onNavigate?.(action.direction);
 				break;
 		}
 	});

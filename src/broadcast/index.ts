@@ -5,8 +5,14 @@ export {
 	getPresentationPairId,
 } from "./pairing";
 export { getPdfData } from "./pdf";
-export { usePresentationBroadcast } from "./presentation";
+export { sendNavigate, usePresentationBroadcast } from "./presentation";
 export { usePresenterBroadcast } from "./presenter";
+export {
+	sendTool,
+	type ToolAction,
+	type ToolSide,
+	useToolBroadcast,
+} from "./tools";
 export type {
 	BroadcastAction,
 	PresentationAction,

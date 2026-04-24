@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import { GlobalWorkerOptions } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
 	Suspense,
 	startTransition,
 	useCallback,
+	useEffect,
 	useRef,
 	useState,
 } from "react";
@@ -14,9 +15,12 @@ import {
 	type BroadcastAction,
 	ensurePresenterPairId,
 	getBroadcastChannel,
+	sendTool,
 	usePresenterBroadcast,
+	useToolBroadcast,
 } from "#src/broadcast";
 import { OverviewDialog } from "#src/components/OverviewDialog";
+import { PointerOverlay } from "#src/components/PointerOverlay.tsx";
 import { Button } from "#src/components/ui/button";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
 import {
@@ -24,7 +28,10 @@ import {
 	getNextUserSlidePageNumber,
 	getPrevUserSlidePageNumber,
 } from "#src/lib/navigation-utils.ts";
+import { clearPenStrokes } from "#src/lib/pointer-state.ts";
+import { usePointerEmitter } from "../-hooks/use-pointer-emitter";
 import { useSlideShortcut } from "../-hooks/use-slide-shortcut";
+import { useToolShortcut } from "../-hooks/use-tool-shortcut";
 import { ModeForm } from "./-presenter/ModeForm";
 import { NextPrevFooter } from "./-presenter/NextPrevFooter";
 import { NextSlide } from "./-presenter/NextSlide";
@@ -264,6 +271,27 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 		[slideStageRef, nextSlideRef, nextPrevRef],
 	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: nextSlide 等は毎レンダーで作り直される
+	const handleNavigate = useCallback(
+		(direction: "next" | "prev" | "home" | "end") => {
+			switch (direction) {
+				case "next":
+					nextSlide();
+					break;
+				case "prev":
+					prevSlide();
+					break;
+				case "home":
+					jumpToFirstSlide();
+					break;
+				case "end":
+					jumpToLastSlide();
+					break;
+			}
+		},
+		[pageNumber, pdfpcConfig.totalOverlays],
+	);
+
 	usePresenterBroadcast(
 		fileName,
 		pairId,
@@ -271,7 +299,22 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 		pdf,
 		isBlackout,
 		pageNumber,
+		handleNavigate,
 	);
+
+	useToolBroadcast(fileName, pairId, "presenter");
+	useToolShortcut(fileName, pairId, "presenter");
+	usePointerEmitter(slideStageRef, fileName, pairId, "presenter");
+
+	// ページ遷移時にペンストロークを自動クリア（初回マウント時の無駄な broadcast は避ける）
+	const doClearStrokes = useSetAtom(clearPenStrokes);
+	const prevPageNumberRef = useRef(pageNumber);
+	useEffect(() => {
+		if (prevPageNumberRef.current === pageNumber) return;
+		prevPageNumberRef.current = pageNumber;
+		doClearStrokes();
+		sendTool(fileName, pairId, "presenter", { command: "pen-clear" });
+	}, [pageNumber, fileName, pairId, doClearStrokes]);
 
 	return (
 		<>
@@ -281,7 +324,9 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 					pageNumber={pageNumber}
 					className="aspect-video h-full max-w-full place-self-center"
 					ref={slideStageRef}
-				/>
+				>
+					<PointerOverlay />
+				</SlideStage>
 				<div className="row-span-2 flex flex-col gap-4">
 					<NextSlide
 						currentSlidePage={pageNumber}

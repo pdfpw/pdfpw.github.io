@@ -133,3 +133,16 @@ export function usePresentationBroadcast(
 		};
 	}, [fileName, pairId]);
 }
+
+export function sendNavigate(
+	fileName: string,
+	pairId: string,
+	direction: "next" | "prev" | "home" | "end",
+): void {
+	const channel = getBroadcastChannel(fileName, pairId);
+	channel.postMessage({
+		from: "presentation",
+		command: "navigate",
+		direction,
+	} satisfies PresentationAction);
+}

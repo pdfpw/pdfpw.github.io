@@ -8,6 +8,7 @@ import {
 	use,
 	useEffect,
 	useEffectEvent,
+	useRef,
 	useState,
 	useTransition,
 } from "react";
@@ -15,15 +16,20 @@ import * as typia from "typia";
 import {
 	getPresentationPairId,
 	usePresentationBroadcast,
+	useToolBroadcast,
 } from "#src/broadcast";
 import { ErrorBoundary } from "#src/components/ErrorBoundary.tsx";
 import { OverviewDialog } from "#src/components/OverviewDialog";
+import { PointerOverlay } from "#src/components/PointerOverlay.tsx";
 import { Button } from "#src/components/ui/button.tsx";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
 import { getRecentFileById, openDb } from "#src/lib/recent-store.ts";
 import { createUseMemoried } from "#src/lib/use-memoried.ts";
 import { cn } from "#src/lib/utils.ts";
+import { usePointerEmitter } from "#src/routes/-hooks/use-pointer-emitter";
+import { useToolShortcut } from "#src/routes/-hooks/use-tool-shortcut";
+import { usePresentationShortcut } from "./-hooks/use-presentation-shortcut";
 import { Menu } from "./-Menu";
 import { SlideStage } from "./-SlideStage";
 
@@ -210,7 +216,14 @@ function PresentationBroadcastData({
 		);
 	}
 
-	return <PresentationView {...initData} localPdf={pdf} />;
+	return (
+		<PresentationView
+			{...initData}
+			localPdf={pdf}
+			fileName={fileName}
+			pairId={pairId}
+		/>
+	);
 }
 
 const getPdfBuffer = createUseMemoried(
@@ -229,12 +242,16 @@ function PresentationView({
 	pageNumber,
 	isBlackout,
 	localPdf,
+	fileName,
+	pairId,
 }: {
 	pdfpcConfig: ResolvedPdfpcConfigV2;
 	pdfData: ArrayBuffer;
 	pageNumber: number;
 	isBlackout: boolean;
 	localPdf?: File | FileSystemFileHandle;
+	fileName: string;
+	pairId: string;
 }) {
 	const pdfBuffer = use(
 		localPdf ? getPdfBuffer(localPdf) : Promise.resolve(pdfData),
@@ -260,7 +277,16 @@ function PresentationView({
 		pdfpcPages: pdfpcConfig.pages.length,
 	});
 
+	usePresentationShortcut(fileName, pairId);
+
+	const stageRef = useRef<HTMLDivElement | null>(null);
+
+	useToolBroadcast(fileName, pairId, "presentation");
+	useToolShortcut(fileName, pairId, "presentation");
+	usePointerEmitter(stageRef, fileName, pairId, "presentation");
+
 	const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
+		if (e.defaultPrevented) return;
 		if (e.key === "f") {
 			if (document.fullscreenElement) {
 				document.exitFullscreen();
@@ -288,7 +314,10 @@ function PresentationView({
 				pdfpcConfig={pdfpcConfig}
 				currentPageNumber={currentPageNumber}
 				isBlackout={currentIsBlackout}
-			/>
+				stageRef={stageRef}
+			>
+				<PointerOverlay />
+			</SlideStage>
 			<div
 				className={cn([
 					"absolute bottom-24 w-full flex justify-center",

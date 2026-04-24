@@ -58,3 +58,37 @@ export function clampPageNumber(
 ): number {
 	return Math.max(1, Math.min(pageNumber, maxPageNumber));
 }
+
+/**
+ * 次のページ番号を解決する（単純 +1、末尾クランプ）
+ */
+export function resolveNextPage(
+	currentPageNumber: number,
+	totalOverlays: number,
+): number {
+	return clampPageNumber(currentPageNumber + 1, totalOverlays);
+}
+
+/**
+ * 前のページ番号を解決する（単純 -1、先頭クランプ）
+ */
+export function resolvePrevPage(
+	currentPageNumber: number,
+	totalOverlays: number,
+): number {
+	return clampPageNumber(currentPageNumber - 1, totalOverlays);
+}
+
+/**
+ * 最初のページ番号
+ */
+export function resolveFirstSlide(): number {
+	return 1;
+}
+
+/**
+ * 最後のページ番号
+ */
+export function resolveLastSlide(totalOverlays: number): number {
+	return totalOverlays;
+}
