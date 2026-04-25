@@ -164,6 +164,12 @@ export const KEYBINDING_CATALOG: Record<ActionId, ActionDefinition> = {
 	},
 };
 
+/**
+ * Compare a `KeyboardEvent` against a single `Binding`.
+ *
+ * Exported for unit testing. Prefer `matchAction` as the public API for resolving
+ * events to actions.
+ */
 export function matchBinding(event: KeyboardEvent, binding: Binding): boolean {
 	const eventKey = event.key.length === 1 ? event.key.toLowerCase() : event.key;
 	const bindingKey =
@@ -176,6 +182,14 @@ export function matchBinding(event: KeyboardEvent, binding: Binding): boolean {
 	return true;
 }
 
+/**
+ * Resolve a `KeyboardEvent` to an `ActionId` by scanning `KEYBINDING_CATALOG`.
+ * Entries whose `scope` is `"both"` match regardless of the query scope.
+ *
+ * NOTE: `scope` must be `"presenter"` or `"presentation"` (not `"both"`) — the
+ * query represents the screen the key was pressed on, and `"both"` is a catalog
+ * classification, not a meaningful query value.
+ */
 export function matchAction(
 	event: KeyboardEvent,
 	scope: "presenter" | "presentation",
