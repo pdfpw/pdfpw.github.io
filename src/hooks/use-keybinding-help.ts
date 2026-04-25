@@ -2,7 +2,7 @@ import { useCallback, useEffect, useEffectEvent, useState } from "react";
 import { matchAction } from "#src/lib/keybindings.ts";
 import { useLocalStorageSync } from "./use-local-storage-sync.ts";
 
-const HELP_SEEN_KEY = "pdfpw:keybinding-help-seen";
+export const HELP_SEEN_KEY = "pdfpw:keybinding-help-seen";
 
 export interface KeybindingHelp {
 	isOpen: boolean;
@@ -55,8 +55,11 @@ export function useKeybindingHelp(
 	});
 
 	useEffect(() => {
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
+		const abortController = new AbortController();
+		window.addEventListener("keydown", onKey, {
+			signal: abortController.signal,
+		});
+		return () => abortController.abort();
 	}, []);
 
 	return {

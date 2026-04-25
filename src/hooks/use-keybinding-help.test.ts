@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { useKeybindingHelp } from "./use-keybinding-help.ts";
-
-const HELP_SEEN_KEY = "pdfpw:keybinding-help-seen";
+import { HELP_SEEN_KEY, useKeybindingHelp } from "./use-keybinding-help.ts";
 
 describe("useKeybindingHelp", () => {
 	beforeEach(() => {
