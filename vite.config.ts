@@ -7,7 +7,7 @@ import { devtools } from "@tanstack/devtools-vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { regex } from "arkregex";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
 
 const GITHUB_REPO_URL_REGEX = regex(
@@ -32,7 +32,7 @@ export default defineConfig({
 		}),
 		viteReact({
 			babel: {
-				plugins: ["babel-plugin-react-compiler"],
+				plugins: process.env.VITEST ? [] : ["babel-plugin-react-compiler"],
 			},
 		}),
 		tailwindcss(),
@@ -198,6 +198,10 @@ export default defineConfig({
 			devOptions: { enabled: false },
 		}),
 	],
+	test: {
+		globals: true,
+		setupFiles: ["./src/test-setup.ts"],
+	},
 });
 
 interface PnpmLicense {
