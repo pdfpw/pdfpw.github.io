@@ -42,8 +42,7 @@ export function LibrarySection({
 					</div>
 					<div className="text-[11px] text-subtle mt-0.5">
 						{recentFiles.length > 0
-							? // biome-ignore lint/suspicious/noExplicitAny: paraglide ICU plural type generation quirk
-						m.library_subtitle_with_count({ count: recentFiles.length } as any)
+							? m.library_subtitle_with_count({ count: recentFiles.length })
 							: m.library_subtitle_empty()}
 					</div>
 				</div>

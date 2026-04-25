@@ -29,7 +29,7 @@
   "howitworks_step3_body": "Notes, timer, laser pointer, pen, blackout — all keyboard-driven. Stay in flow.",
 
   "library_eyebrow": "LIBRARY",
-  "library_subtitle_with_count": "{count, plural, one {# file} other {# files}} · recent first",
+  "library_subtitle_with_count": "{count} files · recent first",
   "library_subtitle_empty": "recent first",
   "library_history_toggle": "Save history",
   "library_help_sr": "Help",
