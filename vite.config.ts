@@ -1,5 +1,6 @@
 import { exec } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
+import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import UnpluginTypia from "@ryoppippi/unplugin-typia/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
@@ -17,6 +18,11 @@ const GITHUB_REPO_URL_REGEX = regex(
 export default defineConfig({
 	base: "/",
 	plugins: [
+		paraglideVitePlugin({
+			project: "./project.inlang",
+			outdir: "./src/paraglide",
+			strategy: ["url", "localStorage", "preferredLanguage", "baseLocale"],
+		}),
 		UnpluginTypia(),
 		devtools(),
 		tanstackRouter({
