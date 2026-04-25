@@ -41,7 +41,7 @@ interface PresentationSearch {
 	file?: string;
 }
 
-export const Route = createFileRoute("/presentation/")({
+export const Route = createFileRoute("/$locale/presentation/")({
 	component: RouteComponent,
 	validateSearch: typia.createValidate<PresentationSearch>(),
 });
@@ -53,7 +53,7 @@ const isOverviewModeAtom = atom(false);
 function RouteComponent() {
 	const { file } = Route.useSearch({
 		select: ({ file }) => ({ file }),
-	});
+	})
 
 	if (!file)
 		return (
@@ -70,7 +70,7 @@ function RouteComponent() {
 					</Button>
 				</div>
 			</main>
-		);
+		)
 
 	return (
 		<main className="min-h-screen grid bg-blackout">
@@ -83,19 +83,19 @@ function RouteComponent() {
 									<div className="h-full flex items-center justify-center">
 										ペアリングに失敗しました。プレゼンター画面を開き直すか、同名のファイルで開いているか確認してください。
 									</div>
-								);
+								)
 							case "TIMEOUT_LOADING_PDFPC_CONFIG":
 								return (
 									<div className="h-full flex items-center justify-center">
 										設定を読み込めませんでした。同名のファイルでプレゼンター画面を開いているか確認してください。
 									</div>
-								);
+								)
 							case "TIMEOUT_LOADING_PDF_BUFFER":
 								return (
 									<div className="h-full flex items-center justify-center">
 										PDFファイルの読み込みに失敗しました。同名のファイルでプレゼンター画面を開いているか確認してください。
 									</div>
-								);
+								)
 							default:
 								return (
 									<div className="h-full flex flex-col items-center justify-center gap-4 p-6">
@@ -115,7 +115,7 @@ function RouteComponent() {
 											リロードして再試行
 										</button>
 									</div>
-								);
+								)
 						}
 					}
 					return (
@@ -133,7 +133,7 @@ function RouteComponent() {
 								リロードして再試行
 							</button>
 						</div>
-					);
+					)
 				}}
 			>
 				<Suspense fallback={<Skeleton></Skeleton>}>
@@ -141,7 +141,7 @@ function RouteComponent() {
 				</Suspense>
 			</ErrorBoundary>
 		</main>
-	);
+	)
 }
 
 const useGetRecentFileById = createUseMemoried(async (fileName: string) =>
@@ -158,7 +158,7 @@ function RecentPdfResolver({ fileName }: { fileName: string }) {
 	const pairId = use(usePairId(fileName));
 	return (
 		<PresentationBroadcastData fileName={fileName} pairId={pairId} pdf={pdf} />
-	);
+	)
 }
 
 interface PresentationBroadcastDataProps {
@@ -184,12 +184,12 @@ function PresentationBroadcastData({
 		onPageNumberChange: (pageNumber) => {
 			startTransition(() => {
 				setInitData((prev) => (prev ? { ...prev, pageNumber } : null));
-			});
+			})
 		},
 		onBlackoutChange: (isBlackout) => {
 			startTransition(() => {
 				setInitData((prev) => (prev ? { ...prev, isBlackout } : null));
-			});
+			})
 		},
 		onInitialize: (data) => {
 			console.log("[PresentationBroadcastData] Received initialize data");
@@ -199,10 +199,10 @@ function PresentationBroadcastData({
 					pdfData: data.pdfData,
 					pageNumber: data.pageNumber,
 					isBlackout: data.isBlackout,
-				});
-			});
+				})
+			})
 		},
-	});
+	})
 
 	if (!initData) {
 		// Show loading state while waiting for initialization
@@ -215,7 +215,7 @@ function PresentationBroadcastData({
 					</div>
 				</div>
 			</div>
-		);
+		)
 	}
 
 	return (
@@ -225,7 +225,7 @@ function PresentationBroadcastData({
 			fileName={fileName}
 			pairId={pairId}
 		/>
-	);
+	)
 }
 
 const getPdfBuffer = createUseMemoried(
@@ -257,7 +257,7 @@ function PresentationView({
 }) {
 	const pdfBuffer = use(
 		localPdf ? getPdfBuffer(localPdf) : Promise.resolve(pdfData),
-	);
+	)
 	const pdfPromise = usePdfPromise(pdfBuffer);
 	const pdfProxy = use(pdfPromise);
 	const [currentPageNumber, setCurrentPageNumber] = useAtom(pageNumberAtom);
@@ -277,7 +277,7 @@ function PresentationView({
 		currentIsBlackout,
 		pdfProxy: !!pdfProxy,
 		pdfpcPages: pdfpcConfig.pages.length,
-	});
+	})
 
 	usePresentationShortcut(fileName, pairId);
 	const help = useKeybindingHelp("presentation");
@@ -301,11 +301,11 @@ function PresentationView({
 		closeOverviewIfOpen: () => {
 			if (isOverviewMode) {
 				setIsOverviewMode(false);
-				return true;
+				return true
 			}
 			return false;
 		},
-	});
+	})
 
 	return (
 		<div className="relative grid">
@@ -347,5 +347,5 @@ function PresentationView({
 				onOpenChange={(o) => (o ? help.open() : help.close())}
 			/>
 		</div>
-	);
+	)
 }

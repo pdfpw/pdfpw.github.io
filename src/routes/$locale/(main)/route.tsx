@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-router";
 import Header from "#src/components/Header.tsx";
 
-export const Route = createFileRoute("/(main)")({
+export const Route = createFileRoute("/$locale/(main)")({
 	component: RouteComponent,
 });
 
@@ -21,12 +21,12 @@ function RouteComponent() {
 						? () => {
 								window.dispatchEvent(
 									new KeyboardEvent("keydown", { key: "?" }),
-								);
+								)
 							}
 						: undefined
 				}
 			/>
 			<Outlet />
 		</div>
-	);
+	)
 }

@@ -7,7 +7,7 @@ import { routeTree } from "./routeTree.gen";
 
 import "./styles.css";
 import reportWebVitals from "./reportWebVitals.ts";
-import { subscribePresenterRoute } from "./routes/(main)/-presenter/state.ts";
+import { subscribePresenterRoute } from "./routes/$locale/(main)/-presenter/state.ts";
 
 // Create a new router instance
 const router = createRouter({

@@ -9,135 +9,172 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as mainRouteRouteImport } from './routes/(main)/route'
-import { Route as PresentationIndexRouteImport } from './routes/presentation/index'
-import { Route as mainIndexRouteImport } from './routes/(main)/index'
-import { Route as mainPresenterRouteImport } from './routes/(main)/presenter'
-import { Route as mainLicensesRouteImport } from './routes/(main)/licenses'
+import { Route as LocaleRouteRouteImport } from './routes/$locale/route'
+import { Route as LocalemainRouteRouteImport } from './routes/$locale/(main)/route'
+import { Route as LocalePresentationIndexRouteImport } from './routes/$locale/presentation/index'
+import { Route as LocalemainIndexRouteImport } from './routes/$locale/(main)/index'
+import { Route as LocalemainPresenterRouteImport } from './routes/$locale/(main)/presenter'
+import { Route as LocalemainLicensesRouteImport } from './routes/$locale/(main)/licenses'
 
-const mainRouteRoute = mainRouteRouteImport.update({
-  id: '/(main)',
+const LocaleRouteRoute = LocaleRouteRouteImport.update({
+  id: '/$locale',
+  path: '/$locale',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PresentationIndexRoute = PresentationIndexRouteImport.update({
+const LocalemainRouteRoute = LocalemainRouteRouteImport.update({
+  id: '/(main)',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
+const LocalePresentationIndexRoute = LocalePresentationIndexRouteImport.update({
   id: '/presentation/',
   path: '/presentation/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
-const mainIndexRoute = mainIndexRouteImport.update({
+const LocalemainIndexRoute = LocalemainIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => mainRouteRoute,
+  getParentRoute: () => LocalemainRouteRoute,
 } as any)
-const mainPresenterRoute = mainPresenterRouteImport.update({
+const LocalemainPresenterRoute = LocalemainPresenterRouteImport.update({
   id: '/presenter',
   path: '/presenter',
-  getParentRoute: () => mainRouteRoute,
+  getParentRoute: () => LocalemainRouteRoute,
 } as any)
-const mainLicensesRoute = mainLicensesRouteImport.update({
+const LocalemainLicensesRoute = LocalemainLicensesRouteImport.update({
   id: '/licenses',
   path: '/licenses',
-  getParentRoute: () => mainRouteRoute,
+  getParentRoute: () => LocalemainRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/licenses': typeof mainLicensesRoute
-  '/presenter': typeof mainPresenterRoute
-  '/': typeof mainIndexRoute
-  '/presentation': typeof PresentationIndexRoute
+  '/$locale': typeof LocalemainRouteRouteWithChildren
+  '/$locale/licenses': typeof LocalemainLicensesRoute
+  '/$locale/presenter': typeof LocalemainPresenterRoute
+  '/$locale/': typeof LocalemainIndexRoute
+  '/$locale/presentation': typeof LocalePresentationIndexRoute
 }
 export interface FileRoutesByTo {
-  '/licenses': typeof mainLicensesRoute
-  '/presenter': typeof mainPresenterRoute
-  '/': typeof mainIndexRoute
-  '/presentation': typeof PresentationIndexRoute
+  '/$locale': typeof LocalemainIndexRoute
+  '/$locale/licenses': typeof LocalemainLicensesRoute
+  '/$locale/presenter': typeof LocalemainPresenterRoute
+  '/$locale/presentation': typeof LocalePresentationIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/(main)': typeof mainRouteRouteWithChildren
-  '/(main)/licenses': typeof mainLicensesRoute
-  '/(main)/presenter': typeof mainPresenterRoute
-  '/(main)/': typeof mainIndexRoute
-  '/presentation/': typeof PresentationIndexRoute
+  '/$locale': typeof LocaleRouteRouteWithChildren
+  '/$locale/(main)': typeof LocalemainRouteRouteWithChildren
+  '/$locale/(main)/licenses': typeof LocalemainLicensesRoute
+  '/$locale/(main)/presenter': typeof LocalemainPresenterRoute
+  '/$locale/(main)/': typeof LocalemainIndexRoute
+  '/$locale/presentation/': typeof LocalePresentationIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/licenses' | '/presenter' | '/' | '/presentation'
+  fullPaths:
+    | '/$locale'
+    | '/$locale/licenses'
+    | '/$locale/presenter'
+    | '/$locale/'
+    | '/$locale/presentation'
   fileRoutesByTo: FileRoutesByTo
-  to: '/licenses' | '/presenter' | '/' | '/presentation'
+  to:
+    | '/$locale'
+    | '/$locale/licenses'
+    | '/$locale/presenter'
+    | '/$locale/presentation'
   id:
     | '__root__'
-    | '/(main)'
-    | '/(main)/licenses'
-    | '/(main)/presenter'
-    | '/(main)/'
-    | '/presentation/'
+    | '/$locale'
+    | '/$locale/(main)'
+    | '/$locale/(main)/licenses'
+    | '/$locale/(main)/presenter'
+    | '/$locale/(main)/'
+    | '/$locale/presentation/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  mainRouteRoute: typeof mainRouteRouteWithChildren
-  PresentationIndexRoute: typeof PresentationIndexRoute
+  LocaleRouteRoute: typeof LocaleRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/(main)': {
-      id: '/(main)'
+    '/$locale': {
+      id: '/$locale'
+      path: '/$locale'
+      fullPath: '/$locale'
+      preLoaderRoute: typeof LocaleRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/(main)': {
+      id: '/$locale/(main)'
       path: ''
-      fullPath: ''
-      preLoaderRoute: typeof mainRouteRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale'
+      preLoaderRoute: typeof LocalemainRouteRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
-    '/presentation/': {
-      id: '/presentation/'
+    '/$locale/presentation/': {
+      id: '/$locale/presentation/'
       path: '/presentation'
-      fullPath: '/presentation'
-      preLoaderRoute: typeof PresentationIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale/presentation'
+      preLoaderRoute: typeof LocalePresentationIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
-    '/(main)/': {
-      id: '/(main)/'
+    '/$locale/(main)/': {
+      id: '/$locale/(main)/'
       path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof mainIndexRouteImport
-      parentRoute: typeof mainRouteRoute
+      fullPath: '/$locale/'
+      preLoaderRoute: typeof LocalemainIndexRouteImport
+      parentRoute: typeof LocalemainRouteRoute
     }
-    '/(main)/presenter': {
-      id: '/(main)/presenter'
+    '/$locale/(main)/presenter': {
+      id: '/$locale/(main)/presenter'
       path: '/presenter'
-      fullPath: '/presenter'
-      preLoaderRoute: typeof mainPresenterRouteImport
-      parentRoute: typeof mainRouteRoute
+      fullPath: '/$locale/presenter'
+      preLoaderRoute: typeof LocalemainPresenterRouteImport
+      parentRoute: typeof LocalemainRouteRoute
     }
-    '/(main)/licenses': {
-      id: '/(main)/licenses'
+    '/$locale/(main)/licenses': {
+      id: '/$locale/(main)/licenses'
       path: '/licenses'
-      fullPath: '/licenses'
-      preLoaderRoute: typeof mainLicensesRouteImport
-      parentRoute: typeof mainRouteRoute
+      fullPath: '/$locale/licenses'
+      preLoaderRoute: typeof LocalemainLicensesRouteImport
+      parentRoute: typeof LocalemainRouteRoute
     }
   }
 }
 
-interface mainRouteRouteChildren {
-  mainLicensesRoute: typeof mainLicensesRoute
-  mainPresenterRoute: typeof mainPresenterRoute
-  mainIndexRoute: typeof mainIndexRoute
+interface LocalemainRouteRouteChildren {
+  LocalemainLicensesRoute: typeof LocalemainLicensesRoute
+  LocalemainPresenterRoute: typeof LocalemainPresenterRoute
+  LocalemainIndexRoute: typeof LocalemainIndexRoute
 }
 
-const mainRouteRouteChildren: mainRouteRouteChildren = {
-  mainLicensesRoute: mainLicensesRoute,
-  mainPresenterRoute: mainPresenterRoute,
-  mainIndexRoute: mainIndexRoute,
+const LocalemainRouteRouteChildren: LocalemainRouteRouteChildren = {
+  LocalemainLicensesRoute: LocalemainLicensesRoute,
+  LocalemainPresenterRoute: LocalemainPresenterRoute,
+  LocalemainIndexRoute: LocalemainIndexRoute,
 }
 
-const mainRouteRouteWithChildren = mainRouteRoute._addFileChildren(
-  mainRouteRouteChildren,
+const LocalemainRouteRouteWithChildren = LocalemainRouteRoute._addFileChildren(
+  LocalemainRouteRouteChildren,
+)
+
+interface LocaleRouteRouteChildren {
+  LocalemainRouteRoute: typeof LocalemainRouteRouteWithChildren
+  LocalePresentationIndexRoute: typeof LocalePresentationIndexRoute
+}
+
+const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
+  LocalemainRouteRoute: LocalemainRouteRouteWithChildren,
+  LocalePresentationIndexRoute: LocalePresentationIndexRoute,
+}
+
+const LocaleRouteRouteWithChildren = LocaleRouteRoute._addFileChildren(
+  LocaleRouteRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  mainRouteRoute: mainRouteRouteWithChildren,
-  PresentationIndexRoute: PresentationIndexRoute,
+  LocaleRouteRoute: LocaleRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,11 +1,11 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Suspense, startTransition, useId, useReducer, useState } from "react";
-import { useLocalStorageSync } from "../../hooks/use-local-storage-sync";
+import { useLocalStorageSync } from "#src/hooks/use-local-storage-sync";
 import {
 	canUseFSA,
 	ensureHandleReadable,
 	ensureHandleWritable,
-} from "../../lib/fsa";
+} from "#src/lib/fsa";
 import {
 	clearRecentStore,
 	getRecentFiles,
@@ -14,7 +14,7 @@ import {
 	type RecentFile,
 	removeRecent,
 	upsertRecent,
-} from "../../lib/recent-store";
+} from "#src/lib/recent-store";
 import { HeroSection } from "./-index/HeroSection";
 import { HowItWorksSection } from "./-index/HowItWorksSection";
 import { LibrarySection, LibrarySectionLoading } from "./-index/LibrarySection";
@@ -22,7 +22,7 @@ import { LibrarySectionData } from "./-index/LibrarySectionData";
 
 let presentationWindow: Window | null = null;
 
-export const Route = createFileRoute("/(main)/")({
+export const Route = createFileRoute("/$locale/(main)/")({
 	component: Home,
 });
 
@@ -32,11 +32,11 @@ function Home() {
 		(_, db: RecentDb) => getRecentFiles(db),
 		undefined,
 		async () => getRecentFiles(await openDb()),
-	);
+	)
 	const [saveHistory, setSaveHistory] = useLocalStorageSync<boolean>(
 		"pdfpw-save-history",
 		true,
-	);
+	)
 	const [status, setStatus] = useState<string | null>(null);
 	const inputId = useId();
 	const router = useRouter();
@@ -49,7 +49,7 @@ function Home() {
 				await clearRecentStore(db);
 				startTransition(() => {
 					refreshRecentFiles(db);
-				});
+				})
 			} catch (error) {
 				console.warn("Failed to clear history", error);
 			}
@@ -72,7 +72,7 @@ function Home() {
 			await removeRecent(db, id);
 			startTransition(() => {
 				refreshRecentFiles(db);
-			});
+			})
 		} catch (error) {
 			console.warn("Failed to delete recent file", error);
 		}
@@ -84,7 +84,7 @@ function Home() {
 			await clearRecentStore(db);
 			startTransition(() => {
 				refreshRecentFiles(db);
-			});
+			})
 		} catch (error) {
 			console.warn("Failed to clear recent files", error);
 		}
@@ -95,12 +95,12 @@ function Home() {
 			const basePdf = pdfName.replace(/\.pdf$/i, "");
 			const baseCfg = configName.replace(/\.pdfpc$/i, "");
 			return basePdf.toLowerCase() === baseCfg.toLowerCase();
-		};
+		}
 
 		const pdf = files.find(
 			(f) =>
 				f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
-		);
+		)
 		const pdfpc = pdf
 			? files.find(
 					(f) => /\.pdfpc$/i.test(f.name) && sameBase(pdf.name, f.name),
@@ -109,14 +109,14 @@ function Home() {
 
 		if (!pdf) {
 			setStatus("PDFファイルを選択してください");
-			return;
+			return
 		}
 
 		const pdfHandle = handles?.find((h) => h.name === pdf.name);
 		const pdfpcHandle =
 			pdf && pdfpc && sameBase(pdf.name, pdfpc.name)
 				? handles?.find((h) => h.name === pdfpc.name)
-				: undefined;
+				: undefined
 
 		if (pdfHandle && supportsFSA) {
 			await saveRecent({
@@ -129,11 +129,11 @@ function Home() {
 						? pdfpc.name
 						: undefined,
 				lastOpened: Date.now(),
-			});
+			})
 			const db = await openDb();
 			startTransition(() => {
 				refreshRecentFiles(db);
-			});
+			})
 		} else if (saveHistory) {
 			// Standard Mode: save snapshot
 			await saveRecent({
@@ -143,18 +143,18 @@ function Home() {
 				configFile: pdfpc,
 				configName: pdfpc?.name,
 				lastOpened: Date.now(),
-			});
+			})
 			const db = await openDb();
 			startTransition(() => {
 				refreshRecentFiles(db);
-			});
+			})
 		}
 
 		setStatus(
 			pdfpc && pdfpcHandle && sameBase(pdf.name, pdfpc.name)
 				? `「${pdf.name}」と設定ファイル「${pdfpc.name}」を読み込み中…`
 				: `「${pdf.name}」を読み込み中…`,
-		);
+		)
 
 		await router.navigate({
 			to: "/presenter",
@@ -165,7 +165,7 @@ function Home() {
 				pdf: pdfHandle ?? pdf,
 				pdfpc: pdfpcHandle ?? pdfpc,
 			},
-		});
+		})
 		const url = router.buildLocation({
 			to: "/presentation",
 			search: {
@@ -181,7 +181,7 @@ function Home() {
 				url,
 				"_blank",
 				"width=1200,height=675,resizable=yes",
-			);
+			)
 		}
 	}
 
@@ -194,34 +194,34 @@ function Home() {
 			const canRead = await ensureHandleReadable(item.handle);
 			if (!canRead) {
 				setStatus("権限が拒否されました。再度許可してください。");
-				return;
+				return
 			}
 			if (item.configHandle) {
 				const baseMatch =
 					item.configName && item.name
 						? item.name.replace(/\.pdf$/i, "").toLowerCase() ===
 							item.configName.replace(/\.pdfpc$/i, "").toLowerCase()
-						: false;
+						: false
 				if (!baseMatch) {
 					setStatus(
 						"設定ファイル名がPDFと一致しません（example.pdf ↔ example.pdfpc）。",
-					);
-					return;
+					)
+					return
 				}
 				const ok = await ensureHandleWritable(item.configHandle);
 				if (!ok) {
 					setStatus("設定ファイルの権限が拒否されました。");
-					return;
+					return
 				}
 			}
 			const file = await item.handle.getFile();
 			const extraFiles = item.configHandle
 				? [await item.configHandle.getFile()]
-				: [];
+				: []
 			await handleFiles(
 				[file, ...extraFiles],
 				[item.handle, ...(item.configHandle ? [item.configHandle] : [])],
-			);
+			)
 		} else if (item.file) {
 			// Restore from snapshot
 			const pdf = item.file;
@@ -241,16 +241,16 @@ function Home() {
 			if (!ok) {
 				if (needsWrite) {
 					setStatus("設定ファイルの権限が拒否されました。");
-					return;
+					return
 				}
-				continue;
+				continue
 			}
 			readableHandles.push(handle);
 			files.push(await handle.getFile());
 		}
 		if (files.length === 0) {
 			setStatus("ファイルへの権限がありません。");
-			return;
+			return
 		}
 
 		// Validate pdfpc pairing before proceeding
@@ -264,8 +264,8 @@ function Home() {
 		) {
 			setStatus(
 				"pdfpc は PDF と同じ名前にしてください（例: example.pdf ↔ example.pdfpc）",
-			);
-			return;
+			)
+			return
 		}
 
 		await handleFiles(files, readableHandles);
@@ -287,7 +287,7 @@ function Home() {
 				],
 				excludeAcceptAllOption: true,
 				multiple: true,
-			});
+			})
 			const handles = picker ?? [];
 			if (handles.length === 0) return;
 			await handlePickedHandles(handles);
@@ -337,5 +337,5 @@ function Home() {
 
 			<HowItWorksSection />
 		</main>
-	);
+	)
 }

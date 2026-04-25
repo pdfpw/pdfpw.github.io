@@ -8,7 +8,7 @@ import {
 	CardTitle,
 } from "#src/components/ui/card.tsx";
 
-export const Route = createFileRoute("/(main)/licenses")({
+export const Route = createFileRoute("/$locale/(main)/licenses")({
 	component: RouteComponent,
 });
 
@@ -23,7 +23,7 @@ function RouteComponent() {
 					))}
 			</div>
 		</div>
-	);
+	)
 }
 
 function LicenseCard({ license }: { license: License }) {
@@ -40,5 +40,5 @@ function LicenseCard({ license }: { license: License }) {
 				{license.licenseText}
 			</CardContent>
 		</Card>
-	);
+	)
 }

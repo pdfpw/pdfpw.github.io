@@ -32,9 +32,9 @@ import {
 	getPrevUserSlidePageNumber,
 } from "#src/lib/navigation-utils.ts";
 import { clearPenStrokes } from "#src/lib/pointer-state.ts";
-import { usePointerEmitter } from "../-hooks/use-pointer-emitter";
-import { useSlideShortcut } from "../-hooks/use-slide-shortcut";
-import { useToolShortcut } from "../-hooks/use-tool-shortcut";
+import { usePointerEmitter } from "#src/routes/-hooks/use-pointer-emitter";
+import { useSlideShortcut } from "#src/routes/-hooks/use-slide-shortcut";
+import { useToolShortcut } from "#src/routes/-hooks/use-tool-shortcut";
 import { ModeForm } from "./-presenter/ModeForm";
 import { NextPrevFooter } from "./-presenter/NextPrevFooter";
 import { NextSlide } from "./-presenter/NextSlide";
@@ -54,7 +54,7 @@ export interface PresenterSearch {
 	file?: string;
 }
 
-export const Route = createFileRoute("/(main)/presenter")({
+export const Route = createFileRoute("/$locale/(main)/presenter")({
 	component: RouteComponent,
 	validateSearch: typia.createValidate<PresenterSearch>(),
 });
@@ -72,7 +72,7 @@ function MissingFileScreen({ title }: { title: string }) {
 				</Button>
 			</div>
 		</main>
-	);
+	)
 }
 
 function LoadingSkeleton() {
@@ -85,13 +85,13 @@ function LoadingSkeleton() {
 			</div>
 			<Skeleton className="w-full min-h-0 h-full"></Skeleton>
 		</div>
-	);
+	)
 }
 
 function RouteComponent() {
 	const { file } = Route.useSearch({
 		select: ({ file }) => ({ file }),
-	});
+	})
 
 	if (!file) return <MissingFileScreen title="ファイルが指定されていません" />;
 
@@ -101,7 +101,7 @@ function RouteComponent() {
 				<PresenterView fileName={file} />
 			</Suspense>
 		</main>
-	);
+	)
 }
 
 function PresenterView({ fileName }: { fileName: string }) {
@@ -139,13 +139,13 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 			const clampedPageNumber = clampPageNumber(
 				nextPageNumber,
 				pdfpcConfig.totalOverlays,
-			);
+			)
 			startTransition(() => {
 				if (recordHistory) {
 					setHistory((prev) => [...prev, pageNumber]);
 				}
 				setPageNumber(clampedPageNumber);
-			});
+			})
 			if (!isFrozen) {
 				const channel = getBroadcastChannel(fileName, pairId);
 				channel.postMessage({
@@ -156,69 +156,69 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 			}
 		},
 		[fileName, isFrozen, pageNumber, pairId, pdfpcConfig.totalOverlays],
-	);
+	)
 
 	const getNextPageNumber = () => {
 		const next = pageNumber + 1;
 		return next <= pdfpcConfig.totalOverlays ? next : pdfpcConfig.totalOverlays;
-	};
+	}
 
 	const getPrevPageNumber = () => {
 		const prev = pageNumber - 1;
 		return prev >= 1 ? prev : 1;
-	};
+	}
 
 	const nextSlide = () => {
 		setPageNumberWithBroadcast(getNextPageNumber());
-	};
+	}
 
 	const prevSlide = () => {
 		setPageNumberWithBroadcast(getPrevPageNumber());
-	};
+	}
 
 	// 10スライドスキップ
 	const next10Slides = () => {
 		setPageNumberWithBroadcast(pageNumber + 10);
-	};
+	}
 
 	const prev10Slides = () => {
 		setPageNumberWithBroadcast(pageNumber - 10);
-	};
+	}
 
 	// 最初/最後のスライドへジャンプ
 	const jumpToFirstSlide = () => {
 		setPageNumberWithBroadcast(1, true);
-	};
+	}
 
 	const jumpToLastSlide = () => {
 		setPageNumberWithBroadcast(pdfpcConfig.totalOverlays, true);
-	};
+	}
 
 	// ユーザースライド（オーバーレイグループ）単位の移動
 	const nextUserSlide = () => {
 		const nextPageNumber = getNextUserSlidePageNumber(
 			pdfpcConfig.pages,
 			pageNumber,
-		);
+		)
 		if (nextPageNumber !== null) {
 			setPageNumberWithBroadcast(nextPageNumber);
 		}
-	};
+	}
 
 	const prevUserSlide = () => {
 		const prevPageNumber = getPrevUserSlidePageNumber(
 			pdfpcConfig.pages,
 			pageNumber,
-		);
+		)
 		if (prevPageNumber !== null) {
 			setPageNumberWithBroadcast(prevPageNumber);
 		}
-	};
+	}
 
 	// スライド番号指定ジャンプ
 	const jumpToSlide = (slideNumber: number) => {
 		setPageNumberWithBroadcast(slideNumber, true);
-	};
+	}
 
 	// 履歴を戻る
 	const goBackInHistory = () => {
@@ -227,17 +227,17 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 			setHistory((prev) => prev.slice(0, -1));
 			setPageNumberWithBroadcast(prevPage, false);
 		}
-	};
+	}
 
 	// オーバービューモードの切り替え
 	const toggleOverviewMode = () => {
 		setIsOverviewMode((prev) => !prev);
-	};
+	}
 
 	// タイマーリセット
 	const resetTimer = () => {
 		timerRef.current?.reset();
-	};
+	}
 
 	const handleBlackoutChange = (nextIsBlackout: boolean) => {
 		setIsBlackout(nextIsBlackout);
@@ -247,14 +247,14 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 			command: "send-blackout-state",
 			isBlackout: nextIsBlackout,
 		} satisfies BroadcastAction);
-	};
+	}
 	const handleFrozenChange = (nextIsFrozen: boolean) => {
 		setIsFrozen(nextIsFrozen);
 		if (!nextIsFrozen) {
 			// フリーズ解除時に現在のページを送信
 			setPageNumberWithBroadcast(pageNumber);
 		}
-	};
+	}
 
 	useSlideShortcut(
 		{
@@ -273,28 +273,28 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 			resetTimer,
 		},
 		[slideStageRef, nextSlideRef, nextPrevRef],
-	);
+	)
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: nextSlide 等は毎レンダーで作り直される
 	const handleNavigate = useCallback(
 		(direction: "next" | "prev" | "home" | "end") => {
 			switch (direction) {
 				case "next":
-					nextSlide();
-					break;
+					nextSlide()
+					break
 				case "prev":
-					prevSlide();
-					break;
+					prevSlide()
+					break
 				case "home":
 					jumpToFirstSlide();
-					break;
+					break
 				case "end":
 					jumpToLastSlide();
-					break;
+					break
 			}
 		},
 		[pageNumber, pdfpcConfig.totalOverlays],
-	);
+	)
 
 	usePresenterBroadcast(
 		fileName,
@@ -304,7 +304,7 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 		isBlackout,
 		pageNumber,
 		handleNavigate,
-	);
+	)
 
 	useToolBroadcast(fileName, pairId, "presenter");
 	useToolShortcut(fileName, pairId, "presenter");
@@ -378,5 +378,5 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 				<KeybindingHintToast visible onDismiss={help.dismissHint} />
 			)}
 		</>
-	);
+	)
 }
