@@ -1,33 +1,33 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Browser-based PDF presenter console (pdfpc-compatible)."
-    />
-    <link rel="apple-touch-icon" href="/logo192.png" />
-    <title>PDF Presenter Web</title>
+    <title>PDFPW</title>
+    <link rel="canonical" href="https://pdfpw.github.io/en/" />
     <script>
       (() => {
-        var stored, isDark;
+        var stored, locale, theme, isDark;
         try {
-          stored = localStorage.getItem("pdfpw-theme");
-          isDark = stored
-            ? stored === "dark"
-            : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          stored = localStorage.getItem("pdfpw:locale");
+          locale = stored === "ja" || stored === "en" ? stored : null;
+          if (!locale) locale = navigator.language?.toLowerCase().startsWith("ja") ? "ja" : "en";
+          if (location.pathname === "/" || location.pathname === "") {
+            location.replace(`/${locale}/${location.search}${location.hash}`);
+          }
+        } catch (_) {}
+        try {
+          theme = localStorage.getItem("pdfpw-theme");
+          isDark = theme ? theme === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
           document.documentElement.classList.toggle("dark", isDark);
-        } catch (_e) {
-          /* keep server-rendered class */
-        }
+        } catch (_) {}
       })();
     </script>
   </head>
   <body>
-    <div id="app"  ></div>
+    <div id="app"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
