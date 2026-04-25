@@ -16,11 +16,15 @@ export const fileNameOrFileAtom = atom<
 	| { pdf: File | FileSystemFileHandle; pdfpc?: File | FileSystemFileHandle }
 >(null);
 
+function isPresenterPath(pathname: string): boolean {
+	return /^\/(?:en|ja)\/presenter\/?$/.test(pathname);
+}
+
 export function subscribePresenterRoute(router: Register["router"]) {
 	fileNameOrFileAtom.onMount = (setValue) => {
 		const sync = (event: Pick<RouterEvent, "toLocation" | "fromLocation">) => {
 			if (
-				event.toLocation.pathname === "/presenter" &&
+				isPresenterPath(event.toLocation.pathname) &&
 				event.fromLocation?.searchStr !== event.toLocation.searchStr
 			) {
 				const { pdf, pdfpc } = event.toLocation.state;
@@ -31,8 +35,8 @@ export function subscribePresenterRoute(router: Register["router"]) {
 					setValue(fileName ?? "");
 				}
 			} else if (
-				event.toLocation.pathname !== "/presenter" &&
-				event.fromLocation?.pathname === "/presenter"
+				!isPresenterPath(event.toLocation.pathname) &&
+				isPresenterPath(event.fromLocation?.pathname ?? "")
 			) {
 				setValue(null);
 			}

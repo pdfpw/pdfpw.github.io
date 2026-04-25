@@ -1,3 +1,25 @@
+import {
+	kb_slide_next_label,
+	kb_slide_prev_label,
+	kb_slide_next_user_label,
+	kb_slide_prev_user_label,
+	kb_slide_next_10_label,
+	kb_slide_prev_10_label,
+	kb_slide_first_label,
+	kb_slide_last_label,
+	kb_slide_history_back_label,
+	kb_slide_jump_mode_label,
+	kb_slide_jump_mode_hint,
+	kb_tool_laser_label,
+	kb_tool_pen_label,
+	kb_tool_erase_label,
+	kb_tool_exit_label,
+	kb_view_overview_label,
+	kb_view_fullscreen_label,
+	kb_system_reset_timer_label,
+	kb_system_help_label,
+} from "#src/paraglide/messages.js";
+
 export type ActionId =
 	// navigation
 	| "slide.next"
@@ -38,8 +60,8 @@ export interface ActionDefinition {
 	readonly category: Category;
 	readonly scope: Scope;
 	readonly bindings: readonly Binding[];
-	readonly label: string;
-	readonly hint?: string;
+	readonly label: () => string;
+	readonly hint?: () => string;
 }
 
 export const KEYBINDING_CATALOG: Record<ActionId, ActionDefinition> = {
@@ -51,7 +73,7 @@ export const KEYBINDING_CATALOG: Record<ActionId, ActionDefinition> = {
 			{ key: "ArrowRight", shift: true },
 			{ key: "PageDown", shift: true },
 		],
-		label: "Skip 10 forward",
+		label: kb_slide_next_10_label,
 	},
 	"slide.prev-10": {
 		category: "navigation",
@@ -60,107 +82,107 @@ export const KEYBINDING_CATALOG: Record<ActionId, ActionDefinition> = {
 			{ key: "ArrowLeft", shift: true },
 			{ key: "PageUp", shift: true },
 		],
-		label: "Skip 10 backward",
+		label: kb_slide_prev_10_label,
 	},
 	"slide.next": {
 		category: "navigation",
 		scope: "both",
 		bindings: [{ key: "ArrowRight" }, { key: " " }, { key: "PageDown" }],
-		label: "Next slide",
+		label: kb_slide_next_label,
 	},
 	"slide.prev": {
 		category: "navigation",
 		scope: "both",
 		bindings: [{ key: "ArrowLeft" }, { key: "PageUp" }],
-		label: "Previous slide",
+		label: kb_slide_prev_label,
 	},
 	"slide.next-user": {
 		category: "navigation",
 		scope: "presenter",
 		bindings: [{ key: "ArrowDown" }],
-		label: "Next slide group",
+		label: kb_slide_next_user_label,
 	},
 	"slide.prev-user": {
 		category: "navigation",
 		scope: "presenter",
 		bindings: [{ key: "ArrowUp" }],
-		label: "Previous slide group",
+		label: kb_slide_prev_user_label,
 	},
 	"slide.first": {
 		category: "navigation",
 		scope: "both",
 		bindings: [{ key: "Home" }],
-		label: "First slide",
+		label: kb_slide_first_label,
 	},
 	"slide.last": {
 		category: "navigation",
 		scope: "both",
 		bindings: [{ key: "End" }],
-		label: "Last slide",
+		label: kb_slide_last_label,
 	},
 	"slide.history-back": {
 		category: "navigation",
 		scope: "presenter",
 		bindings: [{ key: "Backspace" }],
-		label: "Navigate back in history",
+		label: kb_slide_history_back_label,
 	},
 	"slide.jump-mode": {
 		category: "navigation",
 		scope: "presenter",
 		bindings: [{ key: "g" }],
-		label: "Jump to slide N",
-		hint: "Then type digits and press Enter",
+		label: kb_slide_jump_mode_label,
+		hint: kb_slide_jump_mode_hint,
 	},
 	// tools
 	"tool.laser": {
 		category: "tools",
 		scope: "both",
 		bindings: [{ key: "l" }],
-		label: "Toggle laser pointer",
+		label: kb_tool_laser_label,
 	},
 	"tool.pen": {
 		category: "tools",
 		scope: "both",
 		bindings: [{ key: "d" }],
-		label: "Toggle pen",
+		label: kb_tool_pen_label,
 	},
 	"tool.erase": {
 		category: "tools",
 		scope: "both",
 		bindings: [{ key: "e" }],
-		label: "Erase pen drawings",
+		label: kb_tool_erase_label,
 	},
 	"tool.exit": {
 		category: "tools",
 		scope: "both",
 		bindings: [{ key: "Escape" }],
-		label: "Exit tool / close dialog",
+		label: kb_tool_exit_label,
 	},
 	// view
 	"view.overview": {
 		category: "view",
 		scope: "both",
 		bindings: [{ key: "Tab" }],
-		label: "Toggle overview",
+		label: kb_view_overview_label,
 	},
 	"view.fullscreen": {
 		category: "view",
 		scope: "presentation",
 		bindings: [{ key: "f" }],
-		label: "Toggle fullscreen",
+		label: kb_view_fullscreen_label,
 	},
 	// system
 	"system.reset-timer": {
 		category: "system",
 		scope: "presenter",
 		bindings: [{ key: "r" }],
-		label: "Reset timer",
+		label: kb_system_reset_timer_label,
 	},
 	"system.help": {
 		category: "system",
 		scope: "both",
 		bindings: [{ key: "?", shift: true }, { key: "F1" }],
-		label: "Show keyboard help",
+		label: kb_system_help_label,
 	},
 };
 

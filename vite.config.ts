@@ -1,12 +1,14 @@
 import { exec } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
+import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import UnpluginTypia from "@ryoppippi/unplugin-typia/vite";
+import { localeHtmlPlugin } from "./src/vite-plugins/locale-html-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { regex } from "arkregex";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
 
 const GITHUB_REPO_URL_REGEX = regex(
@@ -17,6 +19,13 @@ const GITHUB_REPO_URL_REGEX = regex(
 export default defineConfig({
 	base: "/",
 	plugins: [
+		paraglideVitePlugin({
+			project: "./project.inlang",
+			outdir: "./src/paraglide",
+			strategy: ["url", "localStorage", "preferredLanguage", "baseLocale"],
+			emitTsDeclarations: true,
+		}),
+		localeHtmlPlugin(),
 		UnpluginTypia(),
 		devtools(),
 		tanstackRouter({
@@ -25,7 +34,7 @@ export default defineConfig({
 		}),
 		viteReact({
 			babel: {
-				plugins: ["babel-plugin-react-compiler"],
+				plugins: process.env.VITEST ? [] : ["babel-plugin-react-compiler"],
 			},
 		}),
 		tailwindcss(),
@@ -191,6 +200,10 @@ export default defineConfig({
 			devOptions: { enabled: false },
 		}),
 	],
+	test: {
+		globals: true,
+		setupFiles: ["./src/test-setup.ts"],
+	},
 });
 
 interface PnpmLicense {

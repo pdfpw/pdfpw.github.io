@@ -5,13 +5,13 @@ import {
 } from "@tanstack/react-router";
 import Header from "#src/components/Header.tsx";
 
-export const Route = createFileRoute("/(main)")({
+export const Route = createFileRoute("/$locale/(main)")({
 	component: RouteComponent,
 });
 
 function RouteComponent() {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
-	const isPresenterRoute = pathname.startsWith("/presenter");
+	const isPresenterRoute = /^\/(?:en|ja)\/presenter\/?$/.test(pathname);
 
 	return (
 		<div className="grid grid-rows-[auto_1fr] h-screen">
@@ -21,12 +21,12 @@ function RouteComponent() {
 						? () => {
 								window.dispatchEvent(
 									new KeyboardEvent("keydown", { key: "?" }),
-								);
+								)
 							}
 						: undefined
 				}
 			/>
 			<Outlet />
 		</div>
-	);
+	)
 }

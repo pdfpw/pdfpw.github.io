@@ -7,8 +7,9 @@ import {
 	CardHeader,
 	CardTitle,
 } from "#src/components/ui/card.tsx";
+import * as m from "#src/paraglide/messages.js";
 
-export const Route = createFileRoute("/(main)/licenses")({
+export const Route = createFileRoute("/$locale/(main)/licenses")({
 	component: RouteComponent,
 });
 
@@ -23,7 +24,7 @@ function RouteComponent() {
 					))}
 			</div>
 		</div>
-	);
+	)
 }
 
 function LicenseCard({ license }: { license: License }) {
@@ -32,13 +33,17 @@ function LicenseCard({ license }: { license: License }) {
 			<CardHeader>
 				<CardTitle>{license.name}</CardTitle>
 				<CardDescription>
-					License: {license.license}
-					{license.author && <> | Author: {license.author}</>}
+					{m.license_label_license()}: {license.license}
+					{license.author && (
+						<>
+							{" "}| {m.license_label_author()}: {license.author}
+						</>
+					)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="whitespace-pre-wrap wrap-break-word text-sm leading-relaxed text-justify">
 				{license.licenseText}
 			</CardContent>
 		</Card>
-	);
+	)
 }

@@ -9,6 +9,7 @@ import type {
 	ResolvedPdfpcPageV2,
 } from "#src/lib/pdfpc-config.ts";
 import { cn } from "#src/lib/utils.ts";
+import * as m from "#src/paraglide/messages.js";
 
 interface NoteProps {
 	pdfpcConfig: ResolvedPdfpcConfigV2;
@@ -31,7 +32,7 @@ function NoteCore({ className, pdfpcConfig, pageNumber }: NoteProps) {
 		<Card className={cn("overflow-auto gap-3 py-4", className)}>
 			{hasNote && (
 				<div className="px-6 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-					Notes
+					{m.presenter_notes_eyebrow()}
 				</div>
 			)}
 			{pdfpcConfig.disableMarkdown || !pageConfig ? (

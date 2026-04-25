@@ -14,3 +14,6 @@ count.txt
 # Superpowers workflow artifacts (screenshots etc.)
 docs/superpowers/screenshots/
 .superpowers/
+
+# paraglide-js generated
+src/paraglide/

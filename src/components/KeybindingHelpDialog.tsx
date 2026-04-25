@@ -14,12 +14,19 @@ import {
 	KEYBINDING_CATALOG,
 } from "#src/lib/keybindings.ts";
 import { cn } from "#src/lib/utils.ts";
+import * as m from "#src/paraglide/messages.js";
+import {
+	kb_category_navigation,
+	kb_category_tools,
+	kb_category_view,
+	kb_category_system,
+} from "#src/paraglide/messages.js";
 
-const CATEGORY_LABELS: Record<Category, string> = {
-	navigation: "Navigation",
-	tools: "Tools",
-	view: "View",
-	system: "System",
+const CATEGORY_LABELS: Record<Category, () => string> = {
+	navigation: kb_category_navigation,
+	tools: kb_category_tools,
+	view: kb_category_view,
+	system: kb_category_system,
 };
 
 const CATEGORY_ORDER: readonly Category[] = [
@@ -57,13 +64,13 @@ export function KeybindingHelpDialog({ open, onOpenChange }: Props) {
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
 				<DialogHeader>
-					<DialogTitle>Keyboard Shortcuts</DialogTitle>
+					<DialogTitle>{m.kb_help_title()}</DialogTitle>
 				</DialogHeader>
 				<div className="flex flex-col gap-5">
 					{CATEGORY_ORDER.map((cat) => (
 						<section key={cat} className="flex flex-col gap-2">
 							<h3 className="text-[11px] font-mono uppercase tracking-wider text-muted">
-								{CATEGORY_LABELS[cat]}
+								{CATEGORY_LABELS[cat]()}
 							</h3>
 							<ul className="flex flex-col gap-1.5">
 								{grouped[cat].map((row) => (
@@ -74,8 +81,9 @@ export function KeybindingHelpDialog({ open, onOpenChange }: Props) {
 					))}
 				</div>
 				<p className="text-muted text-xs text-center pt-2 border-t border-border">
-					Press <Kbd className="mx-1">?</Kbd> again or{" "}
-					<Kbd className="mx-1">Esc</Kbd> to close
+					{m.kb_help_press_again_prefix()} <Kbd className="mx-1">?</Kbd>{" "}
+					{m.kb_help_press_again_suffix_with_esc_prefix()}{" "}
+					<Kbd className="mx-1">Esc</Kbd> {m.kb_help_press_again_suffix()}
 				</p>
 			</DialogContent>
 		</Dialog>
@@ -104,8 +112,8 @@ function ShortcutRow({ def }: { def: ActionDefinition }) {
 				))}
 			</div>
 			<div className="flex-1 flex flex-col">
-				<span className="text-fg">{def.label}</span>
-				{def.hint && <span className="text-muted text-xs">{def.hint}</span>}
+				<span className="text-fg">{def.label()}</span>
+				{def.hint && <span className="text-muted text-xs">{def.hint()}</span>}
 			</div>
 			<ScopeBadges scope={def.scope} />
 		</li>
@@ -136,7 +144,7 @@ function Badge({ active, label }: { active: boolean; label: string }) {
 					: "bg-transparent text-subtle border border-border",
 			)}
 			aria-label={
-				label === "P" ? "Presenter screen" : "Presentation (audience) screen"
+				label === "P" ? m.kb_help_scope_presenter_aria() : m.kb_help_scope_presentation_aria()
 			}
 		>
 			{label}

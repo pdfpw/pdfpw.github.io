@@ -1,5 +1,7 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { FileTextIcon, KeyboardIcon } from "lucide-react";
+import * as m from "#src/paraglide/messages.js";
+import { LocaleSwitcher } from "./LocaleSwitcher.tsx";
 import { ThemeToggle } from "./ThemeToggle";
 
 function GithubMark({ className }: { className?: string }) {
@@ -20,10 +22,14 @@ interface HeaderProps {
 }
 
 export default function Header({ onHelpClick }: HeaderProps = {}) {
+	const params = useParams({ strict: false }) as { locale?: string };
+	const safeLocale = params.locale === "ja" || params.locale === "en" ? params.locale : "en";
+
 	return (
 		<header className="flex items-center justify-between border-b border-border bg-bg px-6 py-3">
 			<Link
-				to="/"
+				to="/$locale"
+				params={{ locale: safeLocale }}
 				className="flex items-center gap-2 text-fg transition-opacity hover:opacity-80"
 			>
 				<span
@@ -36,12 +42,13 @@ export default function Header({ onHelpClick }: HeaderProps = {}) {
 			</Link>
 
 			<div className="flex items-center gap-1">
+				<LocaleSwitcher />
 				{onHelpClick && (
 					<button
 						type="button"
 						onClick={onHelpClick}
 						className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-fg"
-						aria-label="Keyboard shortcuts"
+						aria-label={m.header_help_aria()}
 					>
 						<KeyboardIcon className="size-4" />
 					</button>
@@ -51,14 +58,15 @@ export default function Header({ onHelpClick }: HeaderProps = {}) {
 					target="_blank"
 					rel="noreferrer noopener"
 					className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-fg"
-					aria-label="GitHub"
+					aria-label={m.header_github_aria()}
 				>
 					<GithubMark className="size-4" />
 				</a>
 				<Link
-					to="/licenses"
+					to="/$locale/licenses"
+					params={{ locale: safeLocale }}
 					className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-fg"
-					aria-label="Licenses"
+					aria-label={m.header_licenses_aria()}
 				>
 					<FileTextIcon className="size-4" />
 				</Link>

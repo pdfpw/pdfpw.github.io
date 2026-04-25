@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { OverviewThumbnail } from "#src/components/OverviewThumbnail";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
 import { cn } from "#src/lib/utils";
+import * as m from "#src/paraglide/messages.js";
 
 interface OverviewDialogProps {
 	pdfProxy: PDFDocumentProxy;
@@ -67,7 +68,7 @@ export function OverviewDialog({
 				>
 					<div className="flex items-center justify-between border-b border-border pb-4 mb-4">
 						<DialogPrimitive.Title className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-							OVERVIEW · {pdfpcConfig.totalOverlays} slides
+							{m.overview_eyebrow()} · {pdfpcConfig.totalOverlays} {m.overview_slides_suffix()}
 						</DialogPrimitive.Title>
 						<DialogPrimitive.Close
 							className={cn(
@@ -86,11 +87,11 @@ export function OverviewDialog({
 								strokeLinecap="round"
 								strokeLinejoin="round"
 							>
-								<title>Close</title>
+								<title>{m.overview_close_sr()}</title>
 								<path d="M18 6 6 18" />
 								<path d="M6 6l12 12" />
 							</svg>
-							<span className="sr-only">閉じる</span>
+							<span className="sr-only">{m.overview_close_sr()}</span>
 						</DialogPrimitive.Close>
 					</div>
 
@@ -113,7 +114,7 @@ export function OverviewDialog({
 					</div>
 
 					<div className="border-t border-border pt-4 mt-4 font-mono text-[11px] text-muted">
-						Tab: toggle · Esc: close · Click: select
+						{m.overview_footer_help()}
 					</div>
 				</DialogPrimitive.Content>
 			</DialogPrimitive.Portal>

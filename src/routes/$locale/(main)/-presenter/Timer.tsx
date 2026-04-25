@@ -9,6 +9,7 @@ import {
 import { Button } from "#src/components/ui/button.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config";
 import { cn } from "#src/lib/utils";
+import { getLocale } from "#src/paraglide/runtime.js";
 
 export interface TimerHandle {
 	reset: () => void;
@@ -55,16 +56,20 @@ type TimerView = {
 const TIMER_PACE_COLOR = true;
 const PACE_THRESHOLD_SECONDS = 60;
 
-const durationFormatter = new Intl.DurationFormat("ja-JP", {
-	style: "digital",
-	hours: "numeric",
-	minutes: "2-digit",
-	seconds: "2-digit",
-});
-const clockFormatter = new Intl.DateTimeFormat("ja-JP", {
-	hour: "2-digit",
-	minute: "2-digit",
-});
+function getDurationFormatter() {
+	return new Intl.DurationFormat(getLocale(), {
+		style: "digital",
+		hours: "numeric",
+		minutes: "2-digit",
+		seconds: "2-digit",
+	});
+}
+function getClockFormatter() {
+	return new Intl.DateTimeFormat(getLocale(), {
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+}
 
 function truncateToMinute(date: Date): Date {
 	const truncated = new Date(date);
@@ -129,7 +134,7 @@ function formatDuration(ms: number): string {
 	const minutes = Math.floor((totalSeconds % 3600) / 60);
 	const seconds = totalSeconds % 60;
 
-	return durationFormatter.format({
+	return getDurationFormatter().format({
 		hours: ms < 0 ? -hours : hours,
 		minutes,
 		seconds,
@@ -331,7 +336,7 @@ function buildTimerView(
 
 	return {
 		displayText: formatDuration(displayMs),
-		clockText: clockFormatter.format(nowMs),
+		clockText: getClockFormatter().format(nowMs),
 		timerColorState,
 		isRunning: timerState.isRunning,
 	};

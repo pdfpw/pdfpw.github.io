@@ -1,11 +1,12 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Suspense, startTransition, useId, useReducer, useState } from "react";
-import { useLocalStorageSync } from "../../hooks/use-local-storage-sync";
+import { useLocalStorageSync } from "#src/hooks/use-local-storage-sync";
+import * as m from "#src/paraglide/messages.js";
 import {
 	canUseFSA,
 	ensureHandleReadable,
 	ensureHandleWritable,
-} from "../../lib/fsa";
+} from "#src/lib/fsa";
 import {
 	clearRecentStore,
 	getRecentFiles,
@@ -14,7 +15,7 @@ import {
 	type RecentFile,
 	removeRecent,
 	upsertRecent,
-} from "../../lib/recent-store";
+} from "#src/lib/recent-store";
 import { HeroSection } from "./-index/HeroSection";
 import { HowItWorksSection } from "./-index/HowItWorksSection";
 import { LibrarySection, LibrarySectionLoading } from "./-index/LibrarySection";
@@ -22,21 +23,22 @@ import { LibrarySectionData } from "./-index/LibrarySectionData";
 
 let presentationWindow: Window | null = null;
 
-export const Route = createFileRoute("/(main)/")({
+export const Route = createFileRoute("/$locale/(main)/")({
 	component: Home,
 });
 
 function Home() {
+	const { locale } = Route.useParams();
 	const [supportsFSA] = useState(() => canUseFSA());
 	const [recentFilesPromise, refreshRecentFiles] = useReducer(
 		(_, db: RecentDb) => getRecentFiles(db),
 		undefined,
 		async () => getRecentFiles(await openDb()),
-	);
+	)
 	const [saveHistory, setSaveHistory] = useLocalStorageSync<boolean>(
 		"pdfpw-save-history",
 		true,
-	);
+	)
 	const [status, setStatus] = useState<string | null>(null);
 	const inputId = useId();
 	const router = useRouter();
@@ -49,7 +51,7 @@ function Home() {
 				await clearRecentStore(db);
 				startTransition(() => {
 					refreshRecentFiles(db);
-				});
+				})
 			} catch (error) {
 				console.warn("Failed to clear history", error);
 			}
@@ -72,7 +74,7 @@ function Home() {
 			await removeRecent(db, id);
 			startTransition(() => {
 				refreshRecentFiles(db);
-			});
+			})
 		} catch (error) {
 			console.warn("Failed to delete recent file", error);
 		}
@@ -84,7 +86,7 @@ function Home() {
 			await clearRecentStore(db);
 			startTransition(() => {
 				refreshRecentFiles(db);
-			});
+			})
 		} catch (error) {
 			console.warn("Failed to clear recent files", error);
 		}
@@ -95,12 +97,12 @@ function Home() {
 			const basePdf = pdfName.replace(/\.pdf$/i, "");
 			const baseCfg = configName.replace(/\.pdfpc$/i, "");
 			return basePdf.toLowerCase() === baseCfg.toLowerCase();
-		};
+		}
 
 		const pdf = files.find(
 			(f) =>
 				f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
-		);
+		)
 		const pdfpc = pdf
 			? files.find(
 					(f) => /\.pdfpc$/i.test(f.name) && sameBase(pdf.name, f.name),
@@ -108,15 +110,15 @@ function Home() {
 			: undefined;
 
 		if (!pdf) {
-			setStatus("PDFファイルを選択してください");
-			return;
+			setStatus(m.presenter_error_no_pdf());
+			return
 		}
 
 		const pdfHandle = handles?.find((h) => h.name === pdf.name);
 		const pdfpcHandle =
 			pdf && pdfpc && sameBase(pdf.name, pdfpc.name)
 				? handles?.find((h) => h.name === pdfpc.name)
-				: undefined;
+				: undefined
 
 		if (pdfHandle && supportsFSA) {
 			await saveRecent({
@@ -129,11 +131,11 @@ function Home() {
 						? pdfpc.name
 						: undefined,
 				lastOpened: Date.now(),
-			});
+			})
 			const db = await openDb();
 			startTransition(() => {
 				refreshRecentFiles(db);
-			});
+			})
 		} else if (saveHistory) {
 			// Standard Mode: save snapshot
 			await saveRecent({
@@ -143,21 +145,22 @@ function Home() {
 				configFile: pdfpc,
 				configName: pdfpc?.name,
 				lastOpened: Date.now(),
-			});
+			})
 			const db = await openDb();
 			startTransition(() => {
 				refreshRecentFiles(db);
-			});
+			})
 		}
 
 		setStatus(
 			pdfpc && pdfpcHandle && sameBase(pdf.name, pdfpc.name)
-				? `「${pdf.name}」と設定ファイル「${pdfpc.name}」を読み込み中…`
-				: `「${pdf.name}」を読み込み中…`,
-		);
+				? m.presenter_status_loading_with_config({ file: pdf.name, config: pdfpc.name })
+				: m.presenter_status_loading({ file: pdf.name }),
+		)
 
 		await router.navigate({
-			to: "/presenter",
+			to: "/$locale/presenter",
+			params: { locale },
 			search: {
 				file: pdf.name,
 			},
@@ -165,9 +168,10 @@ function Home() {
 				pdf: pdfHandle ?? pdf,
 				pdfpc: pdfpcHandle ?? pdfpc,
 			},
-		});
+		})
 		const url = router.buildLocation({
-			to: "/presentation",
+			to: "/$locale/presentation",
+			params: { locale },
 			search: {
 				file: pdf.name,
 			},
@@ -181,7 +185,7 @@ function Home() {
 				url,
 				"_blank",
 				"width=1200,height=675,resizable=yes",
-			);
+			)
 		}
 	}
 
@@ -193,35 +197,33 @@ function Home() {
 		if (item.handle) {
 			const canRead = await ensureHandleReadable(item.handle);
 			if (!canRead) {
-				setStatus("権限が拒否されました。再度許可してください。");
-				return;
+				setStatus(m.presenter_error_permission_denied());
+				return
 			}
 			if (item.configHandle) {
 				const baseMatch =
 					item.configName && item.name
 						? item.name.replace(/\.pdf$/i, "").toLowerCase() ===
 							item.configName.replace(/\.pdfpc$/i, "").toLowerCase()
-						: false;
+						: false
 				if (!baseMatch) {
-					setStatus(
-						"設定ファイル名がPDFと一致しません（example.pdf ↔ example.pdfpc）。",
-					);
-					return;
+					setStatus(m.presenter_error_config_name_mismatch())
+					return
 				}
 				const ok = await ensureHandleWritable(item.configHandle);
 				if (!ok) {
-					setStatus("設定ファイルの権限が拒否されました。");
-					return;
+					setStatus(m.presenter_error_config_permission());
+					return
 				}
 			}
 			const file = await item.handle.getFile();
 			const extraFiles = item.configHandle
 				? [await item.configHandle.getFile()]
-				: [];
+				: []
 			await handleFiles(
 				[file, ...extraFiles],
 				[item.handle, ...(item.configHandle ? [item.configHandle] : [])],
-			);
+			)
 		} else if (item.file) {
 			// Restore from snapshot
 			const pdf = item.file;
@@ -240,17 +242,17 @@ function Home() {
 				: await ensureHandleReadable(handle);
 			if (!ok) {
 				if (needsWrite) {
-					setStatus("設定ファイルの権限が拒否されました。");
-					return;
+					setStatus(m.presenter_error_config_permission());
+					return
 				}
-				continue;
+				continue
 			}
 			readableHandles.push(handle);
 			files.push(await handle.getFile());
 		}
 		if (files.length === 0) {
-			setStatus("ファイルへの権限がありません。");
-			return;
+			setStatus(m.presenter_error_no_file_permission());
+			return
 		}
 
 		// Validate pdfpc pairing before proceeding
@@ -262,10 +264,8 @@ function Home() {
 			pdf.name.replace(/\.pdf$/i, "").toLowerCase() !==
 				pdfpc.name.replace(/\.pdfpc$/i, "").toLowerCase()
 		) {
-			setStatus(
-				"pdfpc は PDF と同じ名前にしてください（例: example.pdf ↔ example.pdfpc）",
-			);
-			return;
+			setStatus(m.presenter_error_pdfpc_pairing())
+			return
 		}
 
 		await handleFiles(files, readableHandles);
@@ -287,13 +287,13 @@ function Home() {
 				],
 				excludeAcceptAllOption: true,
 				multiple: true,
-			});
+			})
 			const handles = picker ?? [];
 			if (handles.length === 0) return;
 			await handlePickedHandles(handles);
 		} catch (error) {
 			if ((error as DOMException).name !== "AbortError") {
-				setStatus("ファイルを開けませんでした");
+				setStatus(m.presenter_error_open_failed());
 			}
 		}
 	}
@@ -337,5 +337,5 @@ function Home() {
 
 			<HowItWorksSection />
 		</main>
-	);
+	)
 }
