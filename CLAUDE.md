@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PDFPW is a browser-based PDF presenter console inspired by pdfpc. It features a dual-window architecture:
+pdfpw is a browser-based PDF presenter console inspired by pdfpc. It features a dual-window architecture:
 - **Presenter Window**: Full control interface with notes, next slides, and presenter tools
 - **Presentation Window**: Minimal fullscreen display for the audience
 

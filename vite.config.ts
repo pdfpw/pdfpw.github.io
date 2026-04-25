@@ -164,8 +164,8 @@ export default defineConfig({
 				"og-image.png",
 			],
 			manifest: {
-				name: "PDF Presenter Web",
-				short_name: "PDFPW",
+				name: "pdfpw",
+				short_name: "pdfpw",
 				description: "Browser-based PDF presenter console (pdfpc-compatible).",
 				start_url: "/",
 				scope: "/",

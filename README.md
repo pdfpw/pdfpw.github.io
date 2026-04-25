@@ -1,6 +1,6 @@
-# PDFPW
+# pdfpw
 
-PDFPW is a browser-based PDF presenter console inspired by pdfpc.
+pdfpw is a browser-based PDF presenter console inspired by pdfpc.
 It opens a presenter view and a separate audience window, supports PDF + pdfpc pairing,
 recent file history (when the File System Access API is available), and works entirely in the browser.
 
