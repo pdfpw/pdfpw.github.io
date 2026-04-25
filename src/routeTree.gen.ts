@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LocaleRouteRouteImport } from './routes/$locale/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocalemainRouteRouteImport } from './routes/$locale/(main)/route'
 import { Route as LocalePresentationIndexRouteImport } from './routes/$locale/presentation/index'
 import { Route as LocalemainIndexRouteImport } from './routes/$locale/(main)/index'
@@ -19,6 +20,11 @@ import { Route as LocalemainLicensesRouteImport } from './routes/$locale/(main)/
 const LocaleRouteRoute = LocaleRouteRouteImport.update({
   id: '/$locale',
   path: '/$locale',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocalemainRouteRoute = LocalemainRouteRouteImport.update({
@@ -47,6 +53,7 @@ const LocalemainLicensesRoute = LocalemainLicensesRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
   '/$locale': typeof LocalemainRouteRouteWithChildren
   '/$locale/licenses': typeof LocalemainLicensesRoute
   '/$locale/presenter': typeof LocalemainPresenterRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByFullPath {
   '/$locale/presentation': typeof LocalePresentationIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/$locale': typeof LocalemainIndexRoute
   '/$locale/licenses': typeof LocalemainLicensesRoute
   '/$locale/presenter': typeof LocalemainPresenterRoute
@@ -61,6 +69,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteRouteWithChildren
   '/$locale/(main)': typeof LocalemainRouteRouteWithChildren
   '/$locale/(main)/licenses': typeof LocalemainLicensesRoute
@@ -71,6 +80,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/$locale'
     | '/$locale/licenses'
     | '/$locale/presenter'
@@ -78,12 +88,14 @@ export interface FileRouteTypes {
     | '/$locale/presentation'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/$locale'
     | '/$locale/licenses'
     | '/$locale/presenter'
     | '/$locale/presentation'
   id:
     | '__root__'
+    | '/'
     | '/$locale'
     | '/$locale/(main)'
     | '/$locale/(main)/licenses'
@@ -93,6 +105,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   LocaleRouteRoute: typeof LocaleRouteRouteWithChildren
 }
 
@@ -103,6 +116,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale'
       fullPath: '/$locale'
       preLoaderRoute: typeof LocaleRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/(main)': {
@@ -174,6 +194,7 @@ const LocaleRouteRouteWithChildren = LocaleRouteRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   LocaleRouteRoute: LocaleRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
