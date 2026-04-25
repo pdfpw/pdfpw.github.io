@@ -10,7 +10,9 @@ import {
 } from "#src/components/ui/dialog";
 import { Skeleton } from "#src/components/ui/skeleton";
 import { Switch } from "#src/components/ui/switch";
+import { formatDateTime } from "#src/lib/format.ts";
 import type { RecentFile, Settings } from "#src/lib/recent-store";
+import * as m from "#src/paraglide/messages.js";
 
 type LibrarySectionProps = {
 	supportsFSA: boolean;
@@ -36,12 +38,13 @@ export function LibrarySection({
 			<div className="mb-6 flex items-center justify-between gap-4">
 				<div>
 					<div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-						LIBRARY
+						{m.library_eyebrow()}
 					</div>
 					<div className="text-[11px] text-subtle mt-0.5">
 						{recentFiles.length > 0
-							? `${recentFiles.length} files · recent first`
-							: "recent first"}
+							? // biome-ignore lint/suspicious/noExplicitAny: paraglide ICU plural type generation quirk
+						m.library_subtitle_with_count({ count: recentFiles.length } as any)
+							: m.library_subtitle_empty()}
 					</div>
 				</div>
 				<div className="flex items-center gap-3">
@@ -55,44 +58,44 @@ export function LibrarySection({
 							htmlFor="save-history"
 							className="text-[11px] font-medium text-muted select-none"
 						>
-							履歴を保存
+							{m.library_history_toggle()}
 						</label>
 					</div>
 					<Dialog>
 						<DialogTrigger asChild>
 							<Button variant="ghost" size="icon-sm">
 								<CircleHelp className="h-4 w-4" />
-								<span className="sr-only">ヘルプ</span>
+								<span className="sr-only">{m.library_help_sr()}</span>
 							</Button>
 						</DialogTrigger>
 						<DialogContent>
 							<DialogHeader>
-								<DialogTitle>履歴の保存について</DialogTitle>
+								<DialogTitle>{m.library_help_title()}</DialogTitle>
 								<DialogDescription className="space-y-4 pt-4 text-left">
 									<p>
-										<strong>高機能モード (推奨)</strong>
+										<strong>{m.library_help_advanced_heading()}</strong>
 										<br />
 										<span className="flex items-center gap-1">
 											<FileSymlink className="h-3 w-3" />
-											ファイルへのリンク
+											{m.library_help_advanced_label()}
 										</span>
 										<br />
-										ファイルへのポインタのみを保存するため、常に最新のファイルを開くことができます。
+										{m.library_help_advanced_body()}
 									</p>
 									<p>
-										<strong>標準モード</strong>
+										<strong>{m.library_help_standard_heading()}</strong>
 										<br />
 										<span className="flex items-center gap-1">
 											<FileClock className="h-3 w-3" />
-											スナップショット保存
+											{m.library_help_standard_label()}
 										</span>
 										<br />
-										その時点のファイルそのものをブラウザ内に保存します。元のファイルを更新しても、履歴から開く際は保存時の状態となります。
+										{m.library_help_standard_body()}
 									</p>
 									<p className="text-xs text-muted">
-										※同名のファイルを開いた場合、古い履歴は上書きされます。
+										{m.library_help_note_overwrite()}
 										<br />
-										※「履歴を保存」をオフにすると、どちらのモードでも履歴は残らなくなります。
+										{m.library_help_note_off()}
 									</p>
 								</DialogDescription>
 							</DialogHeader>
@@ -105,7 +108,7 @@ export function LibrarySection({
 							variant="ghost"
 							size="sm"
 						>
-							Clear all
+							{m.library_clear_all()}
 						</Button>
 					) : null}
 				</div>
@@ -113,11 +116,11 @@ export function LibrarySection({
 
 			{!settings.saveHistory && recentFiles.length === 0 ? (
 				<div className="rounded-lg border border-dashed border-border bg-raised/40 p-8 text-center text-[13px] text-muted">
-					履歴の保存が無効になっています。
+					{m.library_disabled_message()}
 				</div>
 			) : recentFiles.length === 0 ? (
 				<div className="rounded-lg border border-dashed border-border bg-raised/40 p-8 text-center text-[13px] text-muted">
-					No recent files yet. Drop a PDF above to start.
+					{m.library_empty_hint()}
 				</div>
 			) : (
 				<ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -130,8 +133,8 @@ export function LibrarySection({
 									className="block w-full p-2.5 text-left"
 									title={
 										item.handle
-											? "最新のファイルを開く"
-											: "開いた時点の状態を復元"
+											? m.library_open_latest()
+											: m.library_open_snapshot()
 									}
 								>
 									<div className="relative mb-2 aspect-[4/3] overflow-hidden rounded-md bg-gradient-to-br from-surface to-bg">
@@ -145,7 +148,7 @@ export function LibrarySection({
 										{item.handle && (
 											<span
 												role="img"
-												aria-label="File System Access"
+												aria-label={m.library_fsa_indicator_aria()}
 												className="absolute bottom-1.5 right-1.5 size-1.5 rounded-full bg-accent"
 											/>
 										)}
@@ -154,7 +157,7 @@ export function LibrarySection({
 										{item.name}
 									</div>
 									<div className="mt-0.5 font-mono text-[10px] text-subtle">
-										{new Date(item.lastOpened).toLocaleString("ja-JP")}
+										{formatDateTime(item.lastOpened, { dateStyle: "medium", timeStyle: "short" })}
 									</div>
 								</button>
 								<Button
@@ -163,7 +166,7 @@ export function LibrarySection({
 									variant="ghost"
 									size="icon-sm"
 									className="absolute right-1.5 top-1.5 opacity-0 transition hover:text-danger group-hover:opacity-100"
-									aria-label="Delete from library"
+									aria-label={m.library_delete_aria()}
 								>
 									<XIcon className="size-3.5" />
 								</Button>
@@ -182,9 +185,9 @@ export function LibrarySectionLoading() {
 			<div className="mb-6 flex items-center justify-between gap-4">
 				<div>
 					<div className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-						LIBRARY
+						{m.library_eyebrow()}
 					</div>
-					<div className="text-[11px] text-subtle mt-0.5">recent first</div>
+					<div className="text-[11px] text-subtle mt-0.5">{m.library_subtitle_empty()}</div>
 				</div>
 				<div className="flex items-center gap-3">
 					<div className="flex items-center gap-2 rounded-md border border-border bg-raised px-3 py-1.5">
