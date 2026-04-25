@@ -23,11 +23,10 @@ function LocaleLayout() {
 
 	useEffect(() => {
 		setLocale(locale as Locale, { reload: false });
+		if (typeof document !== "undefined") {
+			document.documentElement.lang = locale;
+		}
 	}, [locale]);
-
-	if (typeof document !== "undefined") {
-		document.documentElement.lang = locale;
-	}
 
 	return <Outlet />;
 }
