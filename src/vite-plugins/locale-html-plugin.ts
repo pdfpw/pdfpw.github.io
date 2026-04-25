@@ -15,12 +15,12 @@ const LOCALE_CONFIGS: LocaleConfig[] = [
 
 const META = {
 	en: {
-		title: "PDFPW — Precise PDF presenter",
+		title: "pdfpw — pdfpc in your browser",
 		description:
 			"Browser-based PDF presenter console (pdfpc-compatible). No install, no upload.",
 	},
 	ja: {
-		title: "PDFPW — 精密設計のプレゼンタコンソール",
+		title: "pdfpw — ブラウザで動く pdfpc",
 		description:
 			"ブラウザベースの PDF プレゼンテーション・コンソール (pdfpc 互換)。インストール不要、アップロード不要。",
 	},

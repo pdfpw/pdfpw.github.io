@@ -2,7 +2,7 @@
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "smoke_test": "OK",
 
-  "meta_title": "PDFPW — 精密設計のプレゼンタコンソール",
+  "meta_title": "pdfpw — ブラウザで動く pdfpc",
   "meta_description": "ブラウザベースの PDF プレゼンテーション・コンソール (pdfpc 互換)。インストール不要、アップロード不要。",
 
   "header_help_aria": "キーボードショートカット",
@@ -10,10 +10,9 @@
   "header_licenses_aria": "ライセンス",
   "header_lang_aria": "言語を切り替え",
 
-  "hero_eyebrow": "PRESENTER CONSOLE / 001",
-  "hero_headline_line1": "Precise by",
-  "hero_headline_line2": "default.",
-  "hero_lead": "ブラウザで動くプレゼンタコンソール。インストール・クラウドアップロード不要。PDF はあなたの端末から離れません。",
+  "hero_headline_line1": "pdfpc,",
+  "hero_headline_line2": "in your browser.",
+  "hero_lead": "ブラウザで動くプレゼンタコンソール。インストール・クラウドアップロード不要。",
   "hero_open_pdf": "PDF を開く",
   "hero_open_with_fsa": "File System Access で開く",
   "hero_drop_label": "PDF をここにドロップ",
@@ -21,12 +20,12 @@
 
   "howitworks_eyebrow": "HOW IT WORKS",
   "howitworks_steps_count": "3 ステップ",
-  "howitworks_step1_title": "ブラウザで PDF を開く",
-  "howitworks_step1_body": "インストール・クラウドアップロード不要。ファイルはあなたの端末上にとどまります。pdfpc 設定ファイルにも対応。",
+  "howitworks_step1_title": "PDF を開く",
+  "howitworks_step1_body": "インストール不要。ファイルはブラウザ外に送信されません。.pdfpc 設定ファイルにも対応。",
   "howitworks_step2_title": "プレゼンテーション画面を開く",
-  "howitworks_step2_body": "ノートとタイマー付きの発表者用コンソール、客席用フルスクリーン表示の 2 ウィンドウが同期します。",
-  "howitworks_step3_title": "落ち着いて発表する",
-  "howitworks_step3_body": "ノート・タイマー・レーザーポインタ・ペン・ブラックアウトをキーボードで操作。集中を切らしません。",
+  "howitworks_step2_body": "プレゼンター画面（ノート・タイマー付き）と客席用フルスクリーンの 2 ウィンドウが同期します。",
+  "howitworks_step3_title": "発表する",
+  "howitworks_step3_body": "ノート・タイマー・レーザーポインタ・ペン・ブラックアウトをキーボードで操作できます。",
 
   "library_eyebrow": "LIBRARY",
   "library_subtitle_with_count": "{count} 件 · 新しい順",

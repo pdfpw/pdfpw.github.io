@@ -47,9 +47,6 @@ export function HeroSection({
 	return (
 		<section className="grid w-full grid-cols-1 gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-14">
 			<div className="flex flex-col justify-center">
-				<div className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-accent">
-					{m.hero_eyebrow()}
-				</div>
 				<h1 className="mb-5 text-4xl font-semibold leading-[1.05] tracking-[-0.035em] text-fg sm:text-5xl lg:text-[56px]">
 					{m.hero_headline_line1()}
 					<br />
