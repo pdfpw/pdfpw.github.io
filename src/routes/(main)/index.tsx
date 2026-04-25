@@ -15,10 +15,10 @@ import {
 	removeRecent,
 	upsertRecent,
 } from "../../lib/recent-store";
-import { DropzoneSection } from "./-index/DropzoneSection";
 import { HeroSection } from "./-index/HeroSection";
-import { RecentSection, RecentSectionLoading } from "./-index/RecentSection";
-import { RecentSectionData } from "./-index/RecentSectionData";
+import { HowItWorksSection } from "./-index/HowItWorksSection";
+import { LibrarySection, LibrarySectionLoading } from "./-index/LibrarySection";
+import { LibrarySectionData } from "./-index/LibrarySectionData";
 
 let presentationWindow: Window | null = null;
 
@@ -299,27 +299,21 @@ function Home() {
 	}
 
 	return (
-		<main className="bg-linear-to-br from-background via-background to-secondary/20 text-foreground">
-			<div className="container mx-auto flex min-h-[50vh] max-w-6xl flex-col items-center justify-center px-6 pt-8 pb-8">
-				<div className="grid w-full grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12">
-					<div className="flex w-full justify-center lg:justify-start">
-						<HeroSection status={status} />
-					</div>
-					<div className="flex w-full justify-center lg:justify-end">
-						<DropzoneSection
-							inputId={inputId}
-							supportsFSA={supportsFSA}
-							onOpenPicker={onOpenPicker}
-							onFilesSelected={onFilesSelected}
-						/>
-					</div>
-				</div>
+		<main className="bg-bg text-fg">
+			<div className="container mx-auto max-w-6xl px-6 pt-12 pb-14">
+				<HeroSection
+					status={status}
+					inputId={inputId}
+					supportsFSA={supportsFSA}
+					onOpenPicker={onOpenPicker}
+					onFilesSelected={onFilesSelected}
+				/>
 			</div>
 
-			<div className="border-t border-border/50 bg-secondary/5 pt-8">
+			<div className="border-t border-border">
 				{supportsFSA ? (
-					<Suspense fallback={<RecentSectionLoading />}>
-						<RecentSectionData
+					<Suspense fallback={<LibrarySectionLoading />}>
+						<LibrarySectionData
 							recentFilesPromise={recentFilesPromise}
 							settings={{ saveHistory }}
 							onToggleHistory={toggleHistory}
@@ -329,7 +323,7 @@ function Home() {
 						/>
 					</Suspense>
 				) : (
-					<RecentSection
+					<LibrarySection
 						supportsFSA={false}
 						recentFiles={[]}
 						settings={{ saveHistory }}
@@ -340,6 +334,8 @@ function Home() {
 					/>
 				)}
 			</div>
+
+			<HowItWorksSection />
 		</main>
 	);
 }

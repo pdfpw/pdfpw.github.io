@@ -26,11 +26,17 @@ export function Note(props: NoteProps) {
 
 function NoteCore({ className, pdfpcConfig, pageNumber }: NoteProps) {
 	const pageConfig = findPageConfig(pdfpcConfig.pages, pageNumber);
+	const hasNote = !!pageConfig?.note;
 	return (
-		<Card className={cn("overflow-auto", className)}>
+		<Card className={cn("overflow-auto gap-3 py-4", className)}>
+			{hasNote && (
+				<div className="px-6 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+					Notes
+				</div>
+			)}
 			{pdfpcConfig.disableMarkdown || !pageConfig ? (
 				<CardContent
-					className="whitespace-pre-wrap px-4"
+					className="whitespace-pre-wrap px-6"
 					style={{
 						fontSize: `calc(0.125rem*${pdfpcConfig.noteFontSize})`,
 						lineHeight: "1.4",
@@ -39,9 +45,9 @@ function NoteCore({ className, pdfpcConfig, pageNumber }: NoteProps) {
 					{pageConfig?.note}
 				</CardContent>
 			) : (
-				<CardContent className="px-4">
+				<CardContent className="px-6">
 					<div
-						className="prose dark:prose-invert px-6 prose-ul:my-2 prose-ol:my-0 prose-li:my-0 prose-p:my-2 prose-ul:ps-4"
+						className="prose dark:prose-invert prose-ul:my-2 prose-ol:my-0 prose-li:my-0 prose-p:my-2 prose-ul:ps-4 max-w-none"
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: To render markdown content
 						dangerouslySetInnerHTML={{
 							__html: DOMPurify.sanitize(

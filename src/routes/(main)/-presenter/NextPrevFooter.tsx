@@ -67,16 +67,16 @@ function NextPrevFooterCore({
 
 	return (
 		<div
-			className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-2"
+			className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 rounded-lg border border-border bg-raised p-3"
 			ref={ref}
 		>
 			{prev === null ? (
-				<div className="aspect-video h-full max-w-full justify-self-end"></div>
+				<div className="aspect-video h-full max-w-full justify-self-end rounded-md"></div>
 			) : (
 				<PdfPage
 					pdfProxy={pdfProxy}
 					pageNumber={prev}
-					className="aspect-video h-full max-w-full justify-self-end"
+					className="aspect-video h-full max-w-full justify-self-end rounded-md overflow-hidden"
 				/>
 			)}
 			<div className="flex flex-col items-center justify-center gap-2">
@@ -112,12 +112,12 @@ function NextPrevFooterCore({
 				/>
 			</div>
 			{next === null ? (
-				<div className="aspect-video h-full max-w-full justify-self-start"></div>
+				<div className="aspect-video h-full max-w-full justify-self-start rounded-md"></div>
 			) : (
 				<PdfPage
 					pdfProxy={pdfProxy}
 					pageNumber={next}
-					className="aspect-video h-full max-w-full justify-self-start"
+					className="aspect-video h-full max-w-full justify-self-start rounded-md overflow-hidden"
 				/>
 			)}
 		</div>
