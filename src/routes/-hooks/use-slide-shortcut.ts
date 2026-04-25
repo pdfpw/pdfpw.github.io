@@ -106,7 +106,8 @@ export function useSlideShortcut(
 				event.preventDefault();
 				callbacks.resetTimer?.();
 				break;
-			// 他の action (tool.* / system.help / view.fullscreen) は別フックで処理
+			// 他の action (tool.* / system.help) は別フックで処理
+			// view.fullscreen は scope:"presentation" のため matchAction が返さない
 			default:
 				break;
 		}
