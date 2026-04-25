@@ -92,6 +92,8 @@ describe("useKeybindingHelp", () => {
 			result.current.open();
 		});
 		expect(result.current.isOpen).toBe(true);
+		expect(result.current.shouldShowHint).toBe(false);
+		expect(localStorage.getItem(HELP_SEEN_KEY)).toBe('"1"');
 
 		act(() => {
 			result.current.close();
