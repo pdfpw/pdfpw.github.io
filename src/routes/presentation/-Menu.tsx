@@ -1,6 +1,6 @@
 import type { ClassValue } from "clsx";
 import { useAtomValue } from "jotai";
-import { MaximizeIcon, MinimizeIcon } from "lucide-react";
+import { KeyboardIcon, MaximizeIcon, MinimizeIcon } from "lucide-react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { Button } from "#src/components/ui/button.tsx";
@@ -12,11 +12,17 @@ interface MenuProps {
 	pdfpcConfig: ResolvedPdfpcConfigV2;
 	currentPageNumber: number;
 	className?: ClassValue;
+	onHelpClick?: () => void;
 }
 
 const HIDE_DELAY_MS = 2500;
 
-export function Menu({ pdfpcConfig, currentPageNumber, className }: MenuProps) {
+export function Menu({
+	pdfpcConfig,
+	currentPageNumber,
+	className,
+	onHelpClick,
+}: MenuProps) {
 	const currentSlidePage =
 		pdfpcConfig.pages.findIndex((pageGroup) =>
 			pageGroup.some(({ pageNumber }) => pageNumber === currentPageNumber),
@@ -106,6 +112,17 @@ export function Menu({ pdfpcConfig, currentPageNumber, className }: MenuProps) {
 			<span className="font-mono text-[11px] text-fg tabular-nums">
 				{currentSlidePage} / {pdfpcConfig.pages.length}
 			</span>
+			{onHelpClick && (
+				<Button
+					variant="ghost"
+					type="button"
+					size="icon-sm"
+					onClick={onHelpClick}
+					aria-label="Keyboard shortcuts"
+				>
+					<KeyboardIcon />
+				</Button>
+			)}
 			<Button
 				variant="ghost"
 				type="button"

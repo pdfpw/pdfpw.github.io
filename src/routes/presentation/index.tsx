@@ -7,7 +7,6 @@ import {
 	startTransition,
 	use,
 	useEffect,
-	useEffectEvent,
 	useRef,
 	useState,
 	useTransition,
@@ -19,10 +18,12 @@ import {
 	useToolBroadcast,
 } from "#src/broadcast";
 import { ErrorBoundary } from "#src/components/ErrorBoundary.tsx";
+import { KeybindingHelpDialog } from "#src/components/KeybindingHelpDialog";
 import { OverviewDialog } from "#src/components/OverviewDialog";
 import { PointerOverlay } from "#src/components/PointerOverlay.tsx";
 import { Button } from "#src/components/ui/button.tsx";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
+import { useKeybindingHelp } from "#src/hooks/use-keybinding-help";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
 import { getRecentFileById, openDb } from "#src/lib/recent-store.ts";
 import { createUseMemoried } from "#src/lib/use-memoried.ts";
@@ -30,6 +31,7 @@ import { cn } from "#src/lib/utils.ts";
 import { usePointerEmitter } from "#src/routes/-hooks/use-pointer-emitter";
 import { useToolShortcut } from "#src/routes/-hooks/use-tool-shortcut";
 import { usePresentationShortcut } from "./-hooks/use-presentation-shortcut";
+import { usePresentationViewShortcut } from "./-hooks/use-presentation-view-shortcut";
 import { Menu } from "./-Menu";
 import { SlideStage } from "./-SlideStage";
 
@@ -278,6 +280,7 @@ function PresentationView({
 	});
 
 	usePresentationShortcut(fileName, pairId);
+	const help = useKeybindingHelp("presentation");
 
 	const stageRef = useRef<HTMLDivElement | null>(null);
 	const pdfAreaRef = useRef<HTMLDivElement | null>(null);
@@ -286,27 +289,23 @@ function PresentationView({
 	useToolShortcut(fileName, pairId, "presentation");
 	usePointerEmitter(pdfAreaRef, fileName, pairId, "presentation");
 
-	const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
-		if (e.defaultPrevented) return;
-		if (e.key === "f") {
+	usePresentationViewShortcut({
+		toggleFullscreen: () => {
 			if (document.fullscreenElement) {
 				document.exitFullscreen();
 			} else {
 				document.documentElement.requestFullscreen();
 			}
-		} else if (e.key === "Tab") {
-			e.preventDefault();
-			setIsOverviewMode((prev) => !prev);
-		} else if (e.key === "Escape" && isOverviewMode) {
-			e.preventDefault();
-			setIsOverviewMode(false);
-		}
+		},
+		toggleOverview: () => setIsOverviewMode((prev) => !prev),
+		closeOverviewIfOpen: () => {
+			if (isOverviewMode) {
+				setIsOverviewMode(false);
+				return true;
+			}
+			return false;
+		},
 	});
-
-	useEffect(() => {
-		window.addEventListener("keydown", onKeyDown);
-		return () => window.removeEventListener("keydown", onKeyDown);
-	}, []);
 
 	return (
 		<div className="relative grid">
@@ -327,7 +326,11 @@ function PresentationView({
 					},
 				])}
 			>
-				<Menu pdfpcConfig={pdfpcConfig} currentPageNumber={currentPageNumber} />
+				<Menu
+					pdfpcConfig={pdfpcConfig}
+					currentPageNumber={currentPageNumber}
+					onHelpClick={help.open}
+				/>
 			</div>
 			<OverviewDialog
 				pdfProxy={pdfProxy}
@@ -338,6 +341,10 @@ function PresentationView({
 				onSlideSelect={(slideNumber) =>
 					startTransition(() => setCurrentPageNumber(slideNumber))
 				}
+			/>
+			<KeybindingHelpDialog
+				open={help.isOpen}
+				onOpenChange={(o) => (o ? help.open() : help.close())}
 			/>
 		</div>
 	);

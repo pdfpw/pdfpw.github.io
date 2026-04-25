@@ -1,30 +1,36 @@
 import { useEffect, useEffectEvent } from "react";
-import { sendNavigate } from "#src/broadcast";
 import { matchAction } from "#src/lib/keybindings.ts";
 
-export function usePresentationShortcut(fileName: string, pairId: string) {
+interface Callbacks {
+	toggleFullscreen: () => void;
+	toggleOverview: () => void;
+	closeOverviewIfOpen: () => boolean;
+}
+
+export function usePresentationViewShortcut(callbacks: Callbacks) {
 	const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
 		if (event.defaultPrevented) return;
+
+		// Esc は overview 開閉中なら閉じる (action としては tool.exit と衝突するので
+		// matchAction の前に context 判定で先取りする)
+		if (event.key === "Escape") {
+			if (callbacks.closeOverviewIfOpen()) {
+				event.preventDefault();
+			}
+			return;
+		}
 
 		const action = matchAction(event, "presentation");
 		if (!action) return;
 
 		switch (action) {
-			case "slide.next":
+			case "view.fullscreen":
 				event.preventDefault();
-				sendNavigate(fileName, pairId, "next");
+				callbacks.toggleFullscreen();
 				break;
-			case "slide.prev":
+			case "view.overview":
 				event.preventDefault();
-				sendNavigate(fileName, pairId, "prev");
-				break;
-			case "slide.first":
-				event.preventDefault();
-				sendNavigate(fileName, pairId, "home");
-				break;
-			case "slide.last":
-				event.preventDefault();
-				sendNavigate(fileName, pairId, "end");
+				callbacks.toggleOverview();
 				break;
 			default:
 				break;

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { FileTextIcon } from "lucide-react";
+import { FileTextIcon, KeyboardIcon } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
 function GithubMark({ className }: { className?: string }) {
@@ -15,7 +15,11 @@ function GithubMark({ className }: { className?: string }) {
 	);
 }
 
-export default function Header() {
+interface HeaderProps {
+	onHelpClick?: () => void;
+}
+
+export default function Header({ onHelpClick }: HeaderProps = {}) {
 	return (
 		<header className="flex items-center justify-between border-b border-border bg-bg px-6 py-3">
 			<Link
@@ -32,6 +36,16 @@ export default function Header() {
 			</Link>
 
 			<div className="flex items-center gap-1">
+				{onHelpClick && (
+					<button
+						type="button"
+						onClick={onHelpClick}
+						className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-fg"
+						aria-label="Keyboard shortcuts"
+					>
+						<KeyboardIcon className="size-4" />
+					</button>
+				)}
 				<a
 					href="https://github.com/pdfpw/pdfpw.github.io"
 					target="_blank"
