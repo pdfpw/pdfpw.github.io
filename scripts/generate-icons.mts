@@ -1,22 +1,22 @@
 /**
  * Generates all brand assets (favicon, PWA icons, OGP image) from the icon design.
- * Run: node scripts/generate-icons.mjs
- *
- * Requires @napi-rs/canvas (transitive dep via jsdom).
+ * Run: node --experimental-strip-types scripts/generate-icons.mts
  */
 
-import { createCanvas, GlobalFonts } from '../node_modules/.pnpm/@napi-rs+canvas@0.1.84/node_modules/@napi-rs/canvas/index.js'
+import { createCanvas, GlobalFonts, type SKRSContext2D } from '@napi-rs/canvas'
 import { writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC = join(__dirname, '../public')
+const require = createRequire(import.meta.url)
 
-// Register Geist font for OGP text
+// Resolve Geist font via package resolution (avoids hard-coded pnpm store paths)
 const GEIST_DIR = join(
-  __dirname,
-  '../node_modules/.pnpm/@fontsource+geist-sans@5.2.5/node_modules/@fontsource/geist-sans/files',
+  dirname(require.resolve('@fontsource/geist-sans/package.json')),
+  'files',
 )
 try {
   GlobalFonts.registerFromPath(join(GEIST_DIR, 'geist-sans-latin-400-normal.woff2'), 'Geist')
@@ -33,14 +33,13 @@ const C = {
   surface: '#0B0B0F',
   raised: '#1C1C24',
   accent: '#06B6D4',
-  accentFg: '#052B33',
   fg: '#F5F5F7',
   muted: '#A8A8B2',
-}
+} as const
 
 // ----- Drawing helpers -----
 
-function roundRect(ctx, x, y, w, h, r) {
+function roundRect(ctx: SKRSContext2D, x: number, y: number, w: number, h: number, r: number): void {
   ctx.beginPath()
   ctx.moveTo(x + r, y)
   ctx.lineTo(x + w - r, y)
@@ -54,21 +53,40 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath()
 }
 
-function fillRR(ctx, x, y, w, h, r, color) {
+function fillRR(
+  ctx: SKRSContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+  color: string,
+): void {
   ctx.fillStyle = color
   roundRect(ctx, x, y, w, h, r)
   ctx.fill()
 }
 
+interface DrawIconOptions {
+  background?: boolean
+  maskable?: boolean
+}
+
 /**
  * Draw the icon design.
- * @param {boolean} background - whether to draw the dark background square
- * @param {boolean} maskable   - use solid (non-rounded) background for maskable icons
+ * @param background - whether to draw the dark background square
+ * @param maskable   - use solid (non-rounded) background for maskable icons
  */
-function drawIcon(ctx, x0, y0, size, { background = true, maskable = false } = {}) {
+function drawIcon(
+  ctx: SKRSContext2D,
+  x0: number,
+  y0: number,
+  size: number,
+  { background = true, maskable = false }: DrawIconOptions = {},
+): void {
   const s = size / 512
-  const r = (v) => v * s
-  const ri = (v) => Math.max(1, Math.round(v * s))
+  const r = (v: number) => v * s
+  const ri = (v: number) => Math.max(1, Math.round(v * s))
 
   if (background) {
     if (maskable) {
@@ -115,7 +133,13 @@ function drawIcon(ctx, x0, y0, size, { background = true, maskable = false } = {
 
 // ----- ICO encoder -----
 
-function buildIco(images) {
+interface IcoImage {
+  w: number
+  h: number
+  png: Buffer
+}
+
+function buildIco(images: IcoImage[]): Buffer {
   const count = images.length
   const dataOffset = 6 + 16 * count
   const header = Buffer.alloc(6)
@@ -142,14 +166,14 @@ function buildIco(images) {
 
 // ----- Render helpers -----
 
-function renderIcon(size, opts) {
+function renderIcon(size: number, opts?: DrawIconOptions): Buffer {
   const canvas = createCanvas(size, size)
   const ctx = canvas.getContext('2d')
   drawIcon(ctx, 0, 0, size, opts)
   return canvas.toBuffer('image/png')
 }
 
-function save(filename, buffer) {
+function save(filename: string, buffer: Buffer): void {
   writeFileSync(join(PUBLIC, filename), buffer)
   console.log(`✓ ${filename}`)
 }
@@ -199,8 +223,8 @@ for (let y = 60; y < OG_H; y += 60) {
 
 // Icon with glow (left side: 0–560, centered)
 const ICON_SIZE = 380
-const iconX = Math.round((560 - ICON_SIZE) / 2)  // = 90
-const iconY = Math.round((OG_H - ICON_SIZE) / 2)  // = 125
+const iconX = Math.round((560 - ICON_SIZE) / 2)
+const iconY = Math.round((OG_H - ICON_SIZE) / 2)
 
 // Cyan glow behind icon
 ctx.shadowColor = 'rgba(6,182,212,0.15)'
@@ -215,7 +239,6 @@ ctx.shadowBlur = 0
 ctx.shadowOffsetX = 0
 ctx.shadowOffsetY = 0
 
-// Icon slides (no background, already drawn above)
 drawIcon(ctx, iconX, iconY, ICON_SIZE, { background: false })
 
 // Vertical separator
@@ -228,26 +251,23 @@ ctx.lineTo(590, 558)
 ctx.stroke()
 ctx.globalAlpha = 1
 
-// Text (right side: 630–1160)
+// Text (right side: 638–1160)
 const TX = 638
-const font = (w, px) => `${w} ${px}px Geist, "Ubuntu Sans", "DejaVu Sans", sans-serif`
+const font = (w: number | string, px: number) =>
+  `${w} ${px}px Geist, "Ubuntu Sans", "DejaVu Sans", sans-serif`
 
-// "pdfpw" wordmark
 ctx.fillStyle = C.fg
 ctx.font = font(700, 92)
 ctx.fillText('pdfpw', TX, 280)
 
-// Subtitle
 ctx.fillStyle = C.muted
 ctx.font = font(400, 28)
 ctx.fillText('PDF Presenter Web', TX, 328)
 
-// Tagline
 ctx.font = font(400, 22)
 ctx.fillText('Browser-based PDF presenter console', TX, 376)
 ctx.fillText('(pdfpc-compatible)', TX, 406)
 
-// URL
 ctx.fillStyle = C.accent
 ctx.font = font(500, 22)
 ctx.fillText('pdfpw.github.io', TX, 468)
