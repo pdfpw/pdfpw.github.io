@@ -2,6 +2,7 @@ import { exec } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import UnpluginTypia from "@ryoppippi/unplugin-typia/vite";
+import { localeHtmlPlugin } from "./src/vite-plugins/locale-html-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
@@ -24,6 +25,7 @@ export default defineConfig({
 			strategy: ["url", "localStorage", "preferredLanguage", "baseLocale"],
 			emitTsDeclarations: true,
 		}),
+		localeHtmlPlugin(),
 		UnpluginTypia(),
 		devtools(),
 		tanstackRouter({
