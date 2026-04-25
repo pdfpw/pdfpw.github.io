@@ -51,7 +51,8 @@ export function localeHtmlPlugin(): Plugin {
 
 	return {
 		name: "locale-html",
-		async config() {
+		async config(_config, env) {
+			if (env.command !== "build") return;
 			const templatePath = resolve(root, "index.template.html");
 			const template = await readFile(templatePath, "utf-8");
 			for (const cfg of LOCALE_CONFIGS) {
