@@ -1,4 +1,5 @@
 import { useLocation, useParams, useRouter } from "@tanstack/react-router";
+import * as m from "#src/paraglide/messages.js";
 import { cn } from "#src/lib/utils.ts";
 
 const LOCALES = [
@@ -42,7 +43,7 @@ export function LocaleSwitcher() {
 		// biome-ignore lint/a11y/useSemanticElements: fieldset のデフォルトスタイル (border/padding) を避けるため div role=group を使用
 		<div
 			role="group"
-			aria-label="Switch language"
+			aria-label={m.header_lang_aria()}
 			className="inline-flex items-center rounded-md border border-border bg-bg p-0.5"
 		>
 			{LOCALES.map((l) => {

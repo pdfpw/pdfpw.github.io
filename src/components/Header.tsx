@@ -1,5 +1,6 @@
 import { Link, useParams } from "@tanstack/react-router";
 import { FileTextIcon, KeyboardIcon } from "lucide-react";
+import * as m from "#src/paraglide/messages.js";
 import { LocaleSwitcher } from "./LocaleSwitcher.tsx";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -47,7 +48,7 @@ export default function Header({ onHelpClick }: HeaderProps = {}) {
 						type="button"
 						onClick={onHelpClick}
 						className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-fg"
-						aria-label="Keyboard shortcuts"
+						aria-label={m.header_help_aria()}
 					>
 						<KeyboardIcon className="size-4" />
 					</button>
@@ -57,7 +58,7 @@ export default function Header({ onHelpClick }: HeaderProps = {}) {
 					target="_blank"
 					rel="noreferrer noopener"
 					className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-fg"
-					aria-label="GitHub"
+					aria-label={m.header_github_aria()}
 				>
 					<GithubMark className="size-4" />
 				</a>
@@ -65,7 +66,7 @@ export default function Header({ onHelpClick }: HeaderProps = {}) {
 					to="/$locale/licenses"
 					params={{ locale: safeLocale }}
 					className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-fg"
-					aria-label="Licenses"
+					aria-label={m.header_licenses_aria()}
 				>
 					<FileTextIcon className="size-4" />
 				</Link>

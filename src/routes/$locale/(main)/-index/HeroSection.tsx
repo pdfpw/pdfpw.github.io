@@ -1,5 +1,6 @@
 import { FileIcon, PlusIcon } from "lucide-react";
 import { type DragEvent, useRef, useState } from "react";
+import * as m from "#src/paraglide/messages.js";
 import { Button } from "#src/components/ui/button";
 import { cn } from "#src/lib/utils";
 
@@ -47,16 +48,15 @@ export function HeroSection({
 		<section className="grid w-full grid-cols-1 gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-14">
 			<div className="flex flex-col justify-center">
 				<div className="mb-4 font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-accent">
-					PRESENTER CONSOLE / 001
+					{m.hero_eyebrow()}
 				</div>
 				<h1 className="mb-5 text-4xl font-semibold leading-[1.05] tracking-[-0.035em] text-fg sm:text-5xl lg:text-[56px]">
-					Precise by
+					{m.hero_headline_line1()}
 					<br />
-					default.
+					{m.hero_headline_line2()}
 				</h1>
 				<p className="mb-8 max-w-[42ch] text-[13px] leading-[1.6] text-muted">
-					A browser-based presenter console. No install, no cloud upload. Your
-					PDF stays on your device.
+					{m.hero_lead()}
 				</p>
 				<div className="flex flex-wrap gap-2">
 					<Button
@@ -66,7 +66,7 @@ export function HeroSection({
 						onClick={() => inputRef.current?.click()}
 					>
 						<PlusIcon className="size-4" />
-						Open PDF
+						{m.hero_open_pdf()}
 					</Button>
 					{supportsFSA && (
 						<Button
@@ -75,7 +75,7 @@ export function HeroSection({
 							size="default"
 							onClick={onOpenPicker}
 						>
-							Open with File System Access
+							{m.hero_open_with_fsa()}
 						</Button>
 					)}
 				</div>
@@ -103,10 +103,10 @@ export function HeroSection({
 					<FileIcon className="size-5" />
 				</span>
 				<span className="text-[13px] font-medium text-accent">
-					Drop a PDF here
+					{m.hero_drop_label()}
 				</span>
 				<span className="font-mono text-[11px] text-muted">
-					or click to browse &middot; <kbd>⌘O</kbd>
+					{m.hero_drop_hint_browse()} &middot; <kbd>⌘O</kbd>
 				</span>
 				<input
 					ref={inputRef}
