@@ -1,5 +1,6 @@
 import { Link, useParams } from "@tanstack/react-router";
 import { FileTextIcon, KeyboardIcon } from "lucide-react";
+import { LocaleSwitcher } from "./LocaleSwitcher.tsx";
 import { ThemeToggle } from "./ThemeToggle";
 
 function GithubMark({ className }: { className?: string }) {
@@ -40,6 +41,7 @@ export default function Header({ onHelpClick }: HeaderProps = {}) {
 			</Link>
 
 			<div className="flex items-center gap-1">
+				<LocaleSwitcher />
 				{onHelpClick && (
 					<button
 						type="button"

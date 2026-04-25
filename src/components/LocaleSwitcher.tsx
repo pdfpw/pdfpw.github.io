@@ -40,8 +40,7 @@ export function LocaleSwitcher() {
 	}
 
 	return (
-		<div
-			role="group"
+		<fieldset
 			aria-label="Switch language"
 			className="inline-flex items-center rounded-md border border-border bg-bg p-0.5"
 		>
@@ -65,6 +64,6 @@ export function LocaleSwitcher() {
 					</button>
 				);
 			})}
-		</div>
+		</fieldset>
 	);
 }
