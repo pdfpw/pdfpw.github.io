@@ -103,13 +103,17 @@ describe("matchAction", () => {
 		).toBe("slide.next-10");
 	});
 
-	it("? と F1 は system.help にマッチ", () => {
-		expect(matchAction(makeEvent({ key: "?" }), "presenter")).toBe(
-			"system.help",
-		);
+	it("Shift+? と F1 は system.help にマッチ", () => {
+		expect(
+			matchAction(makeEvent({ key: "?", shiftKey: true }), "presenter"),
+		).toBe("system.help");
 		expect(matchAction(makeEvent({ key: "F1" }), "presentation")).toBe(
 			"system.help",
 		);
+	});
+
+	it("Shift なしの ? は system.help にマッチしない (実ブラウザでは ? は常に Shift+/ で生成される)", () => {
+		expect(matchAction(makeEvent({ key: "?" }), "presenter")).toBeNull();
 	});
 
 	it("未定義キーは null", () => {

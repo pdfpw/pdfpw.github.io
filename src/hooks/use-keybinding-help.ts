@@ -50,7 +50,13 @@ export function useKeybindingHelp(
 		const action = matchAction(event, scope);
 		if (action !== "system.help") return;
 		event.preventDefault();
-		setIsOpen((prev) => !prev);
+		// `?` (Shift+/) は toggle、`F1` は idempotent open。
+		// ヘルプダイアログのフッター "Press ? again or Esc to close" との整合。
+		if (event.key === "F1") {
+			setIsOpen(true);
+		} else {
+			setIsOpen((prev) => !prev);
+		}
 		markSeen();
 	});
 

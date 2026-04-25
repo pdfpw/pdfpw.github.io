@@ -159,7 +159,7 @@ export const KEYBINDING_CATALOG: Record<ActionId, ActionDefinition> = {
 	"system.help": {
 		category: "system",
 		scope: "both",
-		bindings: [{ key: "?" }, { key: "F1" }],
+		bindings: [{ key: "?", shift: true }, { key: "F1" }],
 		label: "Show keyboard help",
 	},
 };

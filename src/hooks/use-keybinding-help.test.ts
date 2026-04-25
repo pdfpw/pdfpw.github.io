@@ -18,11 +18,13 @@ describe("useKeybindingHelp", () => {
 		expect(result.current.shouldShowHint).toBe(true);
 	});
 
-	it("? キーで open し、localStorage が更新される", () => {
+	it("Shift+? キーで open し、localStorage が更新される", () => {
 		const { result } = renderHook(() => useKeybindingHelp("presenter"));
 
 		act(() => {
-			window.dispatchEvent(new KeyboardEvent("keydown", { key: "?" }));
+			window.dispatchEvent(
+				new KeyboardEvent("keydown", { key: "?", shiftKey: true }),
+			);
 		});
 
 		expect(result.current.isOpen).toBe(true);
@@ -40,21 +42,40 @@ describe("useKeybindingHelp", () => {
 		expect(result.current.isOpen).toBe(true);
 	});
 
-	it("? を再度押すと close する (toggle)", () => {
+	it("Shift+? を再度押すと close する (toggle)", () => {
 		const { result } = renderHook(() => useKeybindingHelp("presenter"));
 
 		act(() => {
-			window.dispatchEvent(new KeyboardEvent("keydown", { key: "?" }));
+			window.dispatchEvent(
+				new KeyboardEvent("keydown", { key: "?", shiftKey: true }),
+			);
 		});
 		expect(result.current.isOpen).toBe(true);
 
 		act(() => {
-			window.dispatchEvent(new KeyboardEvent("keydown", { key: "?" }));
+			window.dispatchEvent(
+				new KeyboardEvent("keydown", { key: "?", shiftKey: true }),
+			);
 		});
 		expect(result.current.isOpen).toBe(false);
 	});
 
-	it("INPUT にフォーカスがあると ? を無視する", () => {
+	it("F1 は idempotent open (押しても close しない)", () => {
+		const { result } = renderHook(() => useKeybindingHelp("presenter"));
+
+		act(() => {
+			window.dispatchEvent(new KeyboardEvent("keydown", { key: "F1" }));
+		});
+		expect(result.current.isOpen).toBe(true);
+
+		// 既に open 状態で F1 を再度押しても close しない
+		act(() => {
+			window.dispatchEvent(new KeyboardEvent("keydown", { key: "F1" }));
+		});
+		expect(result.current.isOpen).toBe(true);
+	});
+
+	it("INPUT にフォーカスがあると Shift+? を無視する", () => {
 		const { result } = renderHook(() => useKeybindingHelp("presenter"));
 
 		const input = document.createElement("input");
@@ -63,7 +84,11 @@ describe("useKeybindingHelp", () => {
 
 		act(() => {
 			input.dispatchEvent(
-				new KeyboardEvent("keydown", { key: "?", bubbles: true }),
+				new KeyboardEvent("keydown", {
+					key: "?",
+					shiftKey: true,
+					bubbles: true,
+				}),
 			);
 		});
 
