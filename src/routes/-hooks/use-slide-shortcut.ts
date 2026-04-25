@@ -1,26 +1,19 @@
 import { type RefObject, useEffect, useEffectEvent, useRef } from "react";
+import { matchAction } from "#src/lib/keybindings.ts";
 
 interface NavigationCallbacks {
-	// 基本的な移動
 	moveNextSlide: () => void;
 	movePrevSlide: () => void;
-	// 10スライドスキップ
 	moveNext10Slides: () => void;
 	movePrev10Slides: () => void;
-	// 最初/最後のスライドへジャンプ
 	jumpToFirstSlide: () => void;
 	jumpToLastSlide: () => void;
-	// ユーザースライド（オーバーレイグループ）単位の移動
 	moveNextUserSlide: () => void;
 	movePrevUserSlide: () => void;
-	// スライド番号指定ジャンプ
 	startJumpToSlide: () => void;
 	jumpToSlide?: (slideNumber: number) => void;
-	// 履歴を戻る
 	goBackInHistory: () => void;
-	// オーバービューモードの切り替え
 	toggleOverviewMode?: () => void;
-	// タイマーリセット
 	resetTimer?: () => void;
 }
 
@@ -30,14 +23,13 @@ export function useSlideShortcut(
 ) {
 	const wheelThreshold = 40;
 
-	// gキーでスライド番号入力モードに入るための状態
 	const jumpToSlideModeRef = useRef(false);
 	const jumpToSlideBufferRef = useRef("");
 
 	const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
 		if (event.defaultPrevented) return;
 
-		// スライド番号入力モード中
+		// jump-to-slide モード中は専用処理 (Enter / Esc / 数字 / Backspace / g)
 		if (jumpToSlideModeRef.current) {
 			if (event.key >= "0" && event.key <= "9") {
 				event.preventDefault();
@@ -62,64 +54,61 @@ export function useSlideShortcut(
 			return;
 		}
 
-		// 通常モード
-		switch (event.key) {
-			case "ArrowRight":
-			case " ":
-			case "PageDown":
+		const action = matchAction(event, "presenter");
+		if (!action) return;
+
+		switch (action) {
+			case "slide.next":
 				event.preventDefault();
 				callbacks.moveNextSlide();
 				break;
-			case "ArrowLeft":
-			case "PageUp":
+			case "slide.prev":
 				event.preventDefault();
 				callbacks.movePrevSlide();
 				break;
-			case "ArrowDown":
-				// 次のユーザースライド（オーバーレイグループ）へ
+			case "slide.next-10":
+				event.preventDefault();
+				callbacks.moveNext10Slides();
+				break;
+			case "slide.prev-10":
+				event.preventDefault();
+				callbacks.movePrev10Slides();
+				break;
+			case "slide.next-user":
 				event.preventDefault();
 				callbacks.moveNextUserSlide();
 				break;
-			case "ArrowUp":
-				// 前のユーザースライド（オーバーレイグループ）へ
+			case "slide.prev-user":
 				event.preventDefault();
 				callbacks.movePrevUserSlide();
 				break;
-			case "Home":
+			case "slide.first":
 				event.preventDefault();
 				callbacks.jumpToFirstSlide();
 				break;
-			case "End":
+			case "slide.last":
 				event.preventDefault();
 				callbacks.jumpToLastSlide();
 				break;
-			case "Backspace":
+			case "slide.history-back":
 				event.preventDefault();
 				callbacks.goBackInHistory();
 				break;
-			case "g":
+			case "slide.jump-mode":
 				event.preventDefault();
 				enterJumpToSlideMode();
 				break;
-			case "Tab":
+			case "view.overview":
 				event.preventDefault();
 				callbacks.toggleOverviewMode?.();
 				break;
-			case "r":
+			case "system.reset-timer":
 				event.preventDefault();
 				callbacks.resetTimer?.();
 				break;
-		}
-
-		// Shiftキーとの組み合わせ（10スライドスキップ）
-		if (event.shiftKey) {
-			if (event.key === "ArrowRight" || event.key === "PageDown") {
-				event.preventDefault();
-				callbacks.moveNext10Slides();
-			} else if (event.key === "ArrowLeft" || event.key === "PageUp") {
-				event.preventDefault();
-				callbacks.movePrev10Slides();
-			}
+			// 他の action (tool.* / system.help / view.fullscreen) は別フックで処理
+			default:
+				break;
 		}
 	});
 
@@ -146,7 +135,6 @@ export function useSlideShortcut(
 		}
 		lastWheelTimeRef.current = now;
 
-		// 横スクロール(トラックパッド)も拾いたいなら大きい方を採用
 		const delta =
 			Math.abs(event.deltaX) > Math.abs(event.deltaY)
 				? event.deltaX
