@@ -3,11 +3,14 @@ import { useEffect } from "react";
 import { type Locale, isLocale, setLocale } from "#src/paraglide/runtime.js";
 
 export const Route = createFileRoute("/$locale")({
-	beforeLoad: ({ params }) => {
+	beforeLoad: ({ params, location }) => {
 		if (!isLocale(params.locale)) {
+			// 元の pathname から invalid locale segment を剥がし、en で再構築
+			const segments = location.pathname.split("/").filter(Boolean);
+			segments.shift(); // invalid locale を除去
+			const restPath = segments.join("/");
 			throw redirect({
-				to: "/$locale",
-				params: { locale: "en" },
+				href: restPath ? `/en/${restPath}` : "/en",
 				replace: true,
 			});
 		}
