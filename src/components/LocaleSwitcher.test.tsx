@@ -28,8 +28,15 @@ function setupRouter(initialPath: string) {
 		path: "/",
 		component: () => <div>home</div>,
 	});
+	const presenterRoute = createRoute({
+		getParentRoute: () => localeRoute,
+		path: "/presenter",
+		component: () => <div>presenter</div>,
+	});
 	const router = createRouter({
-		routeTree: rootRoute.addChildren([localeRoute.addChildren([indexRoute])]),
+		routeTree: rootRoute.addChildren([
+			localeRoute.addChildren([indexRoute, presenterRoute]),
+		]),
 		history: createMemoryHistory({ initialEntries: [initialPath] }),
 	});
 	return router;
@@ -59,5 +66,18 @@ describe("LocaleSwitcher", () => {
 		await router.invalidate();
 		expect(router.state.location.pathname.startsWith("/ja")).toBe(true);
 		expect(localStorage.getItem("pdfpw:locale")).toBe("ja");
+	});
+
+	it("locale 切替で query string と hash が維持される", async () => {
+		const router = setupRouter("/en/presenter?file=foo.pdf#section1");
+		render(<RouterProvider router={router} />);
+		const jaBtn = await screen.findByRole("button", {
+			name: /japanese|日本語/i,
+		});
+		fireEvent.click(jaBtn);
+		await router.invalidate();
+		expect(router.state.location.pathname).toBe("/ja/presenter");
+		expect(router.state.location.searchStr).toBe("?file=foo.pdf");
+		expect(router.state.location.hash).toBe("section1");
 	});
 });

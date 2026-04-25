@@ -36,7 +36,9 @@ export function LocaleSwitcher() {
 			// localStorage 利用不可環境では握り潰し
 		}
 		const nextPath = rewritePath(location.pathname, next);
-		router.history.push(nextPath);
+		const hashStr = location.hash ? `#${location.hash}` : "";
+		const nextUrl = `${nextPath}${location.searchStr ?? ""}${hashStr}`;
+		router.history.push(nextUrl);
 	}
 
 	return (
