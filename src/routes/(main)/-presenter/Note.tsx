@@ -26,11 +26,14 @@ export function Note(props: NoteProps) {
 
 function NoteCore({ className, pdfpcConfig, pageNumber }: NoteProps) {
 	const pageConfig = findPageConfig(pdfpcConfig.pages, pageNumber);
+	const hasNote = !!pageConfig?.note;
 	return (
 		<Card className={cn("overflow-auto gap-3 py-4", className)}>
-			<div className="px-6 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-				Notes
-			</div>
+			{hasNote && (
+				<div className="px-6 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+					Notes
+				</div>
+			)}
 			{pdfpcConfig.disableMarkdown || !pageConfig ? (
 				<CardContent
 					className="whitespace-pre-wrap px-6"
