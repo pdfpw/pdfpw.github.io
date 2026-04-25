@@ -1,29 +1,32 @@
 import { useEffect, useEffectEvent } from "react";
 import { sendNavigate } from "#src/broadcast";
+import { matchAction } from "#src/lib/keybindings.ts";
 
 export function usePresentationShortcut(fileName: string, pairId: string) {
 	const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
 		if (event.defaultPrevented) return;
 
-		switch (event.key) {
-			case " ":
-			case "ArrowRight":
-			case "PageDown":
+		const action = matchAction(event, "presentation");
+		if (!action) return;
+
+		switch (action) {
+			case "slide.next":
 				event.preventDefault();
 				sendNavigate(fileName, pairId, "next");
 				break;
-			case "ArrowLeft":
-			case "PageUp":
+			case "slide.prev":
 				event.preventDefault();
 				sendNavigate(fileName, pairId, "prev");
 				break;
-			case "Home":
+			case "slide.first":
 				event.preventDefault();
 				sendNavigate(fileName, pairId, "home");
 				break;
-			case "End":
+			case "slide.last":
 				event.preventDefault();
 				sendNavigate(fileName, pairId, "end");
+				break;
+			default:
 				break;
 		}
 	});
