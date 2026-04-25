@@ -155,9 +155,13 @@ export default defineConfig({
 			injectRegister: null,
 			includeAssets: [
 				"favicon.ico",
+				"icon.svg",
 				"robots.txt",
 				"logo192.png",
 				"logo512.png",
+				"icon-maskable.png",
+				"apple-touch-icon.png",
+				"og-image.png",
 			],
 			manifest: {
 				name: "PDF Presenter Web",
@@ -167,12 +171,12 @@ export default defineConfig({
 				scope: "/",
 				display: "standalone",
 				orientation: "any",
-				theme_color: "#000000",
-				background_color: "#ffffff",
+				theme_color: "#0B0B0F",
+				background_color: "#0B0B0F",
 				icons: [
 					{
 						src: "/favicon.ico",
-						sizes: "64x64 32x32 24x24 16x16",
+						sizes: "32x32 16x16",
 						type: "image/x-icon",
 					},
 					{
@@ -185,7 +189,13 @@ export default defineConfig({
 						src: "/logo512.png",
 						type: "image/png",
 						sizes: "512x512",
-						purpose: "any maskable",
+						purpose: "any",
+					},
+					{
+						src: "/icon-maskable.png",
+						type: "image/png",
+						sizes: "512x512",
+						purpose: "maskable",
 					},
 				],
 			},
