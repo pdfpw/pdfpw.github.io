@@ -34,6 +34,7 @@ import { usePresentationShortcut } from "./-hooks/use-presentation-shortcut";
 import { usePresentationViewShortcut } from "./-hooks/use-presentation-view-shortcut";
 import { Menu } from "./-Menu";
 import { SlideStage } from "./-SlideStage";
+import * as m from "#src/paraglide/messages.js";
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
@@ -61,13 +62,13 @@ function RouteComponent() {
 			<main className="min-h-screen bg-background text-foreground">
 				<div className="mx-auto flex max-w-2xl flex-col gap-4 px-6 py-12">
 					<h1 className="text-xl font-semibold">
-						ファイルが指定されていません
+						{m.presentation_missing_no_file_title()}
 					</h1>
 					<p className="text-muted-foreground">
-						ホームに戻って再度ファイルを選択してください。
+						{m.presentation_missing_back_message()}
 					</p>
 					<Button asChild className="w-fit">
-						<Link to="/$locale" params={{ locale }}>ホームへ戻る</Link>
+						<Link to="/$locale" params={{ locale }}>{m.presentation_back_home()}</Link>
 					</Button>
 				</div>
 			</main>
@@ -82,19 +83,19 @@ function RouteComponent() {
 							case "TIMEOUT_PAIRING_PRESENTATION":
 								return (
 									<div className="h-full flex items-center justify-center">
-										ペアリングに失敗しました。プレゼンター画面を開き直すか、同名のファイルで開いているか確認してください。
+										{m.presentation_pairing_failed()}
 									</div>
 								)
 							case "TIMEOUT_LOADING_PDFPC_CONFIG":
 								return (
 									<div className="h-full flex items-center justify-center">
-										設定を読み込めませんでした。同名のファイルでプレゼンター画面を開いているか確認してください。
+										{m.presentation_config_load_failed()}
 									</div>
 								)
 							case "TIMEOUT_LOADING_PDF_BUFFER":
 								return (
 									<div className="h-full flex items-center justify-center">
-										PDFファイルの読み込みに失敗しました。同名のファイルでプレゼンター画面を開いているか確認してください。
+										{m.presentation_pdf_load_failed()}
 									</div>
 								)
 							default:
@@ -102,7 +103,7 @@ function RouteComponent() {
 									<div className="h-full flex flex-col items-center justify-center gap-4 p-6">
 										<div className="text-center">
 											<div className="text-red-500 font-semibold mb-2">
-												エラーが発生しました
+												{m.presentation_error_generic()}
 											</div>
 											<div className="text-muted-foreground">
 												{error.message}
@@ -113,7 +114,7 @@ function RouteComponent() {
 											onClick={reset}
 											className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
 										>
-											リロードして再試行
+											{m.presentation_error_retry()}
 										</button>
 									</div>
 								)
@@ -123,7 +124,7 @@ function RouteComponent() {
 						<div className="h-full flex flex-col items-center justify-center gap-4 p-6">
 							<div className="text-center">
 								<div className="text-red-500 font-semibold mb-2">
-									予期しないエラーが発生しました
+									{m.presentation_error_unexpected()}
 								</div>
 							</div>
 							<button
@@ -131,7 +132,7 @@ function RouteComponent() {
 								onClick={reset}
 								className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
 							>
-								リロードして再試行
+								{m.presentation_error_retry()}
 							</button>
 						</div>
 					)
@@ -210,9 +211,9 @@ function PresentationBroadcastData({
 		return (
 			<div className="h-full flex items-center justify-center">
 				<div className="text-center">
-					<div className="text-lg mb-2">接続中...</div>
+					<div className="text-lg mb-2">{m.presentation_connecting()}</div>
 					<div className="text-sm text-muted-foreground">
-						プレゼンター画面を開いているか確認してください
+						{m.presentation_connecting_hint()}
 					</div>
 				</div>
 			</div>

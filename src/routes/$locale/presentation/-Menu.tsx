@@ -7,6 +7,7 @@ import { Button } from "#src/components/ui/button.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
 import { toolModeAtom } from "#src/lib/pointer-state.ts";
 import { cn } from "#src/lib/utils.ts";
+import * as m from "#src/paraglide/messages.js";
 
 interface MenuProps {
 	pdfpcConfig: ResolvedPdfpcConfigV2;
@@ -118,7 +119,7 @@ export function Menu({
 					type="button"
 					size="icon-sm"
 					onClick={onHelpClick}
-					aria-label="Keyboard shortcuts"
+					aria-label={m.presentation_menu_help_aria()}
 				>
 					<KeyboardIcon />
 				</Button>
@@ -131,7 +132,7 @@ export function Menu({
 					if (document.fullscreenElement) document.exitFullscreen();
 					else document.documentElement.requestFullscreen();
 				}}
-				aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+				aria-label={isFullscreen ? m.presentation_menu_fullscreen_exit() : m.presentation_menu_fullscreen_enter()}
 			>
 				{isFullscreen ? <MinimizeIcon /> : <MaximizeIcon />}
 			</Button>
