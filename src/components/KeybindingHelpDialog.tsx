@@ -14,6 +14,7 @@ import {
 	KEYBINDING_CATALOG,
 } from "#src/lib/keybindings.ts";
 import { cn } from "#src/lib/utils.ts";
+import * as m from "#src/paraglide/messages.js";
 import {
 	kb_category_navigation,
 	kb_category_tools,
@@ -63,7 +64,7 @@ export function KeybindingHelpDialog({ open, onOpenChange }: Props) {
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
 				<DialogHeader>
-					<DialogTitle>Keyboard Shortcuts</DialogTitle>
+					<DialogTitle>{m.kb_help_title()}</DialogTitle>
 				</DialogHeader>
 				<div className="flex flex-col gap-5">
 					{CATEGORY_ORDER.map((cat) => (
@@ -80,8 +81,9 @@ export function KeybindingHelpDialog({ open, onOpenChange }: Props) {
 					))}
 				</div>
 				<p className="text-muted text-xs text-center pt-2 border-t border-border">
-					Press <Kbd className="mx-1">?</Kbd> again or{" "}
-					<Kbd className="mx-1">Esc</Kbd> to close
+					{m.kb_help_press_again_prefix()} <Kbd className="mx-1">?</Kbd>{" "}
+					{m.kb_help_press_again_suffix_with_esc_prefix()}{" "}
+					<Kbd className="mx-1">Esc</Kbd> {m.kb_help_press_again_suffix()}
 				</p>
 			</DialogContent>
 		</Dialog>
@@ -142,7 +144,7 @@ function Badge({ active, label }: { active: boolean; label: string }) {
 					: "bg-transparent text-subtle border border-border",
 			)}
 			aria-label={
-				label === "P" ? "Presenter screen" : "Presentation (audience) screen"
+				label === "P" ? m.kb_help_scope_presenter_aria() : m.kb_help_scope_presentation_aria()
 			}
 		>
 			{label}
