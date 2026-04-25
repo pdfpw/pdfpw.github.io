@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Suspense, startTransition, useId, useReducer, useState } from "react";
 import { useLocalStorageSync } from "#src/hooks/use-local-storage-sync";
+import * as m from "#src/paraglide/messages.js";
 import {
 	canUseFSA,
 	ensureHandleReadable,
@@ -109,7 +110,7 @@ function Home() {
 			: undefined;
 
 		if (!pdf) {
-			setStatus("PDFファイルを選択してください");
+			setStatus(m.presenter_error_no_pdf());
 			return
 		}
 
@@ -153,8 +154,8 @@ function Home() {
 
 		setStatus(
 			pdfpc && pdfpcHandle && sameBase(pdf.name, pdfpc.name)
-				? `「${pdf.name}」と設定ファイル「${pdfpc.name}」を読み込み中…`
-				: `「${pdf.name}」を読み込み中…`,
+				? m.presenter_status_loading_with_config({ file: pdf.name, config: pdfpc.name })
+				: m.presenter_status_loading({ file: pdf.name }),
 		)
 
 		await router.navigate({
@@ -196,7 +197,7 @@ function Home() {
 		if (item.handle) {
 			const canRead = await ensureHandleReadable(item.handle);
 			if (!canRead) {
-				setStatus("権限が拒否されました。再度許可してください。");
+				setStatus(m.presenter_error_permission_denied());
 				return
 			}
 			if (item.configHandle) {
@@ -206,14 +207,12 @@ function Home() {
 							item.configName.replace(/\.pdfpc$/i, "").toLowerCase()
 						: false
 				if (!baseMatch) {
-					setStatus(
-						"設定ファイル名がPDFと一致しません（example.pdf ↔ example.pdfpc）。",
-					)
+					setStatus(m.presenter_error_config_name_mismatch())
 					return
 				}
 				const ok = await ensureHandleWritable(item.configHandle);
 				if (!ok) {
-					setStatus("設定ファイルの権限が拒否されました。");
+					setStatus(m.presenter_error_config_permission());
 					return
 				}
 			}
@@ -243,7 +242,7 @@ function Home() {
 				: await ensureHandleReadable(handle);
 			if (!ok) {
 				if (needsWrite) {
-					setStatus("設定ファイルの権限が拒否されました。");
+					setStatus(m.presenter_error_config_permission());
 					return
 				}
 				continue
@@ -252,7 +251,7 @@ function Home() {
 			files.push(await handle.getFile());
 		}
 		if (files.length === 0) {
-			setStatus("ファイルへの権限がありません。");
+			setStatus(m.presenter_error_no_file_permission());
 			return
 		}
 
@@ -265,9 +264,7 @@ function Home() {
 			pdf.name.replace(/\.pdf$/i, "").toLowerCase() !==
 				pdfpc.name.replace(/\.pdfpc$/i, "").toLowerCase()
 		) {
-			setStatus(
-				"pdfpc は PDF と同じ名前にしてください（例: example.pdf ↔ example.pdfpc）",
-			)
+			setStatus(m.presenter_error_pdfpc_pairing())
 			return
 		}
 
@@ -296,7 +293,7 @@ function Home() {
 			await handlePickedHandles(handles);
 		} catch (error) {
 			if ((error as DOMException).name !== "AbortError") {
-				setStatus("ファイルを開けませんでした");
+				setStatus(m.presenter_error_open_failed());
 			}
 		}
 	}

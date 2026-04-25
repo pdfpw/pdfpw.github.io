@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAtomValue, useSetAtom } from "jotai";
+import * as m from "#src/paraglide/messages.js";
 import { GlobalWorkerOptions } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
@@ -66,10 +67,10 @@ function MissingFileScreen({ title }: { title: string }) {
 			<div className="mx-auto flex max-w-2xl flex-col gap-4 px-6 py-12">
 				<h1 className="text-xl font-semibold">{title}</h1>
 				<p className="text-muted-foreground">
-					ホームに戻って再度ファイルを選択してください。
+					{m.presenter_missing_back_message()}
 				</p>
 				<Button asChild className="w-fit">
-					<Link to="/$locale" params={{ locale }}>ホームへ戻る</Link>
+					<Link to="/$locale" params={{ locale }}>{m.presenter_back_home()}</Link>
 				</Button>
 			</div>
 		</main>
@@ -94,7 +95,7 @@ function RouteComponent() {
 		select: ({ file }) => ({ file }),
 	})
 
-	if (!file) return <MissingFileScreen title="ファイルが指定されていません" />;
+	if (!file) return <MissingFileScreen title={m.presenter_missing_no_file_title()} />;
 
 	return (
 		<main className="text-foreground min-h-0">
@@ -111,7 +112,7 @@ function PresenterView({ fileName }: { fileName: string }) {
 
 	if (loading) return <LoadingSkeleton />;
 	if (!pdf)
-		return <MissingFileScreen title="指定されたファイルが見つかりません" />;
+		return <MissingFileScreen title={m.presenter_missing_not_found_title()} />;
 
 	return <PresenterContent pdf={pdf} fileName={fileName} />;
 }
