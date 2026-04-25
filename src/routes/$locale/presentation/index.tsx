@@ -51,6 +51,7 @@ const isBlackoutAtom = atom(false);
 const isOverviewModeAtom = atom(false);
 
 function RouteComponent() {
+	const { locale } = Route.useParams();
 	const { file } = Route.useSearch({
 		select: ({ file }) => ({ file }),
 	})
@@ -66,7 +67,7 @@ function RouteComponent() {
 						ホームに戻って再度ファイルを選択してください。
 					</p>
 					<Button asChild className="w-fit">
-						<Link to="/">ホームへ戻る</Link>
+						<Link to="/$locale" params={{ locale }}>ホームへ戻る</Link>
 					</Button>
 				</div>
 			</main>

@@ -27,6 +27,7 @@ export const Route = createFileRoute("/$locale/(main)/")({
 });
 
 function Home() {
+	const { locale } = Route.useParams();
 	const [supportsFSA] = useState(() => canUseFSA());
 	const [recentFilesPromise, refreshRecentFiles] = useReducer(
 		(_, db: RecentDb) => getRecentFiles(db),
@@ -157,7 +158,8 @@ function Home() {
 		)
 
 		await router.navigate({
-			to: "/presenter",
+			to: "/$locale/presenter",
+			params: { locale },
 			search: {
 				file: pdf.name,
 			},
@@ -167,7 +169,8 @@ function Home() {
 			},
 		})
 		const url = router.buildLocation({
-			to: "/presentation",
+			to: "/$locale/presentation",
+			params: { locale },
 			search: {
 				file: pdf.name,
 			},

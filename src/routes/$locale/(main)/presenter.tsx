@@ -60,6 +60,7 @@ export const Route = createFileRoute("/$locale/(main)/presenter")({
 });
 
 function MissingFileScreen({ title }: { title: string }) {
+	const { locale } = Route.useParams();
 	return (
 		<main className="min-h-screen bg-background text-foreground">
 			<div className="mx-auto flex max-w-2xl flex-col gap-4 px-6 py-12">
@@ -68,7 +69,7 @@ function MissingFileScreen({ title }: { title: string }) {
 					ホームに戻って再度ファイルを選択してください。
 				</p>
 				<Button asChild className="w-fit">
-					<Link to="/">ホームへ戻る</Link>
+					<Link to="/$locale" params={{ locale }}>ホームへ戻る</Link>
 				</Button>
 			</div>
 		</main>

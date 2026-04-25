@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { FileTextIcon, KeyboardIcon } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -20,10 +20,14 @@ interface HeaderProps {
 }
 
 export default function Header({ onHelpClick }: HeaderProps = {}) {
+	const params = useParams({ strict: false }) as { locale?: string };
+	const safeLocale = params.locale === "ja" || params.locale === "en" ? params.locale : "en";
+
 	return (
 		<header className="flex items-center justify-between border-b border-border bg-bg px-6 py-3">
 			<Link
-				to="/"
+				to="/$locale"
+				params={{ locale: safeLocale }}
 				className="flex items-center gap-2 text-fg transition-opacity hover:opacity-80"
 			>
 				<span
@@ -56,7 +60,8 @@ export default function Header({ onHelpClick }: HeaderProps = {}) {
 					<GithubMark className="size-4" />
 				</a>
 				<Link
-					to="/licenses"
+					to="/$locale/licenses"
+					params={{ locale: safeLocale }}
 					className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-fg"
 					aria-label="Licenses"
 				>
