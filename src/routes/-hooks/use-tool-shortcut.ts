@@ -1,6 +1,7 @@
 import { useAtom, useSetAtom } from "jotai";
 import { useEffect, useEffectEvent } from "react";
 import { sendTool, type ToolSide } from "#src/broadcast";
+import { matchAction } from "#src/lib/keybindings.ts";
 import {
 	clearPenStrokes,
 	laserPosAtom,
@@ -18,7 +19,6 @@ export function useToolShortcut(
 	const setLaserPos = useSetAtom(laserPosAtom);
 
 	const changeMode = useEffectEvent((next: ToolMode) => {
-		// 前モードの残像を避けるため、切替時にレーザー位置をリセット
 		setLaserPos(null);
 		setToolMode(next);
 		sendTool(fileName, pairId, selfSide, { command: "tool-mode", mode: next });
@@ -31,7 +31,6 @@ export function useToolShortcut(
 
 	const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
 		if (event.defaultPrevented) return;
-		// IME やテキスト入力中は無視
 		const target = event.target as HTMLElement | null;
 		if (
 			target &&
@@ -42,26 +41,30 @@ export function useToolShortcut(
 			return;
 		}
 
-		if (event.key === "Escape") {
-			if (toolMode !== "none") {
-				event.preventDefault();
-				changeMode("none");
-			}
-			return;
-		}
+		const action = matchAction(event, selfSide);
+		if (!action) return;
 
-		switch (event.key.toLowerCase()) {
-			case "l":
+		switch (action) {
+			case "tool.exit":
+				if (toolMode !== "none") {
+					event.preventDefault();
+					changeMode("none");
+				}
+				// tool モードでない時は Esc を消費しない (overview 等が処理できるように)
+				break;
+			case "tool.laser":
 				event.preventDefault();
 				changeMode(toolMode === "laser" ? "none" : "laser");
 				break;
-			case "d":
+			case "tool.pen":
 				event.preventDefault();
 				changeMode(toolMode === "pen" ? "none" : "pen");
 				break;
-			case "e":
+			case "tool.erase":
 				event.preventDefault();
 				clearPen();
+				break;
+			default:
 				break;
 		}
 	});
