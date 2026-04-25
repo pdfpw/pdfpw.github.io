@@ -1,4 +1,4 @@
-import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
+import { useLocation, useParams, useRouter } from "@tanstack/react-router";
 import { cn } from "#src/lib/utils.ts";
 
 const LOCALES = [
@@ -22,7 +22,7 @@ function rewritePath(pathname: string, nextLocale: LocaleCode): string {
 }
 
 export function LocaleSwitcher() {
-	const navigate = useNavigate();
+	const router = useRouter();
 	const location = useLocation();
 	const params = useParams({ strict: false }) as { locale?: string };
 	const current: LocaleCode = params.locale === "ja" ? "ja" : "en";
@@ -35,12 +35,13 @@ export function LocaleSwitcher() {
 			// localStorage 利用不可環境では握り潰し
 		}
 		const nextPath = rewritePath(location.pathname, next);
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		void navigate({ to: nextPath as any, replace: true });
+		router.history.push(nextPath);
 	}
 
 	return (
-		<fieldset
+		// biome-ignore lint/a11y/useSemanticElements: fieldset のデフォルトスタイル (border/padding) を避けるため div role=group を使用
+		<div
+			role="group"
 			aria-label="Switch language"
 			className="inline-flex items-center rounded-md border border-border bg-bg p-0.5"
 		>
@@ -64,6 +65,6 @@ export function LocaleSwitcher() {
 					</button>
 				);
 			})}
-		</fieldset>
+		</div>
 	);
 }
