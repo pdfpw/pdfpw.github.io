@@ -1,4 +1,27 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "smoke_test": "OK"
+  "smoke_test": "OK",
+  "kb_slide_next_label": "次のスライド",
+  "kb_slide_prev_label": "前のスライド",
+  "kb_slide_next_user_label": "次のスライドグループ",
+  "kb_slide_prev_user_label": "前のスライドグループ",
+  "kb_slide_next_10_label": "10 ページ進む",
+  "kb_slide_prev_10_label": "10 ページ戻る",
+  "kb_slide_first_label": "最初のスライド",
+  "kb_slide_last_label": "最後のスライド",
+  "kb_slide_history_back_label": "履歴を戻る",
+  "kb_slide_jump_mode_label": "指定スライドへジャンプ",
+  "kb_slide_jump_mode_hint": "数字を入力して Enter で確定",
+  "kb_tool_laser_label": "レーザーポインタ切替",
+  "kb_tool_pen_label": "ペン切替",
+  "kb_tool_erase_label": "ペン描画を消去",
+  "kb_tool_exit_label": "ツール終了 / ダイアログを閉じる",
+  "kb_view_overview_label": "一覧表示の切替",
+  "kb_view_fullscreen_label": "フルスクリーン切替",
+  "kb_system_reset_timer_label": "タイマーをリセット",
+  "kb_system_help_label": "キーボードヘルプを表示",
+  "kb_category_navigation": "ナビゲーション",
+  "kb_category_tools": "ツール",
+  "kb_category_view": "表示",
+  "kb_category_system": "システム"
 }

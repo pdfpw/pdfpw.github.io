@@ -1,4 +1,27 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
-  "smoke_test": "ok"
+  "smoke_test": "ok",
+  "kb_slide_next_label": "Next slide",
+  "kb_slide_prev_label": "Previous slide",
+  "kb_slide_next_user_label": "Next slide group",
+  "kb_slide_prev_user_label": "Previous slide group",
+  "kb_slide_next_10_label": "Skip 10 forward",
+  "kb_slide_prev_10_label": "Skip 10 backward",
+  "kb_slide_first_label": "First slide",
+  "kb_slide_last_label": "Last slide",
+  "kb_slide_history_back_label": "Navigate back in history",
+  "kb_slide_jump_mode_label": "Jump to slide N",
+  "kb_slide_jump_mode_hint": "Then type digits and press Enter",
+  "kb_tool_laser_label": "Toggle laser pointer",
+  "kb_tool_pen_label": "Toggle pen",
+  "kb_tool_erase_label": "Erase pen drawings",
+  "kb_tool_exit_label": "Exit tool / close dialog",
+  "kb_view_overview_label": "Toggle overview",
+  "kb_view_fullscreen_label": "Toggle fullscreen",
+  "kb_system_reset_timer_label": "Reset timer",
+  "kb_system_help_label": "Show keyboard help",
+  "kb_category_navigation": "Navigation",
+  "kb_category_tools": "Tools",
+  "kb_category_view": "View",
+  "kb_category_system": "System"
 }

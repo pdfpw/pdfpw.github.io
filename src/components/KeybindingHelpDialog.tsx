@@ -14,12 +14,18 @@ import {
 	KEYBINDING_CATALOG,
 } from "#src/lib/keybindings.ts";
 import { cn } from "#src/lib/utils.ts";
+import {
+	kb_category_navigation,
+	kb_category_tools,
+	kb_category_view,
+	kb_category_system,
+} from "#src/paraglide/messages.js";
 
-const CATEGORY_LABELS: Record<Category, string> = {
-	navigation: "Navigation",
-	tools: "Tools",
-	view: "View",
-	system: "System",
+const CATEGORY_LABELS: Record<Category, () => string> = {
+	navigation: kb_category_navigation,
+	tools: kb_category_tools,
+	view: kb_category_view,
+	system: kb_category_system,
 };
 
 const CATEGORY_ORDER: readonly Category[] = [
@@ -63,7 +69,7 @@ export function KeybindingHelpDialog({ open, onOpenChange }: Props) {
 					{CATEGORY_ORDER.map((cat) => (
 						<section key={cat} className="flex flex-col gap-2">
 							<h3 className="text-[11px] font-mono uppercase tracking-wider text-muted">
-								{CATEGORY_LABELS[cat]}
+								{CATEGORY_LABELS[cat]()}
 							</h3>
 							<ul className="flex flex-col gap-1.5">
 								{grouped[cat].map((row) => (
@@ -104,8 +110,8 @@ function ShortcutRow({ def }: { def: ActionDefinition }) {
 				))}
 			</div>
 			<div className="flex-1 flex flex-col">
-				<span className="text-fg">{def.label}</span>
-				{def.hint && <span className="text-muted text-xs">{def.hint}</span>}
+				<span className="text-fg">{def.label()}</span>
+				{def.hint && <span className="text-muted text-xs">{def.hint()}</span>}
 			</div>
 			<ScopeBadges scope={def.scope} />
 		</li>
