@@ -19,10 +19,13 @@ import {
 	usePresenterBroadcast,
 	useToolBroadcast,
 } from "#src/broadcast";
+import { KeybindingHelpDialog } from "#src/components/KeybindingHelpDialog";
+import { KeybindingHintToast } from "#src/components/KeybindingHintToast";
 import { OverviewDialog } from "#src/components/OverviewDialog";
 import { PointerOverlay } from "#src/components/PointerOverlay.tsx";
 import { Button } from "#src/components/ui/button";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
+import { useKeybindingHelp } from "#src/hooks/use-keybinding-help";
 import {
 	clampPageNumber,
 	getNextUserSlidePageNumber,
@@ -306,6 +309,7 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 	useToolBroadcast(fileName, pairId, "presenter");
 	useToolShortcut(fileName, pairId, "presenter");
 	usePointerEmitter(pdfAreaRef, fileName, pairId, "presenter");
+	const help = useKeybindingHelp("presenter");
 
 	// ページ遷移時にペンストロークを自動クリア（初回マウント時の無駄な broadcast は避ける）
 	const doClearStrokes = useSetAtom(clearPenStrokes);
@@ -366,6 +370,13 @@ function PresenterContent({ pdf, fileName }: { pdf: File; fileName: string }) {
 				onClose={() => setIsOverviewMode(false)}
 				onSlideSelect={jumpToSlide}
 			/>
+			<KeybindingHelpDialog
+				open={help.isOpen}
+				onOpenChange={(o) => (o ? help.open() : help.close())}
+			/>
+			{help.shouldShowHint && pdfProxy && (
+				<KeybindingHintToast visible onDismiss={help.dismissHint} />
+			)}
 		</>
 	);
 }
