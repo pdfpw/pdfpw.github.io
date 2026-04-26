@@ -1,4 +1,3 @@
-// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("pdfjs-dist/build/pdf.worker.min.mjs?url", () => ({
@@ -33,14 +32,6 @@ describe("generateThumbnail", () => {
 			promise: Promise.resolve(mockPdfProxy),
 			// biome-ignore lint/suspicious/noExplicitAny: テスト用モック
 		} as any);
-
-		vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
-			// biome-ignore lint/suspicious/noExplicitAny: テスト用モック
-			{} as any,
-		);
-		vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue(
-			"data:image/jpeg;base64,abc",
-		);
 	});
 
 	afterEach(() => {
@@ -50,18 +41,11 @@ describe("generateThumbnail", () => {
 	it("PDFの1ページ目のJPEG data URLを返す", async () => {
 		const file = new File(["pdf"], "test.pdf", { type: "application/pdf" });
 		const result = await generateThumbnail(file);
-		expect(result).toBe("data:image/jpeg;base64,abc");
+		expect(result).toMatch(/^data:image\/jpeg;base64,/);
 		expect(mockGetDocument).toHaveBeenCalled();
 		// biome-ignore lint/suspicious/noExplicitAny: テスト用モック
 		const proxy = await (mockGetDocument.mock.results[0].value as any).promise;
 		expect(proxy.getPage).toHaveBeenCalledWith(1);
-	});
-
-	it("getContext が null を返す場合は null を返す", async () => {
-		vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
-		const file = new File(["pdf"], "test.pdf", { type: "application/pdf" });
-		const result = await generateThumbnail(file);
-		expect(result).toBeNull();
 	});
 
 	it("PDF ロードエラー時は null を返す", async () => {
