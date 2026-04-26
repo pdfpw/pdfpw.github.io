@@ -1,5 +1,5 @@
-// @vitest-environment jsdom
-import { act, renderHook } from "@testing-library/react";
+import { act } from "react";
+import { renderHook } from "vitest-browser-react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useTheme } from "./use-theme";
 
@@ -43,9 +43,9 @@ describe("useTheme", () => {
 		expect(document.documentElement.classList.contains("dark")).toBe(false);
 	});
 
-	it("toggles between light and dark", () => {
+	it("toggles between light and dark", async () => {
 		const { result } = renderHook(() => useTheme());
-		act(() => {
+		await act(() => {
 			result.current.toggleTheme();
 		});
 		expect(result.current.theme).toBe("light");
@@ -53,10 +53,10 @@ describe("useTheme", () => {
 		expect(localStorage.getItem("pdfpw-theme")).toBe("light");
 	});
 
-	it("syncs theme across windows via storage event", () => {
+	it("syncs theme across windows via storage event", async () => {
 		const { result } = renderHook(() => useTheme());
 		expect(result.current.theme).toBe("dark");
-		act(() => {
+		await act(() => {
 			window.dispatchEvent(
 				new StorageEvent("storage", {
 					key: "pdfpw-theme",
@@ -68,9 +68,9 @@ describe("useTheme", () => {
 		expect(document.documentElement.classList.contains("dark")).toBe(false);
 	});
 
-	it("ignores storage events with unrelated keys", () => {
+	it("ignores storage events with unrelated keys", async () => {
 		const { result } = renderHook(() => useTheme());
-		act(() => {
+		await act(() => {
 			window.dispatchEvent(
 				new StorageEvent("storage", {
 					key: "unrelated",

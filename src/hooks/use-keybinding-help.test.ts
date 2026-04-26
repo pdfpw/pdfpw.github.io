@@ -1,5 +1,5 @@
-// @vitest-environment jsdom
-import { act, renderHook } from "@testing-library/react";
+import { act } from "react";
+import { renderHook } from "vitest-browser-react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { HELP_SEEN_KEY, useKeybindingHelp } from "./use-keybinding-help.ts";
 
@@ -18,10 +18,10 @@ describe("useKeybindingHelp", () => {
 		expect(result.current.shouldShowHint).toBe(true);
 	});
 
-	it("Shift+? キーで open し、localStorage が更新される", () => {
+	it("Shift+? キーで open し、localStorage が更新される", async () => {
 		const { result } = renderHook(() => useKeybindingHelp("presenter"));
 
-		act(() => {
+		await act(() => {
 			window.dispatchEvent(
 				new KeyboardEvent("keydown", { key: "?", shiftKey: true }),
 			);
@@ -32,27 +32,27 @@ describe("useKeybindingHelp", () => {
 		expect(localStorage.getItem(HELP_SEEN_KEY)).toBe('"1"');
 	});
 
-	it("F1 キーでも open する", () => {
+	it("F1 キーでも open する", async () => {
 		const { result } = renderHook(() => useKeybindingHelp("presentation"));
 
-		act(() => {
+		await act(() => {
 			window.dispatchEvent(new KeyboardEvent("keydown", { key: "F1" }));
 		});
 
 		expect(result.current.isOpen).toBe(true);
 	});
 
-	it("Shift+? を再度押すと close する (toggle)", () => {
+	it("Shift+? を再度押すと close する (toggle)", async () => {
 		const { result } = renderHook(() => useKeybindingHelp("presenter"));
 
-		act(() => {
+		await act(() => {
 			window.dispatchEvent(
 				new KeyboardEvent("keydown", { key: "?", shiftKey: true }),
 			);
 		});
 		expect(result.current.isOpen).toBe(true);
 
-		act(() => {
+		await act(() => {
 			window.dispatchEvent(
 				new KeyboardEvent("keydown", { key: "?", shiftKey: true }),
 			);
@@ -60,29 +60,28 @@ describe("useKeybindingHelp", () => {
 		expect(result.current.isOpen).toBe(false);
 	});
 
-	it("F1 は idempotent open (押しても close しない)", () => {
+	it("F1 は idempotent open (押しても close しない)", async () => {
 		const { result } = renderHook(() => useKeybindingHelp("presenter"));
 
-		act(() => {
+		await act(() => {
 			window.dispatchEvent(new KeyboardEvent("keydown", { key: "F1" }));
 		});
 		expect(result.current.isOpen).toBe(true);
 
-		// 既に open 状態で F1 を再度押しても close しない
-		act(() => {
+		await act(() => {
 			window.dispatchEvent(new KeyboardEvent("keydown", { key: "F1" }));
 		});
 		expect(result.current.isOpen).toBe(true);
 	});
 
-	it("INPUT にフォーカスがあると Shift+? を無視する", () => {
+	it("INPUT にフォーカスがあると Shift+? を無視する", async () => {
 		const { result } = renderHook(() => useKeybindingHelp("presenter"));
 
 		const input = document.createElement("input");
 		document.body.appendChild(input);
 		input.focus();
 
-		act(() => {
+		await act(() => {
 			input.dispatchEvent(
 				new KeyboardEvent("keydown", {
 					key: "?",
@@ -96,11 +95,11 @@ describe("useKeybindingHelp", () => {
 		document.body.removeChild(input);
 	});
 
-	it("dismissHint() で shouldShowHint が false になる", () => {
+	it("dismissHint() で shouldShowHint が false になる", async () => {
 		const { result } = renderHook(() => useKeybindingHelp("presenter"));
 		expect(result.current.shouldShowHint).toBe(true);
 
-		act(() => {
+		await act(() => {
 			result.current.dismissHint();
 		});
 
@@ -108,17 +107,17 @@ describe("useKeybindingHelp", () => {
 		expect(localStorage.getItem(HELP_SEEN_KEY)).toBe('"1"');
 	});
 
-	it("open() / close() メソッドで明示的に開閉できる", () => {
+	it("open() / close() メソッドで明示的に開閉できる", async () => {
 		const { result } = renderHook(() => useKeybindingHelp("presenter"));
 
-		act(() => {
+		await act(() => {
 			result.current.open();
 		});
 		expect(result.current.isOpen).toBe(true);
 		expect(result.current.shouldShowHint).toBe(false);
 		expect(localStorage.getItem(HELP_SEEN_KEY)).toBe('"1"');
 
-		act(() => {
+		await act(() => {
 			result.current.close();
 		});
 		expect(result.current.isOpen).toBe(false);
