@@ -23,29 +23,29 @@ describe("useTheme", () => {
 		stubMatchMedia(true);
 	});
 
-	it("defaults to 'dark' when no localStorage and OS prefers dark", () => {
-		const { result } = renderHook(() => useTheme());
+	it("defaults to 'dark' when no localStorage and OS prefers dark", async () => {
+		const { result } = await renderHook(() => useTheme());
 		expect(result.current.theme).toBe("dark");
 		expect(document.documentElement.classList.contains("dark")).toBe(true);
 	});
 
-	it("defaults to 'light' when no localStorage and OS prefers light", () => {
+	it("defaults to 'light' when no localStorage and OS prefers light", async () => {
 		stubMatchMedia(false);
-		const { result } = renderHook(() => useTheme());
+		const { result } = await renderHook(() => useTheme());
 		expect(result.current.theme).toBe("light");
 		expect(document.documentElement.classList.contains("dark")).toBe(false);
 	});
 
-	it("reads saved theme from localStorage", () => {
+	it("reads saved theme from localStorage", async () => {
 		localStorage.setItem("pdfpw-theme", "light");
-		const { result } = renderHook(() => useTheme());
+		const { result } = await renderHook(() => useTheme());
 		expect(result.current.theme).toBe("light");
 		expect(document.documentElement.classList.contains("dark")).toBe(false);
 	});
 
 	it("toggles between light and dark", async () => {
-		const { result } = renderHook(() => useTheme());
-		await act(() => {
+		const { result } = await renderHook(() => useTheme());
+		await act(async () => {
 			result.current.toggleTheme();
 		});
 		expect(result.current.theme).toBe("light");
@@ -54,9 +54,9 @@ describe("useTheme", () => {
 	});
 
 	it("syncs theme across windows via storage event", async () => {
-		const { result } = renderHook(() => useTheme());
+		const { result } = await renderHook(() => useTheme());
 		expect(result.current.theme).toBe("dark");
-		await act(() => {
+		await act(async () => {
 			window.dispatchEvent(
 				new StorageEvent("storage", {
 					key: "pdfpw-theme",
@@ -69,8 +69,8 @@ describe("useTheme", () => {
 	});
 
 	it("ignores storage events with unrelated keys", async () => {
-		const { result } = renderHook(() => useTheme());
-		await act(() => {
+		const { result } = await renderHook(() => useTheme());
+		await act(async () => {
 			window.dispatchEvent(
 				new StorageEvent("storage", {
 					key: "unrelated",
