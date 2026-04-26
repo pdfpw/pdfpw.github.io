@@ -61,12 +61,12 @@ describe("generateThumbnail", () => {
   });
 
   it("PDF ロードエラー時は null を返す", async () => {
-    // biome-ignore lint/suspicious/noExplicitAny: テスト用モック
     mockGetDocument.mockImplementation(() => ({
       // Promise.reject を即時生成すると unhandled rejection になるため、lazy に生成する
       get promise() {
         return Promise.reject(new Error("load error"));
       },
+      // biome-ignore lint/suspicious/noExplicitAny: テスト用モック
     }) as any);
     const file = new File(["pdf"], "test.pdf", { type: "application/pdf" });
     const result = await generateThumbnail(file);
