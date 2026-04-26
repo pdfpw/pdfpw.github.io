@@ -15,5 +15,8 @@ count.txt
 docs/superpowers/screenshots/
 .superpowers/
 
+# Git worktrees
+.worktrees/
+
 # paraglide-js generated
 src/paraglide/
