@@ -16,6 +16,7 @@ import {
 	removeRecent,
 	upsertRecent,
 } from "#src/lib/recent-store";
+import { generateThumbnail } from "#src/lib/thumbnail";
 import { HeroSection } from "./-index/HeroSection";
 import { HowItWorksSection } from "./-index/HowItWorksSection";
 import { LibrarySection, LibrarySectionLoading } from "./-index/LibrarySection";
@@ -114,6 +115,8 @@ function Home() {
 			return
 		}
 
+		const thumbnail = await generateThumbnail(pdf);
+
 		const pdfHandle = handles?.find((h) => h.name === pdf.name);
 		const pdfpcHandle =
 			pdf && pdfpc && sameBase(pdf.name, pdfpc.name)
@@ -131,6 +134,7 @@ function Home() {
 						? pdfpc.name
 						: undefined,
 				lastOpened: Date.now(),
+				thumbnail: thumbnail ?? undefined,
 			})
 			const db = await openDb();
 			startTransition(() => {
@@ -145,6 +149,7 @@ function Home() {
 				configFile: pdfpc,
 				configName: pdfpc?.name,
 				lastOpened: Date.now(),
+				thumbnail: thumbnail ?? undefined,
 			})
 			const db = await openDb();
 			startTransition(() => {
