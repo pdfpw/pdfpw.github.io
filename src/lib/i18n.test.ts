@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import enMessages from "../../messages/en.json";
 import jaMessages from "../../messages/ja.json";

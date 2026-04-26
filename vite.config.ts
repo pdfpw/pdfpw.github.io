@@ -1,3 +1,4 @@
+import { playwright } from "@vitest/browser-playwright";
 import { exec } from "node:child_process";
 import { readdir, readFile } from "node:fs/promises";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
@@ -213,6 +214,11 @@ export default defineConfig({
 	test: {
 		globals: true,
 		setupFiles: ["./src/test-setup.ts"],
+		browser: {
+			enabled: true,
+			provider: playwright(),
+			instances: [{ browser: "chromium" }, { browser: "firefox" }],
+		},
 	},
 });
 

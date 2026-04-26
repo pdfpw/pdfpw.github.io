@@ -1,5 +1,5 @@
-// @vitest-environment jsdom
-import { act, renderHook } from "@testing-library/react";
+import { act } from "react";
+import { renderHook } from "vitest-browser-react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useTheme } from "./use-theme";
 
@@ -23,29 +23,29 @@ describe("useTheme", () => {
 		stubMatchMedia(true);
 	});
 
-	it("defaults to 'dark' when no localStorage and OS prefers dark", () => {
-		const { result } = renderHook(() => useTheme());
+	it("defaults to 'dark' when no localStorage and OS prefers dark", async () => {
+		const { result } = await renderHook(() => useTheme());
 		expect(result.current.theme).toBe("dark");
 		expect(document.documentElement.classList.contains("dark")).toBe(true);
 	});
 
-	it("defaults to 'light' when no localStorage and OS prefers light", () => {
+	it("defaults to 'light' when no localStorage and OS prefers light", async () => {
 		stubMatchMedia(false);
-		const { result } = renderHook(() => useTheme());
+		const { result } = await renderHook(() => useTheme());
 		expect(result.current.theme).toBe("light");
 		expect(document.documentElement.classList.contains("dark")).toBe(false);
 	});
 
-	it("reads saved theme from localStorage", () => {
+	it("reads saved theme from localStorage", async () => {
 		localStorage.setItem("pdfpw-theme", "light");
-		const { result } = renderHook(() => useTheme());
+		const { result } = await renderHook(() => useTheme());
 		expect(result.current.theme).toBe("light");
 		expect(document.documentElement.classList.contains("dark")).toBe(false);
 	});
 
-	it("toggles between light and dark", () => {
-		const { result } = renderHook(() => useTheme());
-		act(() => {
+	it("toggles between light and dark", async () => {
+		const { result } = await renderHook(() => useTheme());
+		await act(async () => {
 			result.current.toggleTheme();
 		});
 		expect(result.current.theme).toBe("light");
@@ -53,10 +53,10 @@ describe("useTheme", () => {
 		expect(localStorage.getItem("pdfpw-theme")).toBe("light");
 	});
 
-	it("syncs theme across windows via storage event", () => {
-		const { result } = renderHook(() => useTheme());
+	it("syncs theme across windows via storage event", async () => {
+		const { result } = await renderHook(() => useTheme());
 		expect(result.current.theme).toBe("dark");
-		act(() => {
+		await act(async () => {
 			window.dispatchEvent(
 				new StorageEvent("storage", {
 					key: "pdfpw-theme",
@@ -68,9 +68,9 @@ describe("useTheme", () => {
 		expect(document.documentElement.classList.contains("dark")).toBe(false);
 	});
 
-	it("ignores storage events with unrelated keys", () => {
-		const { result } = renderHook(() => useTheme());
-		act(() => {
+	it("ignores storage events with unrelated keys", async () => {
+		const { result } = await renderHook(() => useTheme());
+		await act(async () => {
 			window.dispatchEvent(
 				new StorageEvent("storage", {
 					key: "unrelated",
