@@ -126,6 +126,9 @@ importers:
       babel-plugin-react-compiler:
         specifier: ^1.0.0
         version: 1.0.0
+      playwright:
+        specifier: 1.59.1
+        version: 1.59.1
       type-fest:
         specifier: ^5.3.1
         version: 5.3.1
@@ -6613,7 +6616,7 @@ snapshots:
       whatwg-encoding: 3.1.1
       whatwg-mimetype: 4.0.0
       whatwg-url: 15.1.0
-      ws: 8.18.3
+      ws: 8.20.0
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - bufferutil
