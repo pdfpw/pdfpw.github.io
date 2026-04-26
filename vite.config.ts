@@ -215,6 +215,7 @@ export default defineConfig({
 		globals: true,
 		setupFiles: ["./src/test-setup.ts"],
 		browser: {
+			enabled: true,
 			provider: playwright(),
 			instances: [{ browser: "chromium" }],
 		},
