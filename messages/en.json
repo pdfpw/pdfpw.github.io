@@ -70,6 +70,7 @@
   "presenter_missing_back_message": "Go back to the home page and select a file again.",
   "presenter_back_home": "Back to home",
   "presenter_notes_eyebrow": "Notes",
+  "presenter_notes_empty": "No notes for this slide",
 
   "presentation_missing_no_file_title": "No file specified",
   "presentation_missing_back_message": "Go back to the home page and select a file again.",

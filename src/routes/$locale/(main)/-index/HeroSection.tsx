@@ -4,6 +4,8 @@ import * as m from "#src/paraglide/messages.js";
 import { Button } from "#src/components/ui/button";
 import { cn } from "#src/lib/utils";
 
+const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
+
 interface HeroSectionProps {
 	status: string | null;
 	inputId: string;
@@ -103,7 +105,7 @@ export function HeroSection({
 					{m.hero_drop_label()}
 				</span>
 				<span className="font-mono text-[11px] text-muted">
-					{m.hero_drop_hint_browse()} &middot; <kbd>⌘O</kbd>
+					{m.hero_drop_hint_browse()} &middot; <kbd>{isMac ? "⌘O" : "Ctrl+O"}</kbd>
 				</span>
 				<input
 					ref={inputRef}

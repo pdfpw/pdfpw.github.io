@@ -67,7 +67,7 @@ function NextPrevFooterCore({
 
 	return (
 		<div
-			className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 rounded-lg border border-border bg-raised p-3"
+			className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 overflow-hidden rounded-lg border border-border bg-raised p-3"
 			ref={ref}
 		>
 			{prev === null ? (
