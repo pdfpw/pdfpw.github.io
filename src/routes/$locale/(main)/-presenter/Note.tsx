@@ -30,36 +30,42 @@ function NoteCore({ className, pdfpcConfig, pageNumber }: NoteProps) {
 	const hasNote = !!pageConfig?.note;
 	return (
 		<Card className={cn("overflow-auto gap-3 py-4", className)}>
-			{hasNote && (
-				<div className="px-6 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
-					{m.presenter_notes_eyebrow()}
-				</div>
-			)}
-			{pdfpcConfig.disableMarkdown || !pageConfig ? (
-				<CardContent
-					className="whitespace-pre-wrap px-6"
-					style={{
-						fontSize: `calc(0.125rem*${pdfpcConfig.noteFontSize})`,
-						lineHeight: "1.4",
-					}}
-				>
-					{pageConfig?.note}
-				</CardContent>
+			{hasNote ? (
+				<>
+					<div className="px-6 font-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+						{m.presenter_notes_eyebrow()}
+					</div>
+					{pdfpcConfig.disableMarkdown ? (
+						<CardContent
+							className="whitespace-pre-wrap px-6"
+							style={{
+								fontSize: `calc(0.125rem*${pdfpcConfig.noteFontSize})`,
+								lineHeight: "1.4",
+							}}
+						>
+							{pageConfig?.note}
+						</CardContent>
+					) : (
+						<CardContent className="px-6">
+							<div
+								className="prose dark:prose-invert prose-ul:my-2 prose-ol:my-0 prose-li:my-0 prose-p:my-2 prose-ul:ps-4 max-w-none"
+								// biome-ignore lint/security/noDangerouslySetInnerHtml: To render markdown content
+								dangerouslySetInnerHTML={{
+									__html: DOMPurify.sanitize(
+										marked.parse(pageConfig!.note, { async: false }),
+									),
+								}}
+								style={{
+									fontSize: `calc(1.25px*${pdfpcConfig.noteFontSize})`,
+									lineHeight: "1.4",
+								}}
+							></div>
+						</CardContent>
+					)}
+				</>
 			) : (
-				<CardContent className="px-6">
-					<div
-						className="prose dark:prose-invert prose-ul:my-2 prose-ol:my-0 prose-li:my-0 prose-p:my-2 prose-ul:ps-4 max-w-none"
-						// biome-ignore lint/security/noDangerouslySetInnerHtml: To render markdown content
-						dangerouslySetInnerHTML={{
-							__html: DOMPurify.sanitize(
-								marked.parse(pageConfig.note, { async: false }),
-							),
-						}}
-						style={{
-							fontSize: `calc(1.25px*${pdfpcConfig.noteFontSize})`,
-							lineHeight: "1.4",
-						}}
-					></div>
+				<CardContent className="flex items-center justify-center px-6 py-4 text-[12px] text-subtle">
+					{m.presenter_notes_empty()}
 				</CardContent>
 			)}
 		</Card>
