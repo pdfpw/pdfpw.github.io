@@ -299,7 +299,7 @@ function Home() {
 	}
 
 	return (
-		<main className="bg-bg text-fg">
+		<main key={locale} className="bg-bg text-fg">
 			<div className="container mx-auto max-w-6xl px-6 pt-12 pb-14">
 				<HeroSection
 					status={status}
