@@ -9,6 +9,7 @@ export type RecentFile = {
 	configName?: string;
 	file?: File;
 	configFile?: File;
+	thumbnail?: string;
 };
 
 export type Settings = {
