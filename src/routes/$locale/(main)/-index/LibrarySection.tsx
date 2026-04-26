@@ -137,13 +137,21 @@ export function LibrarySection({
 									}
 								>
 									<div className="relative mb-2 aspect-[4/3] overflow-hidden rounded-md bg-gradient-to-br from-surface to-bg">
-										<div className="absolute inset-0 flex items-center justify-center text-subtle">
-											{item.handle ? (
-												<FileSymlink className="size-6" />
-											) : (
-												<FileClock className="size-6" />
-											)}
-										</div>
+										{item.thumbnail ? (
+											<img
+												src={item.thumbnail}
+												alt=""
+												className="absolute inset-0 h-full w-full object-contain"
+											/>
+										) : (
+											<div className="absolute inset-0 flex items-center justify-center text-subtle">
+												{item.handle ? (
+													<FileSymlink className="size-6" />
+												) : (
+													<FileClock className="size-6" />
+												)}
+											</div>
+										)}
 										{item.handle && (
 											<span
 												role="img"
