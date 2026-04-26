@@ -74,11 +74,12 @@ Vitest 3.2.4 + jsdom 環境から Vitest 4.1.5 + 実ブラウザ（Playwright / 
 ```diff
 -import { fireEvent, render, screen } from '@testing-library/react'
 +import { render } from 'vitest-browser-react'
-+import { userEvent } from 'vitest/browser'
 ```
 
-- `fireEvent.click(...)` → `await userEvent.click(...)`
-- `screen.getByRole(...)` → `render` の戻り値から取得
+- `render()` は `await` が必要（`Promise<{ getByRole, ... }>` を返す）
+- `screen.getByRole(...)` → `render` の戻り値（Locator）から取得
+- `fireEvent.click(...)` → `await locator.click()`（Locator の `.click()` メソッドを使用）
+- `userEvent` は不要（Locator API で直接操作可能）
 
 ### `src/lib/thumbnail.test.ts`
 

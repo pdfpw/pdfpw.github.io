@@ -63,4 +63,13 @@ describe("generateThumbnail", () => {
 		const result = await generateThumbnail(file);
 		expect(result).toBeNull();
 	});
+
+	it("canvas の 2d context を取得できない場合は null を返す", async () => {
+		// biome-ignore lint/suspicious/noExplicitAny: テスト用モック
+		vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null as any);
+
+		const file = new File(["pdf"], "test.pdf", { type: "application/pdf" });
+		const result = await generateThumbnail(file);
+		expect(result).toBeNull();
+	});
 });

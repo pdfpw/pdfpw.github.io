@@ -20,7 +20,7 @@
 ```bash
 cd /home/miyaji255/workspace/pdfpw.github.io
 pnpm remove jsdom @testing-library/react @testing-library/dom @testing-library/jest-dom
-pnpm add -D vitest@4.1.5 @vitest/browser-playwright@4.1.5 vitest-browser-react@2.2.0
+pnpm add -D vitest@4.1.5 @vitest/browser-playwright@4.1.5 vitest-browser-react@2.2.0 playwright@1.59.1
 ```
 
 - [ ] **Step 2: Playwright の Chromium バイナリをインストール**
