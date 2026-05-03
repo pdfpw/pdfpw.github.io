@@ -203,6 +203,7 @@ export default defineConfig({
 			workbox: {
 				maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
 				globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,wasm,mjs}"],
+				globIgnores: ["**/typst_ts_web_compiler_bg-*.wasm"],
 				navigateFallback: "/index.html",
 				cleanupOutdatedCaches: true,
 				clientsClaim: false,
@@ -213,6 +214,9 @@ export default defineConfig({
 	],
 	optimizeDeps: {
 		include: ["@myriaddreamin/typst.ts"],
+	},
+	worker: {
+		format: "es",
 	},
 	test: {
 		globals: true,
