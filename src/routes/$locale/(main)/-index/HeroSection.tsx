@@ -1,28 +1,49 @@
-import { FileIcon, PlusIcon } from "lucide-react";
-import { type DragEvent, useRef, useState } from "react";
-import * as m from "#src/paraglide/messages.js";
+import { FileIcon, LinkIcon, PlayIcon, PlusIcon } from "lucide-react";
+import { type DragEvent, useId, useRef, useState } from "react";
 import { Button } from "#src/components/ui/button";
 import { cn } from "#src/lib/utils";
+import * as m from "#src/paraglide/messages.js";
 
 const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
+
+const DEMO_BASE =
+	"https://raw.githubusercontent.com/pdfpw/pdfpw.github.io/main/demo";
+
+function demoUrls(locale: string): { pdf: string; pdfpc: string } {
+	const stem = locale === "ja" ? "pdfpw-demo.ja" : "pdfpw-demo";
+	// Only the English demo ships its own .pdfpc; fall back for ja → use base demo pdfpc
+	const pdfpcStem = "pdfpw-demo";
+	return {
+		pdf: `${DEMO_BASE}/${stem}.pdf`,
+		pdfpc: `${DEMO_BASE}/${pdfpcStem}.pdfpc`,
+	};
+}
 
 interface HeroSectionProps {
 	status: string | null;
 	inputId: string;
 	supportsFSA: boolean;
+	locale: string;
 	onOpenPicker: () => void;
 	onFilesSelected: (files: File[]) => void | Promise<void>;
+	onUrlSubmit: (pdfUrl: string, pdfpcUrl?: string) => void | Promise<void>;
 }
 
 export function HeroSection({
 	status,
 	inputId,
 	supportsFSA,
+	locale,
 	onOpenPicker,
 	onFilesSelected,
+	onUrlSubmit,
 }: HeroSectionProps) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [dragActive, setDragActive] = useState(false);
+	const [urlMode, setUrlMode] = useState(false);
+	const [pdfUrlValue, setPdfUrlValue] = useState("");
+	const [pdfpcUrlValue, setPdfpcUrlValue] = useState("");
+	const urlFormId = useId();
 
 	function handleDrop(event: DragEvent<HTMLLabelElement>) {
 		event.preventDefault();
@@ -44,6 +65,22 @@ export function HeroSection({
 		const files = event.target.files ? Array.from(event.target.files) : [];
 		if (files.length > 0) void onFilesSelected(files);
 		event.target.value = "";
+	}
+
+	function handleUrlSubmit(event: React.FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		const pdf = pdfUrlValue.trim();
+		if (!pdf) return;
+		const pdfpc = pdfpcUrlValue.trim();
+		void onUrlSubmit(pdf, pdfpc || undefined);
+		setUrlMode(false);
+		setPdfUrlValue("");
+		setPdfpcUrlValue("");
+	}
+
+	function handleDemoClick() {
+		const { pdf, pdfpc } = demoUrls(locale);
+		void onUrlSubmit(pdf, pdfpc);
 	}
 
 	return (
@@ -77,7 +114,90 @@ export function HeroSection({
 							{m.hero_open_with_fsa()}
 						</Button>
 					)}
+					<Button
+						type="button"
+						variant="secondary"
+						size="default"
+						onClick={() => setUrlMode((prev) => !prev)}
+						aria-expanded={urlMode}
+						aria-controls={urlFormId}
+					>
+						<LinkIcon className="size-4" />
+						{m.hero_open_from_url()}
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="default"
+						onClick={handleDemoClick}
+					>
+						<PlayIcon className="size-4" />
+						{m.hero_demo_label()}
+					</Button>
 				</div>
+				{urlMode && (
+					<form
+						id={urlFormId}
+						onSubmit={handleUrlSubmit}
+						className="mt-4 flex flex-col gap-3"
+					>
+						<div className="flex flex-col gap-1">
+							<label
+								htmlFor={`${urlFormId}-pdf`}
+								className="text-[12px] font-medium text-muted"
+							>
+								{m.hero_url_input_label()}
+							</label>
+							<input
+								id={`${urlFormId}-pdf`}
+								type="url"
+								inputMode="url"
+								// biome-ignore lint/a11y/noAutofocus: form is revealed by user action
+								autoFocus
+								required
+								placeholder={m.hero_url_input_placeholder()}
+								value={pdfUrlValue}
+								onChange={(e) => setPdfUrlValue(e.target.value)}
+								className="rounded-md border border-border bg-bg px-3 py-2 text-[13px] text-fg outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
+							/>
+						</div>
+						<div className="flex flex-col gap-1">
+							<label
+								htmlFor={`${urlFormId}-pdfpc`}
+								className="text-[12px] font-medium text-muted"
+							>
+								{m.hero_url_pdfpc_label()}
+							</label>
+							<input
+								id={`${urlFormId}-pdfpc`}
+								type="url"
+								inputMode="url"
+								placeholder={m.hero_url_pdfpc_placeholder()}
+								value={pdfpcUrlValue}
+								onChange={(e) => setPdfpcUrlValue(e.target.value)}
+								className="rounded-md border border-border bg-bg px-3 py-2 text-[13px] text-fg outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
+							/>
+						</div>
+						<div className="flex flex-wrap gap-2">
+							<Button type="submit" variant="default" size="default">
+								{m.hero_url_submit()}
+							</Button>
+							<Button
+								type="button"
+								variant="ghost"
+								size="default"
+								onClick={() => {
+									setUrlMode(false);
+									setPdfUrlValue("");
+									setPdfpcUrlValue("");
+								}}
+							>
+								{m.hero_url_cancel()}
+							</Button>
+						</div>
+						<p className="text-[11px] text-muted">{m.hero_url_hint()}</p>
+					</form>
+				)}
 				{status && (
 					<output className="mt-6 text-[12px] text-muted">{status}</output>
 				)}
@@ -105,7 +225,8 @@ export function HeroSection({
 					{m.hero_drop_label()}
 				</span>
 				<span className="font-mono text-[11px] text-muted">
-					{m.hero_drop_hint_browse()} &middot; <kbd>{isMac ? "⌘O" : "Ctrl+O"}</kbd>
+					{m.hero_drop_hint_browse()} &middot;{" "}
+					<kbd>{isMac ? "⌘O" : "Ctrl+O"}</kbd>
 				</span>
 				<input
 					ref={inputRef}

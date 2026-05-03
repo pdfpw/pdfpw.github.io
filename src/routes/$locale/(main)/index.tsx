@@ -1,7 +1,16 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { Suspense, startTransition, useId, useReducer, useState } from "react";
+import {
+	Suspense,
+	startTransition,
+	useEffect,
+	useId,
+	useReducer,
+	useRef,
+	useState,
+} from "react";
+import * as typia from "typia";
 import { useLocalStorageSync } from "#src/hooks/use-local-storage-sync";
-import * as m from "#src/paraglide/messages.js";
+import { FetchPdfError, fetchPdfFromUrl } from "#src/lib/fetch-pdf";
 import {
 	canUseFSA,
 	ensureHandleReadable,
@@ -17,6 +26,7 @@ import {
 	upsertRecent,
 } from "#src/lib/recent-store";
 import { generateThumbnail } from "#src/lib/thumbnail";
+import * as m from "#src/paraglide/messages.js";
 import { HeroSection } from "./-index/HeroSection";
 import { HowItWorksSection } from "./-index/HowItWorksSection";
 import { LibrarySection, LibrarySectionLoading } from "./-index/LibrarySection";
@@ -24,22 +34,29 @@ import { LibrarySectionData } from "./-index/LibrarySectionData";
 
 let presentationWindow: Window | null = null;
 
+export interface HomeSearch {
+	pdf?: string;
+	pdfpc?: string;
+}
+
 export const Route = createFileRoute("/$locale/(main)/")({
 	component: Home,
+	validateSearch: typia.createValidate<HomeSearch>(),
 });
 
 function Home() {
 	const { locale } = Route.useParams();
+	const { pdf: pdfUrlParam, pdfpc: pdfpcUrlParam } = Route.useSearch();
 	const [supportsFSA] = useState(() => canUseFSA());
 	const [recentFilesPromise, refreshRecentFiles] = useReducer(
 		(_, db: RecentDb) => getRecentFiles(db),
 		undefined,
 		async () => getRecentFiles(await openDb()),
-	)
+	);
 	const [saveHistory, setSaveHistory] = useLocalStorageSync<boolean>(
 		"pdfpw-save-history",
 		true,
-	)
+	);
 	const [status, setStatus] = useState<string | null>(null);
 	const inputId = useId();
 	const router = useRouter();
@@ -52,7 +69,7 @@ function Home() {
 				await clearRecentStore(db);
 				startTransition(() => {
 					refreshRecentFiles(db);
-				})
+				});
 			} catch (error) {
 				console.warn("Failed to clear history", error);
 			}
@@ -75,7 +92,7 @@ function Home() {
 			await removeRecent(db, id);
 			startTransition(() => {
 				refreshRecentFiles(db);
-			})
+			});
 		} catch (error) {
 			console.warn("Failed to delete recent file", error);
 		}
@@ -87,7 +104,7 @@ function Home() {
 			await clearRecentStore(db);
 			startTransition(() => {
 				refreshRecentFiles(db);
-			})
+			});
 		} catch (error) {
 			console.warn("Failed to clear recent files", error);
 		}
@@ -98,12 +115,12 @@ function Home() {
 			const basePdf = pdfName.replace(/\.pdf$/i, "");
 			const baseCfg = configName.replace(/\.pdfpc$/i, "");
 			return basePdf.toLowerCase() === baseCfg.toLowerCase();
-		}
+		};
 
 		const pdf = files.find(
 			(f) =>
 				f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
-		)
+		);
 		const pdfpc = pdf
 			? files.find(
 					(f) => /\.pdfpc$/i.test(f.name) && sameBase(pdf.name, f.name),
@@ -112,7 +129,7 @@ function Home() {
 
 		if (!pdf) {
 			setStatus(m.presenter_error_no_pdf());
-			return
+			return;
 		}
 
 		const thumbnail = await generateThumbnail(pdf);
@@ -121,7 +138,7 @@ function Home() {
 		const pdfpcHandle =
 			pdf && pdfpc && sameBase(pdf.name, pdfpc.name)
 				? handles?.find((h) => h.name === pdfpc.name)
-				: undefined
+				: undefined;
 
 		if (pdfHandle && supportsFSA) {
 			await saveRecent({
@@ -135,11 +152,11 @@ function Home() {
 						: undefined,
 				lastOpened: Date.now(),
 				thumbnail: thumbnail ?? undefined,
-			})
+			});
 			const db = await openDb();
 			startTransition(() => {
 				refreshRecentFiles(db);
-			})
+			});
 		} else if (saveHistory) {
 			// Standard Mode: save snapshot
 			await saveRecent({
@@ -150,18 +167,21 @@ function Home() {
 				configName: pdfpc?.name,
 				lastOpened: Date.now(),
 				thumbnail: thumbnail ?? undefined,
-			})
+			});
 			const db = await openDb();
 			startTransition(() => {
 				refreshRecentFiles(db);
-			})
+			});
 		}
 
 		setStatus(
 			pdfpc && pdfpcHandle && sameBase(pdf.name, pdfpc.name)
-				? m.presenter_status_loading_with_config({ file: pdf.name, config: pdfpc.name })
+				? m.presenter_status_loading_with_config({
+						file: pdf.name,
+						config: pdfpc.name,
+					})
 				: m.presenter_status_loading({ file: pdf.name }),
-		)
+		);
 
 		await router.navigate({
 			to: "/$locale/presenter",
@@ -173,7 +193,7 @@ function Home() {
 				pdf: pdfHandle ?? pdf,
 				pdfpc: pdfpcHandle ?? pdfpc,
 			},
-		})
+		});
 		const url = router.buildLocation({
 			to: "/$locale/presentation",
 			params: { locale },
@@ -190,7 +210,7 @@ function Home() {
 				url,
 				"_blank",
 				"width=1200,height=675,resizable=yes",
-			)
+			);
 		}
 	}
 
@@ -203,32 +223,32 @@ function Home() {
 			const canRead = await ensureHandleReadable(item.handle);
 			if (!canRead) {
 				setStatus(m.presenter_error_permission_denied());
-				return
+				return;
 			}
 			if (item.configHandle) {
 				const baseMatch =
 					item.configName && item.name
 						? item.name.replace(/\.pdf$/i, "").toLowerCase() ===
 							item.configName.replace(/\.pdfpc$/i, "").toLowerCase()
-						: false
+						: false;
 				if (!baseMatch) {
-					setStatus(m.presenter_error_config_name_mismatch())
-					return
+					setStatus(m.presenter_error_config_name_mismatch());
+					return;
 				}
 				const ok = await ensureHandleWritable(item.configHandle);
 				if (!ok) {
 					setStatus(m.presenter_error_config_permission());
-					return
+					return;
 				}
 			}
 			const file = await item.handle.getFile();
 			const extraFiles = item.configHandle
 				? [await item.configHandle.getFile()]
-				: []
+				: [];
 			await handleFiles(
 				[file, ...extraFiles],
 				[item.handle, ...(item.configHandle ? [item.configHandle] : [])],
-			)
+			);
 		} else if (item.file) {
 			// Restore from snapshot
 			const pdf = item.file;
@@ -248,16 +268,16 @@ function Home() {
 			if (!ok) {
 				if (needsWrite) {
 					setStatus(m.presenter_error_config_permission());
-					return
+					return;
 				}
-				continue
+				continue;
 			}
 			readableHandles.push(handle);
 			files.push(await handle.getFile());
 		}
 		if (files.length === 0) {
 			setStatus(m.presenter_error_no_file_permission());
-			return
+			return;
 		}
 
 		// Validate pdfpc pairing before proceeding
@@ -269,8 +289,8 @@ function Home() {
 			pdf.name.replace(/\.pdf$/i, "").toLowerCase() !==
 				pdfpc.name.replace(/\.pdfpc$/i, "").toLowerCase()
 		) {
-			setStatus(m.presenter_error_pdfpc_pairing())
-			return
+			setStatus(m.presenter_error_pdfpc_pairing());
+			return;
 		}
 
 		await handleFiles(files, readableHandles);
@@ -292,7 +312,7 @@ function Home() {
 				],
 				excludeAcceptAllOption: true,
 				multiple: true,
-			})
+			});
 			const handles = picker ?? [];
 			if (handles.length === 0) return;
 			await handlePickedHandles(handles);
@@ -303,6 +323,58 @@ function Home() {
 		}
 	}
 
+	async function onUrlSubmit(rawUrl: string, rawPdfpcUrl?: string) {
+		const trimmed = rawUrl.trim();
+		if (!trimmed) return;
+		const trimmedPdfpc = rawPdfpcUrl?.trim() || undefined;
+		setStatus(m.presenter_status_fetching_url({ url: trimmed }));
+		try {
+			const fetched = await fetchPdfFromUrl(trimmed, {
+				pdfpcUrl: trimmedPdfpc,
+			});
+			const files = fetched.pdfpc
+				? [fetched.pdf, fetched.pdfpc]
+				: [fetched.pdf];
+			await handleFiles(files);
+		} catch (error) {
+			if (error instanceof FetchPdfError) {
+				switch (error.kind) {
+					case "invalid-url":
+						setStatus(m.presenter_error_url_invalid());
+						break;
+					case "cors-or-network":
+						setStatus(m.presenter_error_url_cors());
+						break;
+					case "http-error":
+						setStatus(
+							m.presenter_error_url_http({
+								status: String(error.status ?? "?"),
+							}),
+						);
+						break;
+					case "not-pdf":
+						setStatus(m.presenter_error_url_not_pdf());
+						break;
+					case "aborted":
+						setStatus(null);
+						break;
+				}
+			} else {
+				setStatus(m.presenter_error_url_failed());
+			}
+		}
+	}
+
+	const autoOpenedUrlRef = useRef<string | null>(null);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: onUrlSubmit recreated each render; ref-guard dedupes
+	useEffect(() => {
+		if (!pdfUrlParam) return;
+		const key = `${pdfUrlParam} ${pdfpcUrlParam ?? ""}`;
+		if (autoOpenedUrlRef.current === key) return;
+		autoOpenedUrlRef.current = key;
+		void onUrlSubmit(pdfUrlParam, pdfpcUrlParam);
+	}, [pdfUrlParam, pdfpcUrlParam]);
+
 	return (
 		<main key={locale} className="bg-bg text-fg">
 			<div className="container mx-auto max-w-6xl px-6 pt-12 pb-14">
@@ -310,8 +382,10 @@ function Home() {
 					status={status}
 					inputId={inputId}
 					supportsFSA={supportsFSA}
+					locale={locale}
 					onOpenPicker={onOpenPicker}
 					onFilesSelected={onFilesSelected}
+					onUrlSubmit={onUrlSubmit}
 				/>
 			</div>
 
@@ -342,5 +416,5 @@ function Home() {
 
 			<HowItWorksSection />
 		</main>
-	)
+	);
 }
