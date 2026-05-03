@@ -25,3 +25,12 @@ export function pickMainTypst(sources: TypstSource[]): string | null {
   });
   return sorted[0].path;
 }
+
+export async function filesToTypstSources(files: File[]): Promise<TypstSource[]> {
+  return Promise.all(
+    files.map(async (f) => ({
+      path: (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name,
+      data: new Uint8Array(await f.arrayBuffer()),
+    })),
+  );
+}

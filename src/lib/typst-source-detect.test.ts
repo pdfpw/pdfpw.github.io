@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { containsTypst, pickMainTypst, type TypstSource } from "./typst-source-detect";
+import { containsTypst, filesToTypstSources, pickMainTypst, type TypstSource } from "./typst-source-detect";
 
 const src = (path: string): TypstSource => ({ path, data: new Uint8Array() });
 
@@ -35,5 +35,16 @@ describe("pickMainTypst", () => {
   });
   it("returns null when no .typ", () => {
     expect(pickMainTypst([src("a.pdf")])).toBe(null);
+  });
+});
+
+describe("filesToTypstSources", () => {
+  it("uses webkitRelativePath when present, otherwise file name", async () => {
+    const a = new File(["hello"], "main.typ", { type: "text/plain" });
+    const b = new File([new Uint8Array([1, 2])], "logo.png");
+    Object.defineProperty(b, "webkitRelativePath", { value: "assets/logo.png" });
+    const result = await filesToTypstSources([a, b]);
+    expect(result.map((r) => r.path)).toEqual(["main.typ", "assets/logo.png"]);
+    expect(result[1].data).toEqual(new Uint8Array([1, 2]));
   });
 });
