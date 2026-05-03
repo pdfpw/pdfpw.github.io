@@ -1,8 +1,54 @@
 import { FileIcon, LinkIcon, PlayIcon, PlusIcon } from "lucide-react";
 import { type DragEvent, useId, useRef, useState } from "react";
+import type React from "react";
 import { Button } from "#src/components/ui/button";
 import { cn } from "#src/lib/utils";
 import * as m from "#src/paraglide/messages.js";
+
+type FsEntry = {
+	isFile: boolean;
+	isDirectory: boolean;
+	name: string;
+	file?: (cb: (f: File) => void, err?: (e: unknown) => void) => void;
+	createReader?: () => {
+		readEntries: (cb: (entries: FsEntry[]) => void, err?: (e: unknown) => void) => void;
+	};
+};
+
+async function expandDroppedItems(list: DataTransferItemList): Promise<File[]> {
+	const entries: FsEntry[] = [];
+	for (const it of Array.from(list)) {
+		const getEntry = (it as DataTransferItem & {
+			webkitGetAsEntry?: () => FsEntry | null;
+		}).webkitGetAsEntry;
+		if (typeof getEntry === "function") {
+			const e = getEntry.call(it);
+			if (e) entries.push(e);
+		}
+	}
+	if (entries.length === 0) return [];
+
+	const out: File[] = [];
+	async function walk(entry: FsEntry, prefix: string): Promise<void> {
+		const path = prefix ? `${prefix}/${entry.name}` : entry.name;
+		if (entry.isFile && entry.file) {
+			const file: File = await new Promise((res, rej) => entry.file!(res, rej));
+			Object.defineProperty(file, "webkitRelativePath", { value: path });
+			out.push(file);
+			return;
+		}
+		if (entry.isDirectory && entry.createReader) {
+			const reader = entry.createReader();
+			let batch: FsEntry[] = [];
+			do {
+				batch = await new Promise<FsEntry[]>((res, rej) => reader.readEntries(res, rej));
+				for (const c of batch) await walk(c, path);
+			} while (batch.length > 0);
+		}
+	}
+	for (const e of entries) await walk(e, "");
+	return out;
+}
 
 const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
 
@@ -20,7 +66,7 @@ function demoUrls(locale: string): { pdf: string; pdfpc: string } {
 }
 
 interface HeroSectionProps {
-	status: string | null;
+	status: React.ReactNode | null;
 	inputId: string;
 	supportsFSA: boolean;
 	locale: string;
@@ -45,10 +91,20 @@ export function HeroSection({
 	const [pdfpcUrlValue, setPdfpcUrlValue] = useState("");
 	const urlFormId = useId();
 
-	function handleDrop(event: DragEvent<HTMLLabelElement>) {
+	async function handleDrop(event: DragEvent<HTMLLabelElement>) {
 		event.preventDefault();
 		setDragActive(false);
-		const files = Array.from(event.dataTransfer.files);
+		const items = event.dataTransfer.items;
+		const supportsEntries =
+			items != null &&
+			Array.from(items).some(
+				(it) =>
+					typeof (it as DataTransferItem & { webkitGetAsEntry?: unknown })
+						.webkitGetAsEntry === "function",
+			);
+		const files = supportsEntries
+			? await expandDroppedItems(items)
+			: Array.from(event.dataTransfer.files);
 		if (files.length > 0) void onFilesSelected(files);
 	}
 
@@ -198,14 +254,14 @@ export function HeroSection({
 						<p className="text-[11px] text-muted">{m.hero_url_hint()}</p>
 					</form>
 				)}
-				{status && (
-					<output className="mt-6 text-[12px] text-muted">{status}</output>
+				{status !== null && status !== undefined && status !== false && (
+					<div className="mt-6 text-[12px] text-muted">{status}</div>
 				)}
 			</div>
 
 			<label
 				htmlFor={inputId}
-				onDrop={handleDrop}
+				onDrop={(e) => void handleDrop(e)}
 				onDragOver={handleDragOver}
 				onDragLeave={handleDragLeave}
 				className={cn(
@@ -232,7 +288,7 @@ export function HeroSection({
 					ref={inputRef}
 					id={inputId}
 					type="file"
-					accept=".pdf,.pdfpc,application/pdf,application/json"
+					accept=".pdf,.pdfpc,.typ,application/pdf,application/json"
 					multiple
 					onChange={handleFileChange}
 					className="sr-only"

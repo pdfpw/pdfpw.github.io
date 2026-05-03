@@ -1,16 +1,35 @@
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
 
-export type RecentFile = {
+export interface RecentPdfFile {
+	kind?: "pdf";
 	id: string;
 	name: string;
-	lastOpened: number;
 	handle?: FileSystemFileHandle;
 	configHandle?: FileSystemFileHandle;
 	configName?: string;
 	file?: File;
 	configFile?: File;
+	lastOpened: number;
 	thumbnail?: string;
-};
+}
+
+export interface RecentTypstFile {
+	kind: "typst";
+	id: string;
+	name: string;
+	mainPath: string;
+	handle?: FileSystemFileHandle;
+	assetHandles?: FileSystemFileHandle[];
+	file?: File;
+	assetFiles?: File[];
+	configHandle?: FileSystemFileHandle;
+	configFile?: File;
+	configName?: string;
+	lastOpened: number;
+	thumbnail?: string;
+}
+
+export type RecentFile = RecentPdfFile | RecentTypstFile;
 
 export type Settings = {
 	saveHistory: boolean;
@@ -70,14 +89,22 @@ export function openDb(): Promise<RecentDb> {
 export async function getRecentFiles(
 	db: IDBPDatabase<RecentSchema>,
 ): Promise<RecentFile[]> {
-	return db.getAll(DB_STORE);
+	const all = await db.getAll(DB_STORE);
+	// Migration: entries stored before the discriminated union had no `kind`.
+	// Treat missing `kind` as "pdf".
+	return all.map((item) =>
+		item.kind === undefined ? { ...item, kind: "pdf" as const } : item,
+	);
 }
 
 export async function getRecentFileById(
 	db: IDBPDatabase<RecentSchema>,
 	id: string,
 ): Promise<RecentFile | undefined> {
-	return db.get(DB_STORE, id);
+	const item = await db.get(DB_STORE, id);
+	if (!item) return undefined;
+	// Migration: entries stored before the discriminated union had no `kind`.
+	return item.kind === undefined ? { ...item, kind: "pdf" as const } : item;
 }
 
 export async function upsertRecent(
