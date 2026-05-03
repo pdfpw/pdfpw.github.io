@@ -276,17 +276,27 @@ function Home() {
 				return;
 			}
 			setStatus(m.typst_status_loading_wasm());
-			const result = await compileTypst(
-				{ sources, mainPath },
-				{
-					onProgress: (p) => {
-						if (p.stage === "loading-wasm") setStatus(m.typst_status_loading_wasm());
-						else if (p.stage === "fetching-packages")
-							setStatus(m.typst_status_fetching_packages({ package: p.current ?? "" }));
-						else if (p.stage === "compiling") setStatus(m.typst_status_compiling());
+			let result: Awaited<ReturnType<typeof compileTypst>>;
+			try {
+				result = await compileTypst(
+					{ sources, mainPath },
+					{
+						onProgress: (p) => {
+							if (p.stage === "loading-wasm") setStatus(m.typst_status_loading_wasm());
+							else if (p.stage === "fetching-packages")
+								setStatus(m.typst_status_fetching_packages({ package: p.current ?? "" }));
+							else if (p.stage === "compiling") setStatus(m.typst_status_compiling());
+						},
 					},
-				},
-			);
+				);
+			} catch (err) {
+				if ((err as Error)?.name === "AbortError") {
+					setStatus(null);
+					return;
+				}
+				setStatus(m.typst_error_runtime_init());
+				return;
+			}
 			if (!result.ok) {
 				setStatus(<TypstDiagnosticList items={result.diagnostics} />);
 				return;

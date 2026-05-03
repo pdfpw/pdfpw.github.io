@@ -51,7 +51,14 @@ describe("filesToTypstSources", () => {
 
 describe("entriesToTypstSources", () => {
   it("recursively expands directory entries with relative paths", async () => {
-    function fileEntry(name: string, content: string): any {
+    type MockEntry = {
+      isFile: boolean;
+      isDirectory: boolean;
+      name: string;
+      file?: (cb: (f: File) => void) => void;
+      createReader?: () => { readEntries: (cb: (e: MockEntry[]) => void) => void };
+    };
+    function fileEntry(name: string, content: string): MockEntry {
       return {
         isFile: true,
         isDirectory: false,
@@ -59,7 +66,7 @@ describe("entriesToTypstSources", () => {
         file: (cb: (f: File) => void) => cb(new File([content], name)),
       };
     }
-    function dirEntry(name: string, children: any[]): any {
+    function dirEntry(name: string, children: MockEntry[]): MockEntry {
       return {
         isFile: false,
         isDirectory: true,
@@ -67,7 +74,7 @@ describe("entriesToTypstSources", () => {
         createReader: () => {
           let exhausted = false;
           return {
-            readEntries: (cb: (e: any[]) => void) => {
+            readEntries: (cb: (e: MockEntry[]) => void) => {
               if (exhausted) return cb([]);
               exhausted = true;
               cb(children);

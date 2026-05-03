@@ -19,7 +19,10 @@ export function TypstDiagnosticList({ items, max = 20 }: Props) {
       </div>
       <ul className="flex flex-col gap-1 font-mono text-fg/80">
         {shown.map((d, i) => (
-          <li key={i} className="flex items-start gap-2">
+          <li
+            key={`${d.path}:${d.line}:${d.column}:${d.message}:${i}`}
+            className="flex items-start gap-2"
+          >
             {d.severity === "error" ? (
               <AlertCircleIcon className="mt-[2px] size-3.5 shrink-0 text-destructive" />
             ) : (
