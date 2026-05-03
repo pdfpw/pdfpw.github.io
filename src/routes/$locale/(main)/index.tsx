@@ -31,6 +31,7 @@ import { generateThumbnail } from "#src/lib/thumbnail";
 import { compileTypst } from "#src/lib/typst";
 import {
 	containsTypst,
+	filesToTypstMeta,
 	filesToTypstSources,
 	pickMainTypst,
 } from "#src/lib/typst-source-detect";
@@ -267,25 +268,34 @@ function Home() {
 			return basePdf.toLowerCase() === baseCfg.toLowerCase();
 		};
 
-		// Typst branch
-		const sources = await filesToTypstSources(files);
-		if (containsTypst(sources)) {
-			const mainPath = pickMainTypst(sources);
+		// Typst branch — detect by filename only first; do not eagerly read bytes.
+		// `filesToTypstSources` is async (arrayBuffer) and must NOT run on the PDF
+		// path or we double-load every PDF deck on open.
+		const meta = filesToTypstMeta(files);
+		if (containsTypst(meta)) {
+			const mainPath = pickMainTypst(meta);
 			if (!mainPath) {
 				setStatus(m.typst_error_no_main());
 				return;
 			}
 			setStatus(m.typst_status_loading_wasm());
+			const sources = await filesToTypstSources(files);
 			let result: Awaited<ReturnType<typeof compileTypst>>;
 			try {
 				result = await compileTypst(
 					{ sources, mainPath },
 					{
 						onProgress: (p) => {
-							if (p.stage === "loading-wasm") setStatus(m.typst_status_loading_wasm());
+							if (p.stage === "loading-wasm")
+								setStatus(m.typst_status_loading_wasm());
 							else if (p.stage === "fetching-packages")
-								setStatus(m.typst_status_fetching_packages({ package: p.current ?? "" }));
-							else if (p.stage === "compiling") setStatus(m.typst_status_compiling());
+								setStatus(
+									m.typst_status_fetching_packages({
+										package: p.current ?? "",
+									}),
+								);
+							else if (p.stage === "compiling")
+								setStatus(m.typst_status_compiling());
 						},
 					},
 				);
@@ -301,11 +311,21 @@ function Home() {
 				setStatus(<TypstDiagnosticList items={result.diagnostics} />);
 				return;
 			}
-			const stem = mainPath.replace(/\.typ$/i, "").split("/").pop() ?? "main";
-			const pdfArrayBuffer = new Uint8Array(result.pdf).buffer;
-			const compiledPdf = new File([pdfArrayBuffer], `${stem}.pdf`, {
-				type: "application/pdf",
-			});
+			const stem =
+				mainPath
+					.replace(/\.typ$/i, "")
+					.split("/")
+					.pop() ?? "main";
+			// Pass the underlying buffer directly to avoid an extra Uint8Array copy.
+			// Worker-cloned Uint8Array always lands with a plain ArrayBuffer
+			// (byteOffset 0, full length), so the cast is safe.
+			const compiledPdf = new File(
+				[result.pdf.buffer as ArrayBuffer],
+				`${stem}.pdf`,
+				{
+					type: "application/pdf",
+				},
+			);
 			const pdfpc = files.find(
 				(f) => /\.pdfpc$/i.test(f.name) && sameBase(`${stem}.pdf`, f.name),
 			);
@@ -319,16 +339,16 @@ function Home() {
 				(f) => f !== mainSourceFile && !/\.pdfpc$/i.test(f.name),
 			);
 			const assetHandles = handles?.filter(
-				(h) =>
-					h.name !== mainSourceFile?.name && !/\.pdfpc$/i.test(h.name),
+				(h) => h.name !== mainSourceFile?.name && !/\.pdfpc$/i.test(h.name),
 			);
 			const sourceHandle = handles?.find(
-				(h) =>
-					h.name ===
-					(mainSourceFile?.name ?? mainPath.split("/").pop()),
+				(h) => h.name === (mainSourceFile?.name ?? mainPath.split("/").pop()),
 			);
 
-			await proceedWithPdf(compiledPdf, pdfpc, undefined, {
+			// Forward `handles` so `proceedWithPdf` can resolve the pdfpc handle
+			// for FSA-based Typst recents (the synthetic compiled PDF itself has
+			// no handle, so the pdfHandle search is a harmless miss).
+			await proceedWithPdf(compiledPdf, pdfpc, handles, {
 				mainPath,
 				sourceFile: mainSourceFile,
 				assetFiles,
