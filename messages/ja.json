@@ -86,6 +86,8 @@
   "presenter_back_home": "ホームへ戻る",
   "presenter_notes_eyebrow": "Notes",
   "presenter_notes_empty": "このスライドにノートはありません",
+  "presenter_prev_slide_aria": "前のスライド",
+  "presenter_next_slide_aria": "次のスライド",
 
   "presentation_missing_no_file_title": "ファイルが指定されていません",
   "presentation_missing_back_message": "ホームに戻って再度ファイルを選択してください。",

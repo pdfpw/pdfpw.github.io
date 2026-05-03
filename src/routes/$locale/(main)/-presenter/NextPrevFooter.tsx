@@ -5,6 +5,7 @@ import { PdfPage } from "#src/components/PdfPage.tsx";
 import { Button } from "#src/components/ui/button.tsx";
 import { Skeleton } from "#src/components/ui/skeleton.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config.ts";
+import * as m from "#src/paraglide/messages.js";
 import { getNextSlidePageNumber } from "./NextSlide";
 import { Timer, type TimerHandle } from "./Timer";
 
@@ -87,6 +88,7 @@ function NextPrevFooterCore({
 						variant="ghost"
 						size="icon-lg"
 						onClick={onPrevSlide}
+						aria-label={m.presenter_prev_slide_aria()}
 						className="rounded-full"
 					>
 						<ChevronLeftCircleIcon className="size-7" />
@@ -101,6 +103,7 @@ function NextPrevFooterCore({
 						size="icon-lg"
 						className="rounded-full"
 						onClick={onNextSlide}
+						aria-label={m.presenter_next_slide_aria()}
 					>
 						<ChevronRightCircleIcon className="size-7" />
 					</Button>
