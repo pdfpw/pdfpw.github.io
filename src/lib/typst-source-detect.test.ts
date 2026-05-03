@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { containsTypst, filesToTypstSources, pickMainTypst, type TypstSource } from "./typst-source-detect";
+import { containsTypst, entriesToTypstSources, filesToTypstSources, pickMainTypst, type TypstSource } from "./typst-source-detect";
 
 const src = (path: string): TypstSource => ({ path, data: new Uint8Array() });
 
@@ -46,5 +46,41 @@ describe("filesToTypstSources", () => {
     const result = await filesToTypstSources([a, b]);
     expect(result.map((r) => r.path)).toEqual(["main.typ", "assets/logo.png"]);
     expect(result[1].data).toEqual(new Uint8Array([1, 2]));
+  });
+});
+
+describe("entriesToTypstSources", () => {
+  it("recursively expands directory entries with relative paths", async () => {
+    function fileEntry(name: string, content: string): any {
+      return {
+        isFile: true,
+        isDirectory: false,
+        name,
+        file: (cb: (f: File) => void) => cb(new File([content], name)),
+      };
+    }
+    function dirEntry(name: string, children: any[]): any {
+      return {
+        isFile: false,
+        isDirectory: true,
+        name,
+        createReader: () => {
+          let exhausted = false;
+          return {
+            readEntries: (cb: (e: any[]) => void) => {
+              if (exhausted) return cb([]);
+              exhausted = true;
+              cb(children);
+            },
+          };
+        },
+      };
+    }
+    const root = [
+      fileEntry("main.typ", "= Hi"),
+      dirEntry("img", [fileEntry("a.png", "x")]),
+    ];
+    const result = await entriesToTypstSources(root);
+    expect(result.map((r) => r.path).sort()).toEqual(["img/a.png", "main.typ"]);
   });
 });

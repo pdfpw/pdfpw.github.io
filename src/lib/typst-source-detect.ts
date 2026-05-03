@@ -26,6 +26,54 @@ export function pickMainTypst(sources: TypstSource[]): string | null {
   return sorted[0].path;
 }
 
+type FsEntry = {
+  isFile: boolean;
+  isDirectory: boolean;
+  name: string;
+  file?: (cb: (f: File) => void, err?: (e: unknown) => void) => void;
+  createReader?: () => {
+    readEntries: (cb: (entries: FsEntry[]) => void, err?: (e: unknown) => void) => void;
+  };
+};
+
+function readDirAll(
+  reader: ReturnType<NonNullable<FsEntry["createReader"]>>,
+): Promise<FsEntry[]> {
+  return new Promise((resolve, reject) => {
+    const all: FsEntry[] = [];
+    const pump = () =>
+      reader.readEntries((batch) => {
+        if (batch.length === 0) return resolve(all);
+        all.push(...batch);
+        pump();
+      }, reject);
+    pump();
+  });
+}
+
+async function entryToSources(entry: FsEntry, prefix: string): Promise<TypstSource[]> {
+  const path = prefix ? `${prefix}/${entry.name}` : entry.name;
+  if (entry.isFile && entry.file) {
+    const file = await new Promise<File>((res, rej) => entry.file!(res, rej));
+    return [{ path, data: new Uint8Array(await file.arrayBuffer()) }];
+  }
+  if (entry.isDirectory && entry.createReader) {
+    const reader = entry.createReader();
+    const children = await readDirAll(reader);
+    const nested = await Promise.all(children.map((c) => entryToSources(c, path)));
+    return nested.flat();
+  }
+  return [];
+}
+
+export async function entriesToTypstSources(
+  entries: ReadonlyArray<FsEntry | null>,
+): Promise<TypstSource[]> {
+  const filtered = entries.filter((e): e is FsEntry => !!e);
+  const nested = await Promise.all(filtered.map((e) => entryToSources(e, "")));
+  return nested.flat();
+}
+
 export async function filesToTypstSources(files: File[]): Promise<TypstSource[]> {
   return Promise.all(
     files.map(async (f) => ({
