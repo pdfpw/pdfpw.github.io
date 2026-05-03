@@ -122,6 +122,13 @@ function Home() {
 		pdf: File,
 		pdfpc: File | undefined,
 		handles?: FileSystemFileHandle[],
+		typstMeta?: {
+			mainPath: string;
+			sourceFile?: File;
+			assetFiles?: File[];
+			sourceHandle?: FileSystemFileHandle;
+			assetHandles?: FileSystemFileHandle[];
+		},
 	) {
 		const sameBase = (pdfName: string, configName: string) => {
 			const basePdf = pdfName.replace(/\.pdf$/i, "");
@@ -136,8 +143,51 @@ function Home() {
 				? handles?.find((h) => h.name === pdfpc.name)
 				: undefined;
 
-		if (pdfHandle && supportsFSA) {
+		if (typstMeta) {
+			const typstId =
+				typstMeta.sourceHandle?.name ??
+				`snapshot-typst-${typstMeta.sourceFile?.name ?? pdf.name}-${Date.now()}`;
+			if (typstMeta.sourceHandle && supportsFSA) {
+				await saveRecent({
+					kind: "typst",
+					id: typstId,
+					name: typstMeta.sourceHandle.name,
+					mainPath: typstMeta.mainPath,
+					handle: typstMeta.sourceHandle,
+					assetHandles: typstMeta.assetHandles,
+					configHandle: pdfpcHandle && pdfpc ? pdfpcHandle : undefined,
+					configName:
+						pdfpc && pdfpcHandle && sameBase(pdf.name, pdfpc.name)
+							? pdfpc.name
+							: undefined,
+					lastOpened: Date.now(),
+					thumbnail: thumbnail ?? undefined,
+				});
+				const db = await openDb();
+				startTransition(() => {
+					refreshRecentFiles(db);
+				});
+			} else if (saveHistory) {
+				await saveRecent({
+					kind: "typst",
+					id: typstId,
+					name: typstMeta.sourceFile?.name ?? pdf.name,
+					mainPath: typstMeta.mainPath,
+					file: typstMeta.sourceFile,
+					assetFiles: typstMeta.assetFiles,
+					configFile: pdfpc,
+					configName: pdfpc?.name,
+					lastOpened: Date.now(),
+					thumbnail: thumbnail ?? undefined,
+				});
+				const db = await openDb();
+				startTransition(() => {
+					refreshRecentFiles(db);
+				});
+			}
+		} else if (pdfHandle && supportsFSA) {
 			await saveRecent({
+				kind: "pdf",
 				id: pdfHandle.name,
 				name: pdf.name,
 				handle: pdfHandle,
@@ -155,6 +205,7 @@ function Home() {
 			});
 		} else if (saveHistory) {
 			await saveRecent({
+				kind: "pdf",
 				id: `snapshot-${pdf.name}-${Date.now()}`,
 				name: pdf.name,
 				file: pdf,
@@ -248,7 +299,32 @@ function Home() {
 			const pdfpc = files.find(
 				(f) => /\.pdfpc$/i.test(f.name) && sameBase(`${stem}.pdf`, f.name),
 			);
-			await proceedWithPdf(compiledPdf, pdfpc);
+
+			const mainSourceFile = files.find(
+				(f) =>
+					((f as File & { webkitRelativePath?: string }).webkitRelativePath ||
+						f.name) === mainPath,
+			);
+			const assetFiles = files.filter(
+				(f) => f !== mainSourceFile && !/\.pdfpc$/i.test(f.name),
+			);
+			const assetHandles = handles?.filter(
+				(h) =>
+					h.name !== mainSourceFile?.name && !/\.pdfpc$/i.test(h.name),
+			);
+			const sourceHandle = handles?.find(
+				(h) =>
+					h.name ===
+					(mainSourceFile?.name ?? mainPath.split("/").pop()),
+			);
+
+			await proceedWithPdf(compiledPdf, pdfpc, undefined, {
+				mainPath,
+				sourceFile: mainSourceFile,
+				assetFiles,
+				sourceHandle,
+				assetHandles,
+			});
 			return;
 		}
 
@@ -274,6 +350,35 @@ function Home() {
 	}
 
 	async function onRecentClick(item: RecentFile) {
+		if (item.kind === "typst") {
+			if (item.handle) {
+				const canRead = await ensureHandleReadable(item.handle);
+				if (!canRead) {
+					setStatus(m.presenter_error_permission_denied());
+					return;
+				}
+				const main = await item.handle.getFile();
+				const assets: File[] = [];
+				for (const ah of item.assetHandles ?? []) {
+					const ok = await ensureHandleReadable(ah);
+					if (ok) assets.push(await ah.getFile());
+				}
+				const cfg = item.configHandle
+					? [await item.configHandle.getFile()]
+					: [];
+				const allHandles = [item.handle, ...(item.assetHandles ?? [])];
+				if (item.configHandle) allHandles.push(item.configHandle);
+				await handleFiles([main, ...assets, ...cfg], allHandles);
+				return;
+			}
+			if (item.file) {
+				const cfg = item.configFile ? [item.configFile] : [];
+				await handleFiles([item.file, ...(item.assetFiles ?? []), ...cfg]);
+				return;
+			}
+			return;
+		}
+
 		if (item.handle) {
 			const canRead = await ensureHandleReadable(item.handle);
 			if (!canRead) {
