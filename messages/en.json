@@ -145,5 +145,15 @@
   "update_reload": "Reload",
 
   "license_label_license": "License",
-  "license_label_author": "Author"
+  "license_label_author": "Author",
+
+  "typst_status_loading_wasm": "Loading Typst engine…",
+  "typst_status_fetching_packages": "Fetching Typst package: {package}",
+  "typst_status_compiling": "Compiling Typst…",
+  "typst_error_no_main": "Could not find a Typst main file (main.typ)",
+  "typst_error_compile_failed": "Typst compile failed ({count} errors)",
+  "typst_error_runtime_init": "Failed to initialize Typst engine",
+  "typst_error_timeout": "Typst compilation timed out",
+  "typst_diag_severity_error": "error",
+  "typst_diag_severity_warning": "warning"
 }

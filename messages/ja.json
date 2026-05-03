@@ -145,5 +145,15 @@
   "update_reload": "再読み込み",
 
   "license_label_license": "ライセンス",
-  "license_label_author": "作者"
+  "license_label_author": "作者",
+
+  "typst_status_loading_wasm": "Typst エンジンを読み込み中…",
+  "typst_status_fetching_packages": "Typst パッケージを取得中: {package}",
+  "typst_status_compiling": "Typst をコンパイル中…",
+  "typst_error_no_main": "Typst の主ファイル (main.typ) が見つかりません",
+  "typst_error_compile_failed": "Typst のコンパイルに失敗しました ({count} 件のエラー)",
+  "typst_error_runtime_init": "Typst エンジンの初期化に失敗しました",
+  "typst_error_timeout": "Typst のコンパイルがタイムアウトしました",
+  "typst_diag_severity_error": "エラー",
+  "typst_diag_severity_warning": "警告"
 }
