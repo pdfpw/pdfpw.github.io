@@ -211,6 +211,9 @@ export default defineConfig({
 			devOptions: { enabled: false },
 		}),
 	],
+	optimizeDeps: {
+		include: ["@myriaddreamin/typst.ts"],
+	},
 	test: {
 		globals: true,
 		setupFiles: ["./src/test-setup.ts"],
