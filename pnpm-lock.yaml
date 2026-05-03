@@ -14,6 +14,12 @@ importers:
       '@fontsource/geist-sans':
         specifier: ^5.2.5
         version: 5.2.5
+      '@myriaddreamin/typst-ts-web-compiler':
+        specifier: ^0.6.0
+        version: 0.6.0
+      '@myriaddreamin/typst.ts':
+        specifier: ^0.6.0
+        version: 0.6.0(@myriaddreamin/typst-ts-web-compiler@0.6.0)
       '@radix-ui/react-dialog':
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -1072,6 +1078,20 @@ packages:
 
   '@lix-js/server-protocol-schema@0.1.1':
     resolution: {integrity: sha512-jBeALB6prAbtr5q4vTuxnRZZv1M2rKe8iNqRQhFJ4Tv7150unEa0vKyz0hs8Gl3fUGsWaNJBh3J8++fpbrpRBQ==}
+
+  '@myriaddreamin/typst-ts-web-compiler@0.6.0':
+    resolution: {integrity: sha512-P/eIJ5RnfElj0NYzn5PI296t/IwWtgqUyyTMi5Jm5X3V5kZfskkH+LI7mSQe8tEyxwgCvxbxvFe5adinA3K8Gg==}
+
+  '@myriaddreamin/typst.ts@0.6.0':
+    resolution: {integrity: sha512-IUpetG0NyF2H6eXRm4j+NsbanJHIvyrffHEijqYb6q128sLWQgT1FYJS+h7dtjXmrBEfnIl1mI80DyfDR6kB/w==}
+    peerDependencies:
+      '@myriaddreamin/typst-ts-renderer': ^0.6.0
+      '@myriaddreamin/typst-ts-web-compiler': ^0.6.0
+    peerDependenciesMeta:
+      '@myriaddreamin/typst-ts-renderer':
+        optional: true
+      '@myriaddreamin/typst-ts-web-compiler':
+        optional: true
 
   '@napi-rs/canvas-android-arm64@0.1.99':
     resolution: {integrity: sha512-9OCRt8VVxA17m32NWZKyNC2qamdaS/SC5CEOIQwFngRq0DIeVm4PDal+6Ljnhqm2whZiC63DNuKZ4xSp2nbj9w==}
@@ -4906,6 +4926,14 @@ snapshots:
       - babel-plugin-macros
 
   '@lix-js/server-protocol-schema@0.1.1': {}
+
+  '@myriaddreamin/typst-ts-web-compiler@0.6.0': {}
+
+  '@myriaddreamin/typst.ts@0.6.0(@myriaddreamin/typst-ts-web-compiler@0.6.0)':
+    dependencies:
+      idb: 7.1.1
+    optionalDependencies:
+      '@myriaddreamin/typst-ts-web-compiler': 0.6.0
 
   '@napi-rs/canvas-android-arm64@0.1.99':
     optional: true
