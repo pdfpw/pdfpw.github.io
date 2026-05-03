@@ -96,6 +96,9 @@ importers:
       '@napi-rs/canvas':
         specifier: ^0.1.99
         version: 0.1.99
+      '@playwright/test':
+        specifier: 1.59.1
+        version: 1.59.1
       '@ryoppippi/unplugin-typia':
         specifier: ^2.6.5
         version: 2.6.5(rollup@2.80.0)(typescript@5.9.3)(typia@10.1.0(@types/node@22.19.3)(typescript@5.9.3))(vite@7.3.0(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.46.1)(tsx@4.21.0))
@@ -1162,6 +1165,11 @@ packages:
   '@napi-rs/canvas@0.1.99':
     resolution: {integrity: sha512-zN4eQlK3eBf7aJBcTHZilpBH3tDekBzPMIWC8r0s94Ecl73XfOyFi4w7yKFMRVUT0lvNQjtOL8YSrwqQj6mZFg==}
     engines: {node: '>= 10'}
+
+  '@playwright/test@1.59.1':
+    resolution: {integrity: sha512-PG6q63nQg5c9rIi4/Z5lR5IVF7yU5MqmKaPOe0HSc0O2cX1fPi96sUQu5j7eo4gKCkB2AnNGoWt7y4/Xx3Kcqg==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
@@ -4981,6 +4989,10 @@ snapshots:
       '@napi-rs/canvas-linux-x64-musl': 0.1.99
       '@napi-rs/canvas-win32-arm64-msvc': 0.1.99
       '@napi-rs/canvas-win32-x64-msvc': 0.1.99
+
+  '@playwright/test@1.59.1':
+    dependencies:
+      playwright: 1.59.1
 
   '@polka/url@1.0.0-next.29': {}
 
