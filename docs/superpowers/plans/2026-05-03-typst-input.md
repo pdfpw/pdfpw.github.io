@@ -44,8 +44,7 @@ pnpm add @myriaddreamin/typst.ts@^0.6.0 @myriaddreamin/typst-ts-web-compiler@^0.
 ```ts
 import {
   createTypstCompiler,
-  withAccessModel,
-  withPackageRegistry,
+  initOptions,
   MemoryAccessModel,
   FetchPackageRegistry,
 } from "@myriaddreamin/typst.ts";
@@ -58,7 +57,7 @@ async function main() {
   const compiler = createTypstCompiler();
   await compiler.init({
     getModule: () => fetch(wasmUrl).then((r) => r.arrayBuffer()),
-    beforeBuild: [withAccessModel(am), withPackageRegistry(reg)],
+    beforeBuild: [initOptions.withAccessModel(am), initOptions.withPackageRegistry(reg)],
   });
   compiler.addSource("/main.typ", "= Hello\nWorld");
   const res = await compiler.compile({
@@ -424,10 +423,11 @@ git commit -m "feat(typst): add worker message protocol and types (#12)"
 import {
   createTypstCompiler,
   FetchPackageRegistry,
+  initOptions,
   MemoryAccessModel,
-  withAccessModel,
-  withPackageRegistry,
 } from "@myriaddreamin/typst.ts";
+// Note: in typst.ts 0.6, withAccessModel/withPackageRegistry are exposed via the
+// `initOptions` namespace re-export, not as top-level named exports.
 import wasmUrl from "@myriaddreamin/typst-ts-web-compiler/wasm?url";
 import type {
   CompileRequest,
@@ -469,7 +469,7 @@ async function compile(req: CompileRequest): Promise<CompileResult> {
   const compiler = createTypstCompiler();
   await compiler.init({
     getModule: () => fetch(wasmUrl).then((r) => r.arrayBuffer()),
-    beforeBuild: [withAccessModel(am), withPackageRegistry(reg)],
+    beforeBuild: [initOptions.withAccessModel(am), initOptions.withPackageRegistry(reg)],
   });
 
   for (const src of req.sources) {
