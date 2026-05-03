@@ -9,6 +9,7 @@ import {
 import { Button } from "#src/components/ui/button.tsx";
 import type { ResolvedPdfpcConfigV2 } from "#src/lib/pdfpc-config";
 import { cn } from "#src/lib/utils";
+import * as m from "#src/paraglide/messages.js";
 import { getLocale } from "#src/paraglide/runtime.js";
 
 export interface TimerHandle {
@@ -409,6 +410,7 @@ export const Timer = forwardRef<TimerHandle, TimerProps>(function Timer(
 					type="button"
 					variant={view.isRunning ? "secondary" : "default"}
 					size="icon-sm"
+					aria-label={m.presenter_timer_toggle_aria()}
 					onClick={() => dispatch({ type: "TOGGLE", nowMs: Date.now() })}
 				>
 					{view.isRunning ? <PauseIcon /> : <PlayIcon />}
@@ -418,6 +420,7 @@ export const Timer = forwardRef<TimerHandle, TimerProps>(function Timer(
 					type="button"
 					variant="ghost"
 					size="icon-sm"
+					aria-label={m.presenter_timer_reset_aria()}
 					onClick={() =>
 						dispatch({
 							type: "RESET",

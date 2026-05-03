@@ -88,6 +88,8 @@
   "presenter_notes_empty": "このスライドにノートはありません",
   "presenter_prev_slide_aria": "前のスライド",
   "presenter_next_slide_aria": "次のスライド",
+  "presenter_timer_toggle_aria": "タイマーの開始/一時停止",
+  "presenter_timer_reset_aria": "タイマーをリセット",
 
   "presentation_missing_no_file_title": "ファイルが指定されていません",
   "presentation_missing_back_message": "ホームに戻って再度ファイルを選択してください。",
