@@ -170,7 +170,7 @@ interface RecentTypstFile {
   name: string;            // main .typ のファイル名
   mainPath: string;        // プロジェクト相対パスでの main 指定
   lastOpened: number;
-  thumbnail?: Uint8Array;  // 初回コンパイル成功後に生成
+  thumbnail?: string;      // data URL / 既存 RecentFile.thumbnail と同形式
   // FSA mode
   handle?: FileSystemFileHandle;            // main .typ
   assetHandles?: FileSystemFileHandle[];    // 同階層の他ファイル
