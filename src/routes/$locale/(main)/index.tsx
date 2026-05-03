@@ -1,4 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import type React from "react";
 import {
 	Suspense,
 	startTransition,
@@ -9,6 +10,7 @@ import {
 	useState,
 } from "react";
 import * as typia from "typia";
+import { TypstDiagnosticList } from "#src/components/TypstDiagnosticList";
 import { useLocalStorageSync } from "#src/hooks/use-local-storage-sync";
 import { FetchPdfError, fetchPdfFromUrl } from "#src/lib/fetch-pdf";
 import {
@@ -26,6 +28,12 @@ import {
 	upsertRecent,
 } from "#src/lib/recent-store";
 import { generateThumbnail } from "#src/lib/thumbnail";
+import { compileTypst } from "#src/lib/typst";
+import {
+	containsTypst,
+	filesToTypstSources,
+	pickMainTypst,
+} from "#src/lib/typst-source-detect";
 import * as m from "#src/paraglide/messages.js";
 import { HeroSection } from "./-index/HeroSection";
 import { HowItWorksSection } from "./-index/HowItWorksSection";
@@ -57,7 +65,7 @@ function Home() {
 		"pdfpw-save-history",
 		true,
 	);
-	const [status, setStatus] = useState<string | null>(null);
+	const [status, setStatus] = useState<React.ReactNode | null>(null);
 	const inputId = useId();
 	const router = useRouter();
 
@@ -110,30 +118,18 @@ function Home() {
 		}
 	}
 
-	async function handleFiles(files: File[], handles?: FileSystemFileHandle[]) {
+	async function proceedWithPdf(
+		pdf: File,
+		pdfpc: File | undefined,
+		handles?: FileSystemFileHandle[],
+	) {
 		const sameBase = (pdfName: string, configName: string) => {
 			const basePdf = pdfName.replace(/\.pdf$/i, "");
 			const baseCfg = configName.replace(/\.pdfpc$/i, "");
 			return basePdf.toLowerCase() === baseCfg.toLowerCase();
 		};
 
-		const pdf = files.find(
-			(f) =>
-				f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
-		);
-		const pdfpc = pdf
-			? files.find(
-					(f) => /\.pdfpc$/i.test(f.name) && sameBase(pdf.name, f.name),
-				)
-			: undefined;
-
-		if (!pdf) {
-			setStatus(m.presenter_error_no_pdf());
-			return;
-		}
-
 		const thumbnail = await generateThumbnail(pdf);
-
 		const pdfHandle = handles?.find((h) => h.name === pdf.name);
 		const pdfpcHandle =
 			pdf && pdfpc && sameBase(pdf.name, pdfpc.name)
@@ -158,7 +154,6 @@ function Home() {
 				refreshRecentFiles(db);
 			});
 		} else if (saveHistory) {
-			// Standard Mode: save snapshot
 			await saveRecent({
 				id: `snapshot-${pdf.name}-${Date.now()}`,
 				name: pdf.name,
@@ -212,6 +207,66 @@ function Home() {
 				"width=1200,height=675,resizable=yes",
 			);
 		}
+	}
+
+	async function handleFiles(files: File[], handles?: FileSystemFileHandle[]) {
+		const sameBase = (pdfName: string, configName: string) => {
+			const basePdf = pdfName.replace(/\.pdf$/i, "");
+			const baseCfg = configName.replace(/\.pdfpc$/i, "");
+			return basePdf.toLowerCase() === baseCfg.toLowerCase();
+		};
+
+		// Typst branch
+		const sources = await filesToTypstSources(files);
+		if (containsTypst(sources)) {
+			const mainPath = pickMainTypst(sources);
+			if (!mainPath) {
+				setStatus(m.typst_error_no_main());
+				return;
+			}
+			setStatus(m.typst_status_loading_wasm());
+			const result = await compileTypst(
+				{ sources, mainPath },
+				{
+					onProgress: (p) => {
+						if (p.stage === "loading-wasm") setStatus(m.typst_status_loading_wasm());
+						else if (p.stage === "fetching-packages")
+							setStatus(m.typst_status_fetching_packages({ package: p.current ?? "" }));
+						else if (p.stage === "compiling") setStatus(m.typst_status_compiling());
+					},
+				},
+			);
+			if (!result.ok) {
+				setStatus(<TypstDiagnosticList items={result.diagnostics} />);
+				return;
+			}
+			const stem = mainPath.replace(/\.typ$/i, "").split("/").pop() ?? "main";
+			const pdfArrayBuffer = new Uint8Array(result.pdf).buffer;
+			const compiledPdf = new File([pdfArrayBuffer], `${stem}.pdf`, {
+				type: "application/pdf",
+			});
+			const pdfpc = files.find(
+				(f) => /\.pdfpc$/i.test(f.name) && sameBase(`${stem}.pdf`, f.name),
+			);
+			await proceedWithPdf(compiledPdf, pdfpc);
+			return;
+		}
+
+		// PDF branch (existing behavior)
+		const pdf = files.find(
+			(f) =>
+				f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
+		);
+		const pdfpc = pdf
+			? files.find(
+					(f) => /\.pdfpc$/i.test(f.name) && sameBase(pdf.name, f.name),
+				)
+			: undefined;
+		if (!pdf) {
+			setStatus(m.presenter_error_no_pdf());
+			return;
+		}
+		await proceedWithPdf(pdf, pdfpc, handles);
 	}
 
 	async function onFilesSelected(files: File[]) {
