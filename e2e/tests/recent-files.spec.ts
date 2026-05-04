@@ -1,16 +1,15 @@
-import { test, expect } from "@playwright/test";
-import { fixtures } from "../fixtures/pdfs";
+import { test, expect } from "../helpers/test-fixtures";
 import { resetAppState } from "../helpers/reset-state";
 
 test.describe("recent files", () => {
 	let presentationCloser: (() => Promise<void>) | null = null;
 
-	test.beforeEach(async ({ page, context }) => {
+	test.beforeEach(async ({ page, context, uniqueFixtures }) => {
 		await resetAppState(page);
 		const presentationPromise = context.waitForEvent("page");
 		await page
 			.locator('input[type="file"][accept*=".pdf"]')
-			.setInputFiles([fixtures.pdf, fixtures.pdfpc]);
+			.setInputFiles([uniqueFixtures.pdf, uniqueFixtures.pdfpc]);
 		await page.waitForURL(/\/(en|ja)\/presenter/);
 		await expect(
 			page.locator("text=/^\\s*\\d+\\s*\\/\\s*\\d+\\s*$/").first(),
@@ -26,20 +25,20 @@ test.describe("recent files", () => {
 		presentationCloser = null;
 	});
 
-	test("uploaded file appears in library after returning home", async ({ page }) => {
+	test("uploaded file appears in library after returning home", async ({ page, uniqueFixtures }) => {
 		await page.goto("/en");
-		// LibrarySection lists each recent by name; the file name from fixture is "pdfpw-demo.pdf"
-		await expect(page.getByText("pdfpw-demo.pdf").first()).toBeVisible({
+		// LibrarySection lists each recent by name; the file name from fixture is dynamic per worker.
+		await expect(page.getByText(uniqueFixtures.pdfName).first()).toBeVisible({
 			timeout: 10_000,
 		});
 	});
 
-	test("deleting a recent file removes it from the library", async ({ page }) => {
+	test("deleting a recent file removes it from the library", async ({ page, uniqueFixtures }) => {
 		await page.goto("/en");
-		await expect(page.getByText("pdfpw-demo.pdf").first()).toBeVisible();
+		await expect(page.getByText(uniqueFixtures.pdfName).first()).toBeVisible();
 
 		await page.getByRole("button", { name: "Delete from library" }).first().click();
 
-		await expect(page.getByText("pdfpw-demo.pdf")).toHaveCount(0);
+		await expect(page.getByText(uniqueFixtures.pdfName)).toHaveCount(0);
 	});
 });

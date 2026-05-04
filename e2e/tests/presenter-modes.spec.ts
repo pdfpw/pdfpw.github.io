@@ -1,16 +1,15 @@
-import { test, expect } from "@playwright/test";
-import { fixtures } from "../fixtures/pdfs";
+import { test, expect } from "../helpers/test-fixtures";
 import { resetAppState } from "../helpers/reset-state";
 
 test.describe("presenter mode toggles", () => {
 	let presentationCloser: (() => Promise<void>) | null = null;
 
-	test.beforeEach(async ({ page, context }) => {
+	test.beforeEach(async ({ page, context, uniqueFixtures }) => {
 		await resetAppState(page);
 		const presentationPromise = context.waitForEvent("page");
 		await page
 			.locator('input[type="file"][accept*=".pdf"]')
-			.setInputFiles([fixtures.pdf, fixtures.pdfpc]);
+			.setInputFiles([uniqueFixtures.pdf, uniqueFixtures.pdfpc]);
 		await page.waitForURL(/\/(en|ja)\/presenter/);
 		await expect(
 			page.locator("text=/^\\s*\\d+\\s*\\/\\s*\\d+\\s*$/").first(),

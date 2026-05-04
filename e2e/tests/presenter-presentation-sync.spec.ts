@@ -1,6 +1,13 @@
-import { test, expect, type Page, type BrowserContext } from "@playwright/test";
-import { fixtures } from "../fixtures/pdfs";
+import type { Page, BrowserContext } from "@playwright/test";
+import { test, expect } from "../helpers/test-fixtures";
 import { resetAppState } from "../helpers/reset-state";
+
+type UniqueFixturesArg = {
+	pdfName: string;
+	pdfpcName: string;
+	pdf: string;
+	pdfpc: string;
+};
 
 async function nudgePresentation(presentation: Page): Promise<void> {
 	// Keeps the auto-hiding menu visible (HIDE_DELAY_MS = 2500 in -Menu.tsx).
@@ -28,12 +35,13 @@ async function waitForPresentationReady(presentation: Page): Promise<void> {
 async function uploadAndCapture(
 	page: Page,
 	context: BrowserContext,
+	uniqueFixtures: UniqueFixturesArg,
 ): Promise<Page> {
 	await resetAppState(page);
 	const presentationPromise = context.waitForEvent("page");
 	await page
 		.locator('input[type="file"][accept*=".pdf"]')
-		.setInputFiles([fixtures.pdf, fixtures.pdfpc]);
+		.setInputFiles([uniqueFixtures.pdf, uniqueFixtures.pdfpc]);
 	await page.waitForURL(/\/(en|ja)\/presenter/);
 	const presentation = await presentationPromise;
 	await presentation.waitForLoadState("domcontentloaded");
@@ -42,8 +50,8 @@ async function uploadAndCapture(
 }
 
 test.describe("presenter ↔ presentation sync", () => {
-	test("next slide on presenter advances presentation", async ({ page, context }) => {
-		const presentation = await uploadAndCapture(page, context);
+	test("next slide on presenter advances presentation", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
 
 		const presentationCounter = presentation
 			.locator("span.font-mono.tabular-nums")
@@ -85,8 +93,8 @@ test.describe("presenter ↔ presentation sync", () => {
 		await presentation.close();
 	});
 
-	test("blackout on presenter blacks out presentation", async ({ page, context }) => {
-		const presentation = await uploadAndCapture(page, context);
+	test("blackout on presenter blacks out presentation", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
 
 		// presentation/index.tsx wraps the Menu in a div whose className gains
 		// `opacity-0` only when isBlackout is true.

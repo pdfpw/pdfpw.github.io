@@ -1,5 +1,5 @@
-import { test, expect, type Locator, type Page } from "@playwright/test";
-import { fixtures } from "../fixtures/pdfs";
+import type { Locator, Page } from "@playwright/test";
+import { test, expect } from "../helpers/test-fixtures";
 import { resetAppState } from "../helpers/reset-state";
 
 /**
@@ -31,12 +31,12 @@ import { resetAppState } from "../helpers/reset-state";
 test.describe("slide navigation", () => {
 	let presentationCloser: (() => Promise<void>) | null = null;
 
-	test.beforeEach(async ({ page, context }) => {
+	test.beforeEach(async ({ page, context, uniqueFixtures }) => {
 		await resetAppState(page);
 		const presentationPromise = context.waitForEvent("page");
 		await page
 			.locator('input[type="file"][accept*=".pdf"]')
-			.setInputFiles([fixtures.pdf, fixtures.pdfpc]);
+			.setInputFiles([uniqueFixtures.pdf, uniqueFixtures.pdfpc]);
 		await page.waitForURL(/\/(en|ja)\/presenter/);
 		await expect(counter(page)).toBeVisible({ timeout: 15_000 });
 		const presentation = await presentationPromise;

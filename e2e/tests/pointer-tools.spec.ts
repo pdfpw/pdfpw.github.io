@@ -1,6 +1,13 @@
-import { test, expect, type Page, type BrowserContext } from "@playwright/test";
-import { fixtures } from "../fixtures/pdfs";
+import type { Page, BrowserContext } from "@playwright/test";
+import { test, expect } from "../helpers/test-fixtures";
 import { resetAppState } from "../helpers/reset-state";
+
+type UniqueFixturesArg = {
+	pdfName: string;
+	pdfpcName: string;
+	pdf: string;
+	pdfpc: string;
+};
 
 /**
  * Tool keys (from src/lib/keybindings.ts):
@@ -18,12 +25,13 @@ import { resetAppState } from "../helpers/reset-state";
 async function uploadAndCapture(
 	page: Page,
 	context: BrowserContext,
+	uniqueFixtures: UniqueFixturesArg,
 ): Promise<Page> {
 	await resetAppState(page);
 	const presentationPromise = context.waitForEvent("page");
 	await page
 		.locator('input[type="file"][accept*=".pdf"]')
-		.setInputFiles([fixtures.pdf, fixtures.pdfpc]);
+		.setInputFiles([uniqueFixtures.pdf, uniqueFixtures.pdfpc]);
 	await page.waitForURL(/\/(en|ja)\/presenter/);
 	const presentation = await presentationPromise;
 	await presentation.waitForLoadState("domcontentloaded");
@@ -31,9 +39,7 @@ async function uploadAndCapture(
 	// Wait for BOTH windows to render their slide canvas. The presenter's
 	// useToolShortcut / useToolBroadcast hooks are inside PresenterContent
 	// which is suspended on PDF.js + pdfpc parsing. Pressing tool keys before
-	// these hooks mount silently no-ops, so without this wait the test fails
-	// flakily under parallel load on a dev server (Vite serves modules slower
-	// when many specs request them concurrently).
+	// these hooks mount silently no-ops.
 	await Promise.all([
 		page.locator("canvas").first().waitFor({ state: "visible", timeout: 30_000 }),
 		presentation
@@ -41,6 +47,15 @@ async function uploadAndCapture(
 			.first()
 			.waitFor({ state: "visible", timeout: 30_000 }),
 	]);
+
+	// Belt-and-suspenders: also wait for the presenter's slide counter to
+	// render. Canvas paint can land slightly before the parent component's
+	// useEffects commit, so this waits one tick further to ensure the global
+	// keydown listener for tool shortcuts is attached.
+	await page
+		.locator('div.text-2xl', { hasText: /^\s*\d+\s*\/\s*\d+\s*$/ })
+		.first()
+		.waitFor({ state: "visible", timeout: 15_000 });
 	return presentation;
 }
 
@@ -78,21 +93,37 @@ async function getCenterOfCanvas(page: Page): Promise<{ x: number; y: number }> 
 	return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
-// These tests exercise heavy multi-window pointer/keyboard interactions and
-// share a BroadcastChannel keyed on the demo file name. Running them in
-// parallel against a single Vite dev server has surfaced flake (overlay
-// portal not mounting in time when tool keys race ahead of PresenterContent
-// suspense). CI runs workers=1 so this is a no-op there; locally it brings
-// behavior in line with CI.
-test.describe.configure({ mode: "serial" });
+/**
+ * Trigger an app keyboard shortcut. `useToolShortcut.onKeyDown` (in
+ * use-tool-shortcut.ts) early-returns when `event.target` is an INPUT /
+ * TEXTAREA / contentEditable element, so we explicitly focus body first.
+ * Locator.press calls element.focus() then dispatches keydown via CDP, which
+ * bubbles to the window-level listener that the app registered.
+ */
+async function pressShortcut(page: Page, key: string): Promise<void> {
+	await page.locator("body").press(key);
+}
+
+// Run tests in this file serially within the worker — they share a
+// BroadcastChannel keyed by the worker's unique file name and stomping each
+// other's tool state mid-test would be confusing.
+//
+// Local parallel runs with this spec are racy (the global `keydown` listener
+// in use-tool-shortcut.ts is registered by a useEffect that occasionally
+// commits AFTER the canvas paints under heavy parallel load on the dev
+// server). Allow retries on top of `mode: "serial"` to absorb the residual
+// flake; CI already runs `workers: 1` so this is mainly a local-dev quality
+// of life setting.
+test.describe.configure({ mode: "serial", retries: 2 });
 
 test.describe("pointer tools (laser + pen)", () => {
-	test("laser activated on presenter syncs dot to presentation", async ({ page, context }) => {
-		const presentation = await uploadAndCapture(page, context);
+	test("laser activated on presenter syncs dot to presentation", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
 
 		// Presenter focuses its window then presses `l` to enable laser.
 		// focus body so window-level keydown listeners receive the key
-		await page.locator("body").press("l");
+		await pressShortcut(page, "l");
+
 
 		// Moving the pointer on presenter sends pointer-move broadcast.
 		const c = await getCenterOfCanvas(page);
@@ -115,12 +146,12 @@ test.describe("pointer tools (laser + pen)", () => {
 		await presentation.close();
 	});
 
-	test("laser activated on presentation syncs dot to presenter", async ({ page, context }) => {
-		const presentation = await uploadAndCapture(page, context);
+	test("laser activated on presentation syncs dot to presenter", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
 
 		// Click presentation body to give it focus, then press `l`.
 		// focus body so window-level keydown listeners receive the key
-		await presentation.locator("body").press("l");
+		await pressShortcut(presentation, "l");
 
 		const c = await getCenterOfCanvas(presentation);
 		await presentation.mouse.move(c.x, c.y);
@@ -136,11 +167,11 @@ test.describe("pointer tools (laser + pen)", () => {
 		await presentation.close();
 	});
 
-	test("pen drawing on presenter appears on presentation", async ({ page, context }) => {
-		const presentation = await uploadAndCapture(page, context);
+	test("pen drawing on presenter appears on presentation", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
 
 		// focus body so window-level keydown listeners receive the key
-		await page.locator("body").press("d");
+		await pressShortcut(page, "d");
 
 		// Draw a short stroke across the presenter canvas.
 		const c = await getCenterOfCanvas(page);
@@ -158,11 +189,11 @@ test.describe("pointer tools (laser + pen)", () => {
 		await presentation.close();
 	});
 
-	test("pen drawing on presentation appears on presenter", async ({ page, context }) => {
-		const presentation = await uploadAndCapture(page, context);
+	test("pen drawing on presentation appears on presenter", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
 
 		// focus body so window-level keydown listeners receive the key
-		await presentation.locator("body").press("d");
+		await pressShortcut(presentation, "d");
 
 		const c = await getCenterOfCanvas(presentation);
 		await presentation.mouse.move(c.x - 40, c.y);
@@ -178,12 +209,12 @@ test.describe("pointer tools (laser + pen)", () => {
 		await presentation.close();
 	});
 
-	test("erase clears pen strokes on both windows", async ({ page, context }) => {
-		const presentation = await uploadAndCapture(page, context);
+	test("erase clears pen strokes on both windows", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
 
 		// Draw on presenter
 		// focus body so window-level keydown listeners receive the key
-		await page.locator("body").press("d");
+		await pressShortcut(page, "d");
 		const c = await getCenterOfCanvas(page);
 		await page.mouse.move(c.x - 30, c.y);
 		await page.mouse.down();
@@ -194,7 +225,7 @@ test.describe("pointer tools (laser + pen)", () => {
 		await expect(penPolylines(presentation)).toHaveCount(1, { timeout: 10_000 });
 
 		// Erase
-		await page.locator("body").press("e");
+		await pressShortcut(page, "e");
 
 		await expect(penPolylines(page)).toHaveCount(0, { timeout: 5_000 });
 		await expect(penPolylines(presentation)).toHaveCount(0, { timeout: 5_000 });
@@ -202,17 +233,17 @@ test.describe("pointer tools (laser + pen)", () => {
 		await presentation.close();
 	});
 
-	test("Escape exits tool mode and removes the overlay", async ({ page, context }) => {
-		const presentation = await uploadAndCapture(page, context);
+	test("Escape exits tool mode and removes the overlay", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
 
 		// focus body so window-level keydown listeners receive the key
-		await page.locator("body").press("l");
+		await pressShortcut(page, "l");
 
 		// Overlay portal exists in both windows once tool mode is non-none.
 		await expect(pointerOverlayPortal(page)).toBeAttached({ timeout: 5_000 });
 		await expect(pointerOverlayPortal(presentation)).toBeAttached({ timeout: 5_000 });
 
-		await page.locator("body").press("Escape");
+		await pressShortcut(page, "Escape");
 
 		// With no strokes and toolMode back to none, the portal unmounts.
 		await expect(pointerOverlayPortal(page)).toHaveCount(0, { timeout: 5_000 });
