@@ -9,7 +9,7 @@ import { devtools } from "@tanstack/devtools-vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { regex } from "arkregex";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
 
 const GITHUB_REPO_URL_REGEX = regex(
@@ -221,7 +221,7 @@ export default defineConfig({
 	test: {
 		globals: true,
 		setupFiles: ["./src/test-setup.ts"],
-		exclude: ["**/node_modules/**", "**/dist/**", "e2e/**"],
+		exclude: [...configDefaults.exclude, "e2e/**"],
 		browser: {
 			enabled: true,
 			provider: playwright(),
