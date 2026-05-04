@@ -10,6 +10,7 @@ import {
 	useState,
 } from "react";
 import * as typia from "typia";
+import { ensurePresenterPairId } from "#src/broadcast";
 import { TypstDiagnosticList } from "#src/components/TypstDiagnosticList";
 import { useLocalStorageSync } from "#src/hooks/use-local-storage-sync";
 import { FetchPdfError, fetchPdfFromUrl } from "#src/lib/fetch-pdf";
@@ -248,6 +249,13 @@ function Home() {
 				file: pdf.name,
 			},
 		}).href;
+
+		// Seed the pair-id into sessionStorage BEFORE window.open so the popup
+		// inherits it at creation time. Without this, the presentation window
+		// has empty sessionStorage and falls back to lobby pairing, which can
+		// time out on slow environments before the presenter's broadcast hooks
+		// finish mounting (the presenter is suspended on PDF.js / pdfpc parsing).
+		ensurePresenterPairId(pdf.name);
 
 		if (presentationWindow && !presentationWindow.closed) {
 			presentationWindow.location.href = url;
