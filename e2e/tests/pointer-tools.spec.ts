@@ -148,42 +148,42 @@ async function isLaserOnTopAt(
 	if (!pos) return false;
 	if (Math.abs(pos.left - expected.left) > tolerance) return false;
 	if (Math.abs(pos.top - expected.top) > tolerance) return false;
-	return await page.evaluate(() => {
-		const overlay = document.querySelector(
-			"body > div.fixed.pointer-events-none.z-50",
-		) as HTMLElement | null;
-		if (!overlay) return false;
-		const wrapper = overlay.querySelector(
-			'div[style*="width: 0"]',
-		) as HTMLElement | null;
-		if (!wrapper) return false;
-		// (1) checkVisibility on the visible inner core (last child of the
-		// 0×0 wrapper).
-		const core = wrapper.lastElementChild as HTMLElement | null;
-		if (!core) return false;
-		if (typeof core.checkVisibility === "function" && !core.checkVisibility())
-			return false;
-		// (2) Resolve the dot's pixel center.
-		const overlayRect = overlay.getBoundingClientRect();
-		const leftPct = Number((wrapper.style.left || "").replace("%", ""));
-		const topPct = Number((wrapper.style.top || "").replace("%", ""));
-		if (Number.isNaN(leftPct) || Number.isNaN(topPct)) return false;
-		const cx = overlayRect.left + (overlayRect.width * leftPct) / 100;
-		const cy = overlayRect.top + (overlayRect.height * topPct) / 100;
-		// Temporarily flip pointer-events so elementsFromPoint can see the
-		// overlay subtree. Without this, Chromium skips the entire overlay
-		// (and its visible dot) and reports whatever is below.
-		const prevPE = overlay.style.pointerEvents;
-		overlay.style.pointerEvents = "auto";
-		try {
-			const stack = document.elementsFromPoint(cx, cy);
-			if (stack.length === 0) return false;
-			const top = stack[0];
-			return top === overlay || overlay.contains(top);
-		} finally {
-			overlay.style.pointerEvents = prevPE;
-		}
-	});
+	return await page.evaluate(
+		({ leftPct, topPct }) => {
+			const overlay = document.querySelector(
+				"body > div.fixed.pointer-events-none.z-50",
+			) as HTMLElement | null;
+			if (!overlay) return false;
+			const wrapper = overlay.querySelector(
+				'div[style*="width: 0"]',
+			) as HTMLElement | null;
+			if (!wrapper) return false;
+			// (1) checkVisibility on the visible inner core (last child of the
+			// 0×0 wrapper).
+			const core = wrapper.lastElementChild as HTMLElement | null;
+			if (!core) return false;
+			if (typeof core.checkVisibility === "function" && !core.checkVisibility())
+				return false;
+			// (2) Resolve the dot's pixel center.
+			const overlayRect = overlay.getBoundingClientRect();
+			const cx = overlayRect.left + (overlayRect.width * leftPct) / 100;
+			const cy = overlayRect.top + (overlayRect.height * topPct) / 100;
+			// Temporarily flip pointer-events so elementsFromPoint can see the
+			// overlay subtree. Without this, Chromium skips the entire overlay
+			// (and its visible dot) and reports whatever is below.
+			const prevPE = overlay.style.pointerEvents;
+			overlay.style.pointerEvents = "auto";
+			try {
+				const stack = document.elementsFromPoint(cx, cy);
+				if (stack.length === 0) return false;
+				const top = stack[0];
+				return top === overlay || overlay.contains(top);
+			} finally {
+				overlay.style.pointerEvents = prevPE;
+			}
+		},
+		{ leftPct: pos.left, topPct: pos.top },
+	);
 }
 
 async function expectLaserNear(
