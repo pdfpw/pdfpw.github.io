@@ -161,8 +161,30 @@ async function expectLaserVisibleAt(
 	expected: { left: number; top: number },
 	tolerance = 2,
 ): Promise<void> {
-	// (1) Visible to the user.
+	// (1a) Playwright's toBeVisible — catches display:none chain and 0×0 size.
 	await expect(laserCore(page)).toBeVisible({ timeout: 10_000 });
+	// (1b) DOM `Element.checkVisibility()` with all options — catches
+	// ancestor opacity:0, ancestor visibility:hidden, content-visibility:hidden.
+	// Playwright's toBeVisible does NOT walk ancestors for opacity, so this
+	// supplementary check is necessary.
+	await expect
+		.poll(
+			async () =>
+				page.evaluate(() => {
+					const core = document.querySelector(
+						'body > div.fixed.pointer-events-none.z-50 div[style*="width: 0"] > div:last-child',
+					) as HTMLElement | null;
+					if (!core) return false;
+					if (typeof core.checkVisibility !== "function") return true;
+					return core.checkVisibility({
+						opacityProperty: true,
+						visibilityProperty: true,
+						contentVisibilityAuto: true,
+					});
+				}),
+			{ timeout: 10_000 },
+		)
+		.toBe(true);
 	// (2) At the expected position.
 	await expect
 		.poll(
@@ -333,6 +355,73 @@ test.describe("pointer tools (laser + pen)", () => {
 		await expectLaserNear(presentation, { left: 10, top: 90 });
 
 		await presentation.close();
+	});
+
+	test("self-verify: hidden laser is detected (display:none injection)", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
+		await pressShortcut(page, "l");
+		const box = await page.locator("canvas").first().boundingBox();
+		if (!box) throw new Error("canvas not found");
+		await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+		// First confirm presentation laser IS visible normally.
+		await expectLaserVisibleAt(presentation, { left: 50, top: 50 });
+		// Now hide the laser dot wrapper and verify our check actually catches it.
+		await presentation.addStyleTag({
+			content:
+				'body > div.fixed.pointer-events-none.z-50 div[style*="width: 0"] { display: none !important; }',
+		});
+		let detected = false;
+		try {
+			await expectLaserVisibleAt(presentation, { left: 50, top: 50 }, 2);
+		} catch {
+			detected = true;
+		}
+		expect(detected, "expectLaserVisibleAt should fail when laser is hidden").toBe(true);
+	});
+
+	test("self-verify: hidden laser via opacity is detected", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
+		await pressShortcut(page, "l");
+		const box = await page.locator("canvas").first().boundingBox();
+		if (!box) throw new Error("canvas not found");
+		await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+		await expectLaserVisibleAt(presentation, { left: 50, top: 50 });
+		// Hide via opacity — checkVisibility default options miss this.
+		await presentation.addStyleTag({
+			content:
+				'body > div.fixed.pointer-events-none.z-50 { opacity: 0 !important; }',
+		});
+		let detected = false;
+		try {
+			await expectLaserVisibleAt(presentation, { left: 50, top: 50 }, 2);
+		} catch {
+			detected = true;
+		}
+		expect(detected, "expectLaserVisibleAt should fail when laser is opacity:0").toBe(true);
+	});
+
+	test("self-verify: laser occluded by overlay element is detected", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
+		await pressShortcut(page, "l");
+		const box = await page.locator("canvas").first().boundingBox();
+		if (!box) throw new Error("canvas not found");
+		await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+		await expectLaserVisibleAt(presentation, { left: 50, top: 50 });
+		// Inject a fixed div with higher z-index covering the entire viewport.
+		await presentation.evaluate(() => {
+			const blocker = document.createElement("div");
+			blocker.id = "test-blocker";
+			blocker.style.cssText =
+				"position: fixed; inset: 0; z-index: 9999; background: rgba(0,255,0,0.2);";
+			document.body.appendChild(blocker);
+		});
+		let detected = false;
+		try {
+			await expectLaserVisibleAt(presentation, { left: 50, top: 50 }, 2);
+		} catch {
+			detected = true;
+		}
+		expect(detected, "expectLaserVisibleAt should fail when laser is occluded").toBe(true);
 	});
 
 	test("laser dot stays on top of the slide across the canvas (grid of 9 points)", async ({ page, context, uniqueFixtures }) => {
