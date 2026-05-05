@@ -94,6 +94,54 @@ async function getCenterOfCanvas(page: Page): Promise<{ x: number; y: number }> 
 }
 
 /**
+ * Read the laser dot wrapper's `style.left` / `style.top` (percent strings
+ * like "25%", "50%"). These are written directly by `PointerOverlay`
+ * (src/components/PointerOverlay.tsx) from `laserPosAtom`, so they are the
+ * cleanest signal for "the laser dot is at this normalized position".
+ *
+ * Returns null when the wrapper isn't present or is hidden.
+ */
+async function readLaserPercent(page: Page): Promise<{ left: number; top: number } | null> {
+	const raw = await page.evaluate(() => {
+		const dot = document.querySelector(
+			'body > div.fixed.pointer-events-none.z-50 div[style*="width: 0"]',
+		) as HTMLElement | null;
+		if (!dot) return null;
+		if (dot.style.display === "none") return null;
+		return { left: dot.style.left, top: dot.style.top };
+	});
+	if (!raw) return null;
+	const parse = (v: string): number | null => {
+		const m = v.match(/^(-?\d+(?:\.\d+)?)%$/);
+		return m ? Number.parseFloat(m[1]) : null;
+	};
+	const left = parse(raw.left);
+	const top = parse(raw.top);
+	if (left === null || top === null) return null;
+	return { left, top };
+}
+
+async function expectLaserNear(
+	page: Page,
+	expected: { left: number; top: number },
+	tolerance = 2,
+): Promise<void> {
+	await expect
+		.poll(
+			async () => {
+				const pos = await readLaserPercent(page);
+				if (!pos) return false;
+				return (
+					Math.abs(pos.left - expected.left) <= tolerance &&
+					Math.abs(pos.top - expected.top) <= tolerance
+				);
+			},
+			{ timeout: 10_000 },
+		)
+		.toBe(true);
+}
+
+/**
  * Trigger an app keyboard shortcut. `useToolShortcut.onKeyDown` (in
  * use-tool-shortcut.ts) early-returns when `event.target` is an INPUT /
  * TEXTAREA / contentEditable element, so we explicitly focus body first.
@@ -163,6 +211,37 @@ test.describe("pointer tools (laser + pen)", () => {
 		await expect(laserDotWrapper(page)).toHaveCSS("display", "block", {
 			timeout: 10_000,
 		});
+
+		await presentation.close();
+	});
+
+	test("laser dot tracks mouse position across presenter and presentation", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
+
+		await pressShortcut(page, "l");
+
+		const box = await page.locator("canvas").first().boundingBox();
+		if (!box) throw new Error("canvas not found");
+
+		// Move to ~25% of canvas (top-left quadrant). PointerOverlay sets
+		// `style.left = ${pos.x * 100}%`, so the dot's percent should match
+		// the cursor's normalized canvas position.
+		await page.mouse.move(box.x + box.width * 0.25, box.y + box.height * 0.25);
+		await expectLaserNear(page, { left: 25, top: 25 });
+		// Broadcast pushes the same position to the presentation.
+		await expectLaserNear(presentation, { left: 25, top: 25 });
+
+		// Move to ~75% (bottom-right quadrant) and verify the dot has moved
+		// the full delta, not lingering at the previous spot.
+		await page.mouse.move(box.x + box.width * 0.75, box.y + box.height * 0.75);
+		await expectLaserNear(page, { left: 75, top: 75 });
+		await expectLaserNear(presentation, { left: 75, top: 75 });
+
+		// One more move to a non-symmetric point so x and y diverge — catches
+		// any accidental coordinate swap or shared-axis bug.
+		await page.mouse.move(box.x + box.width * 0.1, box.y + box.height * 0.9);
+		await expectLaserNear(page, { left: 10, top: 90 });
+		await expectLaserNear(presentation, { left: 10, top: 90 });
 
 		await presentation.close();
 	});
