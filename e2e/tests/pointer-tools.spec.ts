@@ -124,66 +124,90 @@ async function readLaserPercent(page: Page): Promise<{ left: number; top: number
 }
 
 /**
+ * Selector for the visible inner core of the laser dot (the 12×12 red
+ * circle, last child of the 0×0 LaserDot wrapper). We probe THIS element
+ * for visibility instead of the wrapper because the wrapper has inline
+ * `width: 0; height: 0` and would always be reported as zero-area
+ * regardless of whether the actual dot is shown.
+ */
+function laserCore(page: Page) {
+	return page
+		.locator(
+			'body > div.fixed.pointer-events-none.z-50 div[style*="width: 0"] > div:last-child',
+		)
+		.first();
+}
+
+/**
  * Verify the laser dot is actually visible to the user at `expected`:
  *
- * 1. The visible inner dot (the red core, last child of the LaserDot wrapper)
- *    passes `Element.checkVisibility()` — covers display:none /
- *    visibility:hidden / opacity:0 regressions.
- * 2. At the dot's pixel center, no other element is stacked in front of the
- *    overlay. The overlay carries `pointer-events: none`, which Chromium's
- *    `document.elementsFromPoint()` filters out — so we temporarily clear
- *    the inline override during the probe and restore it immediately. This
- *    catches z-index/stacking regressions (the "laser ends up behind the
- *    slide" failure mode `checkVisibility` alone cannot see).
- *
- * Returns `true` once both conditions hold; used inside `expect.poll` to
- * absorb the small RAF + atom commit + broadcast latency window.
+ * 1. The inner red core passes Playwright's `toBeVisible()` — which is
+ *    stricter than DOM `Element.checkVisibility()`: it requires
+ *    display ≠ none, visibility ≠ hidden, opacity > 0 anywhere up the
+ *    chain, AND bounding-box area > 0. Catches the "laser is in DOM but
+ *    invisible" failure modes that `checkVisibility()` alone misses
+ *    (opacity:0 ancestor, visibility:hidden, 0×0 size).
+ * 2. The wrapper's inline percent matches `expected` — proves the dot is
+ *    where the cursor pointed, not lingering at a stale position.
+ * 3. At the dot's pixel center, no other element is stacked in front of
+ *    the overlay. Chromium's `document.elementsFromPoint()` filters out
+ *    `pointer-events: none` elements, so we flip the overlay's inline
+ *    pointer-events to `auto` for the probe and restore it. Catches
+ *    z-index / stacking regressions where the laser sits behind the
+ *    slide.
  */
-async function isLaserOnTopAt(
+async function expectLaserVisibleAt(
 	page: Page,
 	expected: { left: number; top: number },
-	tolerance: number,
-): Promise<boolean> {
-	const pos = await readLaserPercent(page);
-	if (!pos) return false;
-	if (Math.abs(pos.left - expected.left) > tolerance) return false;
-	if (Math.abs(pos.top - expected.top) > tolerance) return false;
-	return await page.evaluate(
-		({ leftPct, topPct }) => {
-			const overlay = document.querySelector(
-				"body > div.fixed.pointer-events-none.z-50",
-			) as HTMLElement | null;
-			if (!overlay) return false;
-			const wrapper = overlay.querySelector(
-				'div[style*="width: 0"]',
-			) as HTMLElement | null;
-			if (!wrapper) return false;
-			// (1) checkVisibility on the visible inner core (last child of the
-			// 0×0 wrapper).
-			const core = wrapper.lastElementChild as HTMLElement | null;
-			if (!core) return false;
-			if (typeof core.checkVisibility === "function" && !core.checkVisibility())
-				return false;
-			// (2) Resolve the dot's pixel center.
-			const overlayRect = overlay.getBoundingClientRect();
-			const cx = overlayRect.left + (overlayRect.width * leftPct) / 100;
-			const cy = overlayRect.top + (overlayRect.height * topPct) / 100;
-			// Temporarily flip pointer-events so elementsFromPoint can see the
-			// overlay subtree. Without this, Chromium skips the entire overlay
-			// (and its visible dot) and reports whatever is below.
-			const prevPE = overlay.style.pointerEvents;
-			overlay.style.pointerEvents = "auto";
-			try {
-				const stack = document.elementsFromPoint(cx, cy);
-				if (stack.length === 0) return false;
-				const top = stack[0];
-				return top === overlay || overlay.contains(top);
-			} finally {
-				overlay.style.pointerEvents = prevPE;
-			}
-		},
-		{ leftPct: pos.left, topPct: pos.top },
-	);
+	tolerance = 2,
+): Promise<void> {
+	// (1) Visible to the user.
+	await expect(laserCore(page)).toBeVisible({ timeout: 10_000 });
+	// (2) At the expected position.
+	await expect
+		.poll(
+			async () => {
+				const pos = await readLaserPercent(page);
+				if (!pos) return false;
+				return (
+					Math.abs(pos.left - expected.left) <= tolerance &&
+					Math.abs(pos.top - expected.top) <= tolerance
+				);
+			},
+			{ timeout: 10_000 },
+		)
+		.toBe(true);
+	// (3) Not occluded by anything stacked in front.
+	await expect
+		.poll(
+			async () =>
+				page.evaluate(
+					({ leftPct, topPct }) => {
+						const overlay = document.querySelector(
+							"body > div.fixed.pointer-events-none.z-50",
+						) as HTMLElement | null;
+						if (!overlay) return false;
+						const overlayRect = overlay.getBoundingClientRect();
+						const cx =
+							overlayRect.left + (overlayRect.width * leftPct) / 100;
+						const cy =
+							overlayRect.top + (overlayRect.height * topPct) / 100;
+						const prevPE = overlay.style.pointerEvents;
+						overlay.style.pointerEvents = "auto";
+						try {
+							const stack = document.elementsFromPoint(cx, cy);
+							if (stack.length === 0) return false;
+							const top = stack[0];
+							return top === overlay || overlay.contains(top);
+						} finally {
+							overlay.style.pointerEvents = prevPE;
+						}
+					},
+					{ leftPct: expected.left, topPct: expected.top },
+				),
+			{ timeout: 10_000 },
+		)
+		.toBe(true);
 }
 
 async function expectLaserNear(
@@ -203,18 +227,6 @@ async function expectLaserNear(
 			},
 			{ timeout: 10_000 },
 		)
-		.toBe(true);
-}
-
-async function expectLaserOnTopAt(
-	page: Page,
-	expected: { left: number; top: number },
-	tolerance = 2,
-): Promise<void> {
-	await expect
-		.poll(async () => isLaserOnTopAt(page, expected, tolerance), {
-			timeout: 10_000,
-		})
 		.toBe(true);
 }
 
@@ -353,8 +365,8 @@ test.describe("pointer tools (laser + pen)", () => {
 				box.x + box.width * (p.left / 100),
 				box.y + box.height * (p.top / 100),
 			);
-			await expectLaserOnTopAt(page, p);
-			await expectLaserOnTopAt(presentation, p);
+			await expectLaserVisibleAt(page, p);
+			await expectLaserVisibleAt(presentation, p);
 		}
 
 		await presentation.close();
