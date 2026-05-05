@@ -86,6 +86,10 @@
   "presenter_back_home": "Back to home",
   "presenter_notes_eyebrow": "Notes",
   "presenter_notes_empty": "No notes for this slide",
+  "presenter_prev_slide_aria": "Previous slide",
+  "presenter_next_slide_aria": "Next slide",
+  "presenter_timer_toggle_aria": "Start or pause timer",
+  "presenter_timer_reset_aria": "Reset timer",
 
   "presentation_missing_no_file_title": "No file specified",
   "presentation_missing_back_message": "Go back to the home page and select a file again.",

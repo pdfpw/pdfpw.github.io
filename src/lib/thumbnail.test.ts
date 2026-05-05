@@ -1,74 +1,40 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-vi.mock("pdfjs-dist/build/pdf.worker.min.mjs?url", () => ({
-	default: "mock-worker.js",
-}));
-vi.mock("pdfjs-dist", () => ({
-	getDocument: vi.fn(),
-	GlobalWorkerOptions: { workerSrc: "" },
-}));
-
-import * as pdfjs from "pdfjs-dist";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import demoPdfUrl from "../../demo/pdfpw-demo.pdf?url";
 import { generateThumbnail } from "./thumbnail.ts";
 
+async function loadDemoPdfFile(): Promise<File> {
+	const res = await fetch(demoPdfUrl);
+	const blob = await res.blob();
+	return new File([blob], "pdfpw-demo.pdf", { type: "application/pdf" });
+}
+
 describe("generateThumbnail", () => {
-	const mockGetDocument = vi.mocked(pdfjs.getDocument);
-
-	beforeEach(() => {
-		const mockRender = vi.fn(() => ({ promise: Promise.resolve() }));
-		const mockGetViewport = vi.fn((opts?: { scale?: number }) => ({
-			width: 800 * (opts?.scale ?? 1),
-			height: 600 * (opts?.scale ?? 1),
-		}));
-		const mockPage = {
-			getViewport: mockGetViewport,
-			render: mockRender,
-		};
-		const mockPdfProxy = {
-			getPage: vi.fn(() => Promise.resolve(mockPage)),
-			destroy: vi.fn(() => Promise.resolve()),
-		};
-		mockGetDocument.mockReturnValue({
-			promise: Promise.resolve(mockPdfProxy),
-			// biome-ignore lint/suspicious/noExplicitAny: テスト用モック
-		} as any);
-	});
-
 	afterEach(() => {
 		vi.restoreAllMocks();
 	});
 
-	it("PDFの1ページ目のJPEG data URLを返す", async () => {
-		const file = new File(["pdf"], "test.pdf", { type: "application/pdf" });
+	it("returns a JPEG data URL for a real PDF", async () => {
+		const file = await loadDemoPdfFile();
 		const result = await generateThumbnail(file);
 		expect(result).toMatch(/^data:image\/jpeg;base64,/);
-		expect(mockGetDocument).toHaveBeenCalled();
-		// biome-ignore lint/suspicious/noExplicitAny: テスト用モック
-		const proxy = await (mockGetDocument.mock.results[0].value as any).promise;
-		expect(proxy.getPage).toHaveBeenCalledWith(1);
+		// A rendered page produces a non-trivial JPEG (>1 KB encoded).
+		expect((result ?? "").length).toBeGreaterThan(1000);
 	});
 
-	it("PDF ロードエラー時は null を返す", async () => {
-		mockGetDocument.mockImplementation(
-			() =>
-				({
-					// Promise.reject を即時生成すると unhandled rejection になるため、lazy に生成する
-					get promise() {
-						return Promise.reject(new Error("load error"));
-					},
-					// biome-ignore lint/suspicious/noExplicitAny: テスト用モック
-				}) as any,
-		);
-		const file = new File(["pdf"], "test.pdf", { type: "application/pdf" });
-		const result = await generateThumbnail(file);
+	it("returns null for a corrupted PDF", async () => {
+		const broken = new File([new Uint8Array([0, 0, 0, 0])], "broken.pdf", {
+			type: "application/pdf",
+		});
+		const result = await generateThumbnail(broken);
 		expect(result).toBeNull();
 	});
 
-	it("canvas の 2d context を取得できない場合は null を返す", async () => {
-		// biome-ignore lint/suspicious/noExplicitAny: テスト用モック
-		vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null as any);
-
-		const file = new File(["pdf"], "test.pdf", { type: "application/pdf" });
+	it("returns null when canvas getContext returns null", async () => {
+		vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
+			// biome-ignore lint/suspicious/noExplicitAny: forcing the failure branch
+			null as any,
+		);
+		const file = await loadDemoPdfFile();
 		const result = await generateThumbnail(file);
 		expect(result).toBeNull();
 	});

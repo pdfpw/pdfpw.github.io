@@ -20,3 +20,8 @@ docs/superpowers/screenshots/
 
 # paraglide-js generated
 src/paraglide/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
