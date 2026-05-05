@@ -357,6 +357,52 @@ test.describe("pointer tools (laser + pen)", () => {
 		await presentation.close();
 	});
 
+	test("regression: presentation PointerOverlay portal mounts even when PdfPage Suspense is slow", async ({ page, context, uniqueFixtures }) => {
+		// Reproduces the user-reported bug: PointerOverlay's `useContainerRect`
+		// runs its useEffect once with `pdfAreaRef.current === null` (because
+		// PdfPageCanvas is still suspended inside the inner <Suspense>), gives
+		// up early, and never re-runs because `[ref]` deps are stable. The
+		// portal then never mounts. Force the race by throttling presentation's
+		// JS thread so `pdfProxy.getPage()` takes longer to resolve, leaving
+		// `pdfAreaRef.current` null past the parent commit's effect phase.
+		await resetAppState(page);
+		const presentationPromise = context.waitForEvent("page");
+		await page
+			.locator('input[type="file"][accept*=".pdf"]')
+			.setInputFiles([uniqueFixtures.pdf, uniqueFixtures.pdfpc]);
+		await page.waitForURL(/\/(en|ja)\/presenter/);
+		const presentation = await presentationPromise;
+		await presentation.waitForLoadState("domcontentloaded");
+
+		// Throttle the presentation's CPU 20× so the inner getPage() Suspense
+		// resolves slowly, deterministically reproducing the
+		// `pdfAreaRef.current === null` window. Without this, fast machines
+		// happen to have the ref attached in time and the bug stays silent.
+		const cdp = await context.newCDPSession(presentation);
+		await cdp.send("Emulation.setCPUThrottlingRate", { rate: 20 });
+
+		// Wait for presentation canvas — past PdfPageCanvas mount.
+		await presentation
+			.locator("canvas")
+			.first()
+			.waitFor({ state: "visible", timeout: 60_000 });
+		// Restore CPU.
+		await cdp.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+
+		// Activate laser on presenter — broadcasts `tool-mode laser`.
+		await page.locator("canvas").first().waitFor({ state: "visible", timeout: 30_000 });
+		await pressShortcut(page, "l");
+		const box = await page.locator("canvas").first().boundingBox();
+		if (!box) throw new Error("canvas not found");
+		await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+
+		// The portal MUST mount on presentation. If `useContainerRect` lost
+		// its ref to the suspense race, this assertion times out.
+		await expect(
+			presentation.locator("body > div.fixed.pointer-events-none.z-50"),
+		).toBeAttached({ timeout: 10_000 });
+	});
+
 	test("self-verify: hidden laser is detected (display:none injection)", async ({ page, context, uniqueFixtures }) => {
 		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
 		await pressShortcut(page, "l");

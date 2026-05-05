@@ -118,18 +118,46 @@ export function PointerOverlay({
 function useContainerRect(ref: RefObject<HTMLElement | null>) {
 	const [rect, setRect] = useState<DOMRect | null>(null);
 	useEffect(() => {
-		const el = ref.current;
-		if (!el) return;
-		const update = () => setRect(el.getBoundingClientRect());
-		update();
-		const observer = new ResizeObserver(update);
-		observer.observe(el);
-		window.addEventListener("resize", update);
-		window.addEventListener("scroll", update, true);
+		// `ref.current` may be null at mount when the target lives behind a
+		// Suspense boundary that hasn't resolved yet (e.g. PdfPageCanvas's
+		// inner <div ref={pdfAreaRef}> is suspended while getPage() is
+		// pending). The previous implementation early-returned in that case
+		// and never recovered because `[ref]` deps are stable, leaving rect
+		// null forever and PointerOverlay perpetually rendering null.
+		// Watch the document for the ref's element to attach instead.
+		let cleanup: (() => void) | null = null;
+
+		const setupOn = (el: HTMLElement) => {
+			const update = () => setRect(el.getBoundingClientRect());
+			update();
+			const observer = new ResizeObserver(update);
+			observer.observe(el);
+			window.addEventListener("resize", update);
+			window.addEventListener("scroll", update, true);
+			cleanup = () => {
+				observer.disconnect();
+				window.removeEventListener("resize", update);
+				window.removeEventListener("scroll", update, true);
+			};
+		};
+
+		const initial = ref.current;
+		if (initial) {
+			setupOn(initial);
+			return () => cleanup?.();
+		}
+
+		const mo = new MutationObserver(() => {
+			const el = ref.current;
+			if (el) {
+				mo.disconnect();
+				setupOn(el);
+			}
+		});
+		mo.observe(document.body, { childList: true, subtree: true });
 		return () => {
-			observer.disconnect();
-			window.removeEventListener("resize", update);
-			window.removeEventListener("scroll", update, true);
+			mo.disconnect();
+			cleanup?.();
 		};
 	}, [ref]);
 	return rect;
