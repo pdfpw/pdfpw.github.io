@@ -113,12 +113,77 @@ async function readLaserPercent(page: Page): Promise<{ left: number; top: number
 	if (!raw) return null;
 	const parse = (v: string): number | null => {
 		const m = v.match(/^(-?\d+(?:\.\d+)?)%$/);
-		return m ? Number.parseFloat(m[1]) : null;
+		if (!m) return null;
+		const n = Number(m[1]);
+		return Number.isNaN(n) ? null : n;
 	};
 	const left = parse(raw.left);
 	const top = parse(raw.top);
 	if (left === null || top === null) return null;
 	return { left, top };
+}
+
+/**
+ * Verify the laser dot is actually visible to the user at `expected`:
+ *
+ * 1. The visible inner dot (the red core, last child of the LaserDot wrapper)
+ *    passes `Element.checkVisibility()` — covers display:none /
+ *    visibility:hidden / opacity:0 regressions.
+ * 2. At the dot's pixel center, no other element is stacked in front of the
+ *    overlay. The overlay carries `pointer-events: none`, which Chromium's
+ *    `document.elementsFromPoint()` filters out — so we temporarily clear
+ *    the inline override during the probe and restore it immediately. This
+ *    catches z-index/stacking regressions (the "laser ends up behind the
+ *    slide" failure mode `checkVisibility` alone cannot see).
+ *
+ * Returns `true` once both conditions hold; used inside `expect.poll` to
+ * absorb the small RAF + atom commit + broadcast latency window.
+ */
+async function isLaserOnTopAt(
+	page: Page,
+	expected: { left: number; top: number },
+	tolerance: number,
+): Promise<boolean> {
+	const pos = await readLaserPercent(page);
+	if (!pos) return false;
+	if (Math.abs(pos.left - expected.left) > tolerance) return false;
+	if (Math.abs(pos.top - expected.top) > tolerance) return false;
+	return await page.evaluate(() => {
+		const overlay = document.querySelector(
+			"body > div.fixed.pointer-events-none.z-50",
+		) as HTMLElement | null;
+		if (!overlay) return false;
+		const wrapper = overlay.querySelector(
+			'div[style*="width: 0"]',
+		) as HTMLElement | null;
+		if (!wrapper) return false;
+		// (1) checkVisibility on the visible inner core (last child of the
+		// 0×0 wrapper).
+		const core = wrapper.lastElementChild as HTMLElement | null;
+		if (!core) return false;
+		if (typeof core.checkVisibility === "function" && !core.checkVisibility())
+			return false;
+		// (2) Resolve the dot's pixel center.
+		const overlayRect = overlay.getBoundingClientRect();
+		const leftPct = Number((wrapper.style.left || "").replace("%", ""));
+		const topPct = Number((wrapper.style.top || "").replace("%", ""));
+		if (Number.isNaN(leftPct) || Number.isNaN(topPct)) return false;
+		const cx = overlayRect.left + (overlayRect.width * leftPct) / 100;
+		const cy = overlayRect.top + (overlayRect.height * topPct) / 100;
+		// Temporarily flip pointer-events so elementsFromPoint can see the
+		// overlay subtree. Without this, Chromium skips the entire overlay
+		// (and its visible dot) and reports whatever is below.
+		const prevPE = overlay.style.pointerEvents;
+		overlay.style.pointerEvents = "auto";
+		try {
+			const stack = document.elementsFromPoint(cx, cy);
+			if (stack.length === 0) return false;
+			const top = stack[0];
+			return top === overlay || overlay.contains(top);
+		} finally {
+			overlay.style.pointerEvents = prevPE;
+		}
+	});
 }
 
 async function expectLaserNear(
@@ -138,6 +203,18 @@ async function expectLaserNear(
 			},
 			{ timeout: 10_000 },
 		)
+		.toBe(true);
+}
+
+async function expectLaserOnTopAt(
+	page: Page,
+	expected: { left: number; top: number },
+	tolerance = 2,
+): Promise<void> {
+	await expect
+		.poll(async () => isLaserOnTopAt(page, expected, tolerance), {
+			timeout: 10_000,
+		})
 		.toBe(true);
 }
 
@@ -242,6 +319,43 @@ test.describe("pointer tools (laser + pen)", () => {
 		await page.mouse.move(box.x + box.width * 0.1, box.y + box.height * 0.9);
 		await expectLaserNear(page, { left: 10, top: 90 });
 		await expectLaserNear(presentation, { left: 10, top: 90 });
+
+		await presentation.close();
+	});
+
+	test("laser dot stays on top of the slide across the canvas (grid of 9 points)", async ({ page, context, uniqueFixtures }) => {
+		const presentation = await uploadAndCapture(page, context, uniqueFixtures);
+
+		await pressShortcut(page, "l");
+
+		const box = await page.locator("canvas").first().boundingBox();
+		if (!box) throw new Error("canvas not found");
+
+		// 3×3 grid covering the slide. The dot must be both rendered
+		// (`checkVisibility`) AND the topmost element at its pixel center
+		// (no z-index regression hiding it behind the slide). Verified on
+		// presenter and presentation independently — a stacking bug on
+		// either side is its own concern.
+		const gridPoints: ReadonlyArray<{ left: number; top: number }> = [
+			{ left: 10, top: 10 },
+			{ left: 50, top: 10 },
+			{ left: 90, top: 10 },
+			{ left: 10, top: 50 },
+			{ left: 50, top: 50 },
+			{ left: 90, top: 50 },
+			{ left: 10, top: 90 },
+			{ left: 50, top: 90 },
+			{ left: 90, top: 90 },
+		];
+
+		for (const p of gridPoints) {
+			await page.mouse.move(
+				box.x + box.width * (p.left / 100),
+				box.y + box.height * (p.top / 100),
+			);
+			await expectLaserOnTopAt(page, p);
+			await expectLaserOnTopAt(presentation, p);
+		}
 
 		await presentation.close();
 	});
